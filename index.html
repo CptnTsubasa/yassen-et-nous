@@ -711,6 +711,7 @@ const Store = {
         done(); render();
       }, e => { done(); this.fail(e); }));
     }
+    if (db.kind === "shared") Live.open();
     render();
     // En rejoignant l'espace commun, ce que ce téléphone contenait déjà y est ajouté.
     if (db.kind === "shared" && Shared.joining) {
@@ -733,6 +734,7 @@ const Store = {
   goLocal() {
     this.unsubs.forEach(u => { try { u(); } catch (e) { /* déjà fermé */ } });
     this.unsubs = []; this.db = null; this.backend = "local"; this.saveLocal();
+    Live.close();
   },
   add(col, data) {
     data = { ...data, createdAt: Date.now() };
@@ -948,7 +950,7 @@ function freshFirst(ids) {
 function cardCount(mode, dur, style) {
   const base = { 5: 4, 10: 7, 20: 12, 30: 18 }[dur] || 7;
   if (mode === "qui") return Math.round(base * 1.5);
-  return style === "secret" ? Math.max(3, Math.round(base * 0.75)) : base;
+  return style === "secret" || style === "distance" ? Math.max(3, Math.round(base * 0.75)) : base;
 }
 function moodPool(mood) {
   const quick = POOL.def.filter(id => CARDS[id].duree <= 15);
@@ -1063,6 +1065,7 @@ function viewHome() {
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
       <div class="row"><button class="btn" data-a="sheet" data-name="names">Ajouter nos prénoms</button></div>
     </div>`}
+  ${liveBanner()}
   ${dailyBlock()}
   <section class="stack" aria-labelledby="h-modes"><h2 class="sec" id="h-modes">Choisir un jeu</h2><div class="tiles">${tiles}</div></section>
   ${cartesBlock()}
@@ -1265,7 +1268,9 @@ function setupView() {
     <div class="opts" style="${cvar(m.c)}">
       <button class="opt" aria-pressed="${s.style === "partage"}" data-a="setup" data-k="style" data-v="partage"><b>Mode partagé</b><span>Un seul téléphone, posé entre vous. On répond à voix haute, chacun son tour.</span></button>
       <button class="opt" aria-pressed="${s.style === "secret"}" data-a="setup" data-k="style" data-v="secret"><b>Réponses secrètes</b><span>Chacun écrit ou vote en cachette, un écran masque la réponse, puis on révèle tout ensemble.</span></button>
-      <button class="opt" disabled aria-disabled="true"><b>À distance · pas encore disponible</b><span>Deux téléphones reliés par un code de partie. Prévu pour une prochaine version.</span></button>
+      ${Store.backend === "shared"
+        ? `<button class="opt" aria-pressed="${s.style === "distance"}" data-a="setup" data-k="style" data-v="distance"><b>À distance</b><span>${esc(fr("Chacun sur son téléphone, même loin l'un de l'autre. Les réponses s'affichent en direct sur vos deux écrans."))}</span></button>`
+        : `<button class="opt" disabled aria-disabled="true"><b>À distance</b><span>${esc(fr(Shared.available() ? "Créez d'abord votre espace commun dans les Réglages." : "Deux téléphones reliés : prévu pour une prochaine version."))}</span></button>`}
     </div>
   </div>
   ${rulesHtml(setupRules(s), "Comment on joue")}
@@ -1293,6 +1298,17 @@ function cardHtml(c, g) {
 }
 const rulesHtml = (list, title = "Les règles") => `<div class="panel"><h2 class="sec">${title}</h2><ol class="rules">${list.map(r => `<li>${esc(fr(r))}</li>`).join("")}</ol></div>`;
 function setupRules(s) {
+  const joker = "Le joker est toujours là : on passe une carte sans avoir à se justifier.";
+  if (s.style === "distance") {
+    const d = {
+      questions: ["À chaque carte, l'un de vous répond à la question, l'autre devine sa réponse. Les rôles alternent.", "Chacun écrit de son côté, sur son téléphone : la prédiction pour l'un, la vraie réponse pour l'autre.", "Dès que vous avez répondu tous les deux, les réponses s'affichent en même temps sur vos deux écrans.", "Ensuite, parlez-en : en appel, en vocal ou par message."],
+      qui: ["Une affirmation s'affiche sur vos deux téléphones.", "Chacun vote de son côté pour la personne qui correspond le mieux. On a le droit de voter pour soi.", "Les deux votes s'affichent ensemble, puis vous plaidez votre cause.", "Pas de points, pas de classement : seulement des fous rires."],
+      histoire: ["Chaque carte est une question pour vous deux. Chacun écrit sa réponse sur son téléphone.", "Les réponses s'affichent ensemble dès que vous avez répondu tous les deux.", "Pour garder vos réponses dans l'album, chacun doit dire oui de son côté."],
+      etsi: ["Chaque carte propose un scénario. Chacun écrit son idée sur son téléphone.", "Les idées s'affichent ensemble. Celle qui vous plaît peut rejoindre « Notre prochaine aventure »."],
+      surprise: ["Le jeu pioche dans tous les modes selon votre humeur.", "Chacun répond ou vote sur son téléphone, et tout s'affiche en même temps chez vous deux."]
+    }[s.mode] || [];
+    return [...d, "La partie apparaît aussi sur l'autre téléphone : il suffit de toucher « Rejoindre la partie » sur l'accueil.", "N'importe lequel de vous deux peut passer à la carte suivante.", joker];
+  }
   const sec = s.style === "secret";
   const r = {
     questions: sec
@@ -1700,6 +1716,7 @@ function arcadeView() {
   const A = S.arc, col = cvar(7);
   if (!A) return `${layerHead("")}
     <section class="setup-hero" style="${col}"><span class="g" aria-hidden="true">◎</span><h1>Arcade</h1><p>${esc(fr("Quatre mini-jeux rapides, à jouer côte à côte. Ici, on gagne ensemble ou on rit ensemble."))}</p></section>
+    ${Store.backend === "shared" ? `<div class="stack"><h2 class="sec">Où jouez-vous ?</h2><div class="chips"><button class="chip" aria-pressed="${!S.arcRemote}" data-a="arc-where" data-v="">Sur ce téléphone</button><button class="chip" aria-pressed="${!!S.arcRemote}" data-a="arc-where" data-v="1">À distance, chacun sur son téléphone</button></div></div>` : ""}
     <div class="opts" style="${col}">${Object.entries(ARCADE).map(([k, g]) => `<button class="opt" data-a="arc-start" data-g="${k}"><b>${g.glyph}&nbsp; ${esc(fr(g.title))}</b><span>${esc(fr(g.desc))}</span></button>`).join("")}</div>`;
   const G = ARCADE[A.game], total = A.deck ? A.deck.length : 0;
   const prog = A.game === "synchro" ? `<span>${esc(G.title)} · manche ${A.round}</span>`
@@ -1875,7 +1892,7 @@ function storyView() {
     return `${layerHead("")}
     <section class="setup-hero" style="${cvar(8)}"><span class="g" aria-hidden="true">❦</span><h1>Il était une fois nous</h1><p>${esc(fr("Vous êtes les héros. Chaque choix que vous faites ensemble change la suite de l'histoire."))}</p></section>
     ${rulesHtml(["Lisez chaque page à voix haute, chacun son tour si vous voulez. Vos prénoms sont dans l'histoire.", "Les « Petites pauses » sont des questions pour vous deux, pour de vrai : prenez le temps d'y répondre.", "Choisissez la suite ensemble, ou votez en secret. En cas de désaccord, négociez ou tirez à pile ou face.", "Toutes les fins sont heureuses. Rejouez pour toutes les découvrir."], "Comment on joue")}
-    <div class="stack"><h2 class="sec">Pour décider</h2><div class="chips">${chip("ensemble", "Ensemble, à voix haute")}${chip("secret", "Chacun vote en secret")}</div>
+    <div class="stack"><h2 class="sec">Pour décider</h2><div class="chips">${chip("ensemble", "Ensemble, à voix haute")}${chip("secret", "Chacun vote en secret")}${Store.backend === "shared" ? chip("distance", "À distance, chacun sur son téléphone") : ""}</div>
       <p class="small muted">${esc(fr("En vote secret, si vos choix diffèrent, vous négociez… ou vous laissez le hasard trancher."))}</p></div>
     <div class="stack"><h2 class="sec">Les histoires</h2><div class="opts">${STORIES.map(st => {
       const [f, t] = endCount(st);
@@ -2021,6 +2038,264 @@ function puzzleView() {
       <div class="actions"><div class="row"><button class="btn ghost" data-a="pz-peek">${z.peek ? "Cacher le modèle" : "Voir le modèle"}</button><button class="btn line" data-a="pz-start">Mélanger à nouveau</button></div></div>`;
 }
 
+/* ───────────────────────── Parties à distance ─────────────────────────
+   Une partie à distance vit dans l'espace commun (live/game) et chaque téléphone l'affiche en
+   direct. Chacun n'écrit que sa propre réponse (live/game/ans/<clé>) : répondre en même temps
+   n'écrase jamais la réponse de l'autre. Une seule partie à distance à la fois. */
+const whoAmI = pzMe;
+const Live = {
+  state: null, unsub: null, lastStart: 0,
+  open() {
+    if (this.unsub || !Store.db || Store.backend !== "shared") return;
+    this.unsub = Store.db.doc("live/game").onSnapshot(s => {
+      const v = s.exists ? s.data() : null;
+      this.state = v && typeof v === "object" && ["cards", "arcade", "story"].includes(v.kind) ? v : null;
+      const st = this.state;
+      if (st && st.startAt !== this.lastStart) {
+        if (this.seen && st.by && st.by !== whoAmI() && !st.ended) toast(`${nm(st.by)} a lancé une partie à distance`);
+        this.lastStart = st.startAt;
+      }
+      this.seen = true;
+      // L'accord pour l'album est enregistré par un seul téléphone, pour éviter les doublons.
+      if (st && st.kind === "cards" && whoAmI() === "a") {
+        const sv = st.saved || {};
+        if (sv.ok && sv.ok.a && sv.ok.b && !sv.album) liveSaveAlbum(st);
+      }
+      render();
+    }, e => Store.fail(e));
+  },
+  close() { if (this.unsub) { try { this.unsub(); } catch (e) { /* déjà fermé */ } } this.unsub = null; this.state = null; },
+  write(obj) {
+    if (!this.state) return;
+    for (const k in obj) { if (obj[k] === null) delete this.state[k]; else this.state[k] = obj[k]; }
+    Store.db.doc("live/game").update({ ...obj, updatedAt: Date.now() }).catch(e => Store.fail(e));
+  },
+  answer(path, key, val) {
+    if (!this.state) return;
+    let o = this.state;
+    path.split("/").forEach(p => { if (!o[p] || typeof o[p] !== "object") o[p] = {}; o = o[p]; });
+    o[key] = val;
+    Store.db.doc("live/game/" + path).update({ [key]: val }).catch(e => Store.fail(e));
+    Store.db.doc("live/game").update({ updatedAt: Date.now() }).catch(() => {});
+  },
+  start(state) {
+    const s = { ...state, by: whoAmI() || "a", startAt: Date.now(), updatedAt: Date.now(), ended: false };
+    this.state = s; this.lastStart = s.startAt; S.lvRules = null; S.lvGuess = 50;
+    Store.db.doc("live/game").set(s).catch(e => Store.fail(e));
+    S.layer = { type: "live" };
+  },
+  active() { const s = this.state; return !!(s && !s.ended && Date.now() - (s.updatedAt || 0) < 12 * 3600 * 1000); }
+};
+const liveTitle = L => L.kind === "cards" ? (MODES[L.mode] || {}).title || "Partie" : L.kind === "arcade" ? (ARCADE[L.game] || {}).title || "Arcade" : (STORY[L.id] || {}).title || "Histoire";
+function liveBanner() {
+  if (Store.backend !== "shared" || !Live.active()) return "";
+  const L = Live.state;
+  return `<section class="panel" style="${cvar(7)};background:var(--c);color:var(--on-c)"><p class="sec" style="color:inherit;opacity:.75">Partie à distance en cours</p>
+    <p><b>${esc(fr(liveTitle(L)))}</b>${L.by ? ` · lancée par ${esc(nm(L.by))}` : ""}</p>
+    <div class="row"><button class="btn" data-a="lv-join">Rejoindre la partie</button></div></section>`;
+}
+const liveWaiting = (who, done) => `<p class="small muted" style="text-align:center">${done ? `${esc(nm(who))} a répondu ✓` : `${esc(nm(who))} est en train de répondre…`}</p>`;
+const liveSent = `<p class="verdict" style="font-size:1.4rem">Réponse envoyée ✓</p>`;
+const liveNorm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "").replace(/s$/, "");
+
+/* Cartes : questions, Qui de nous deux, Notre histoire, Et si on, Surprise */
+function startLiveCards(st) {
+  const deck = buildDeck({ ...st, style: "secret" });
+  if (!deck.length) { toast("Aucune carte ne correspond à ce choix."); return; }
+  Live.start({ kind: "cards", mode: st.mode, setup: { mode: st.mode, cat: st.cat, mood: st.mood, dur: st.dur, style: "distance" }, deck, i: 0, first: Math.random() < 0.5 ? "a" : "b" });
+}
+function liveCard(L) {
+  const c = CARDS[(L.deck || [])[L.i]];
+  if (!c) return null;
+  const flow = flowOf(c, L.mode), T = (L.i % 2 === 0) === (L.first === "a") ? "a" : "b";
+  const g = { flow, T, ans: L.ans || {}, saved: L.saved || {} };
+  g.talk = (flow === "pick" ? PICK_TALK : GUESS_TALK)[L.i % 5];
+  return { c, g, slots: slotsOf(g) };
+}
+function liveSaveAlbum(L) {
+  const x = liveCard(L); if (!x) return;
+  const entries = x.slots.map(s => ({ who: s.who, label: x.g.flow === "guess" ? (s.key === "guess" ? `Prédiction de ${nm(s.who)}` : `Réponse de ${nm(s.who)}`) : nm(s.who), text: String(x.g.ans[s.key] || "") }));
+  Store.add("capsule", { kind: "souvenir", question: x.c.text, cardId: x.c.id, entries });
+  Live.answer("saved", "album", true);
+}
+function liveCardsView(L, me, head) {
+  const col0 = cvar(1);
+  if (L.ended) return head + `<div class="stack" style="text-align:center;justify-items:center;padding-top:20px"><p class="end-big">Joli moment</p>
+    <p>${(L.deck || []).length} cartes jouées à distance.</p><p class="muted small">${esc(fr("Vos souvenirs et idées vous attendent dans la capsule et les aventures."))}</p></div>
+    <div class="actions"><button class="btn wide c" style="${col0}" data-a="lv-replay">Rejouer</button><button class="btn ghost wide" data-a="close-layer">Retour à l'accueil</button></div>`;
+  const x = liveCard(L);
+  if (!x) return head + empty("Cette carte n'existe plus", "Passez à la suivante.") + `<button class="btn wide" data-a="lv-next">Carte suivante</button>`;
+  const { c, g, slots } = x, col = cvar(CAT[c.cat].c), last = L.i + 1 >= L.deck.length;
+  const nextB = `<button class="btn wide" data-a="lv-next">${last ? "Terminer la partie" : "Carte suivante"}</button>`;
+  const joker = `<div class="joker"><button class="link" data-a="lv-next">Joker : on passe cette carte, sans explication</button></div>`;
+  if (g.flow === "defi") return head + cardHtml(c, g) + instr("Défi", c.duree <= 15 ? "Relevez-le dès que vous êtes ensemble, ou gardez-le pour plus tard." : "Ajoutez-le à vos aventures pour le planifier.")
+    + `<div class="actions"><div class="row">${g.saved.done ? `<span class="small muted">Relevé ✓</span>` : `<button class="btn c" style="${col}" data-a="lv-defi" data-v="done">Défi relevé</button>`}
+      ${g.saved.later ? `<span class="small muted">Dans vos aventures ✓</span>` : `<button class="btn ghost" data-a="lv-defi" data-v="later">Pour plus tard</button>`}</div>${nextB}</div>`;
+  const answered = s => g.ans[s.key] != null;
+  if (!slots.every(answered)) {
+    const mine = slots.find(s => s.who === me);
+    let box = "";
+    if (mine && !answered(mine)) {
+      if (mine.kind === "pick") box = `<div class="stack"><p class="lbl">Ton vote :</p><div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${col}" data-a="lv-pick" data-k="${mine.key}" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div></div>`;
+      else {
+        const id = `lv-${L.i}-${mine.key}`;
+        box = `<div class="field"><label for="${id}">${esc(mine.label)}</label><textarea class="hand" id="${id}" data-d placeholder="Quelques mots suffisent…">${dv(id)}</textarea></div><button class="btn wide" data-a="lv-submit" data-k="${mine.key}">Envoyer ma réponse</button>`;
+      }
+    } else if (mine) box = liveSent;
+    return head + cardHtml(c, g) + box + slots.filter(s => s.who !== me).map(s => liveWaiting(s.who, answered(s))).join("") + joker;
+  }
+  let body;
+  if (g.flow === "pick") {
+    const a = g.ans.a, b = g.ans.b;
+    body = `<div class="reveal" style="${col}">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))} a voté</b><p class="pick">${esc(nm(g.ans[k] === "b" ? "b" : "a"))}</p></div>`).join("")}</div>
+      <p class="verdict" style="${col}">${a === b ? `Même vote : c'est ${esc(nm(a === "b" ? "b" : "a"))} !` : "Avis partagés… à vous de plaider !"}</p>${instr("On en discute", esc(g.talk))}`;
+  } else {
+    body = `<div class="reveal">${slots.map(s => `<div class="rv"><b>${g.flow === "guess" ? (s.key === "guess" ? "Prédiction de " : "Réponse de ") + esc(nm(s.who)) : esc(nm(s.who))}</b><p class="ans">${esc(g.ans[s.key])}</p></div>`).join("")}</div>`;
+    body += g.flow === "guess" ? instr("On en parle", esc(g.talk) + MISS) : g.flow === "both" ? instr("On en parle", "Qu'est-ce qui vous touche ou vous surprend dans la réponse de l'autre ?") : instr("On rêve un peu", "Laquelle de ces idées a envie de devenir réalité ?");
+  }
+  const out = [];
+  if (c.cat === "his" && (g.flow === "both" || g.flow === "guess")) {
+    const ok = g.saved.ok || {}, o = other(me);
+    out.push(g.saved.album ? `<p class="small muted">Gardé dans l'album ✓</p>`
+      : ok[me] ? `<p class="small muted">${esc(fr(`Tu es d'accord pour le garder. On attend la réponse de ${nm(o)}…`))}</p>`
+      : `<button class="btn ghost wide" data-a="lv-album-ok">${ok[o] ? esc(fr(`${nm(o)} veut le garder dans l'album. Toi aussi ?`)) : "Garder dans l'album"}</button>`);
+  }
+  if (g.flow === "idea") ["a", "b"].forEach(k => out.push(g.saved["idea" + k] ? `<p class="small muted">Idée de ${esc(nm(k))} ajoutée aux aventures ✓</p>` : `<button class="btn ghost wide" data-a="lv-idea" data-v="${k}">Ajouter l'idée de ${esc(nm(k))} aux aventures</button>`));
+  return head + cardHtml(c, g) + body + (out.length ? `<div class="actions">${out.join("")}</div>` : "") + nextB;
+}
+
+/* Arcade */
+const ARC_REMOTE_RULES = {
+  tp: ["Deux options s'affichent sur vos deux téléphones.", "Chacun choisit la sienne de son côté, sans voir le choix de l'autre.", "Les deux choix apparaissent en même temps. Pas le même ? Défendez le vôtre, en appel, en vocal ou par message.", "Dix dilemmes par partie. Pas de points."],
+  flags: ["Une petite manie s'affiche. Elle parle toujours de « quelqu'un », jamais de l'un de vous deux.", "Chacun vote « green » ou « red » de son côté.", "Les deux verdicts apparaissent en même temps. Pas d'accord ? Défendez le vôtre.", "Dix manies par partie. Pas de points."],
+  onde: ["Une échelle s'affiche entre deux extrêmes, par exemple « Froid » et « Chaud ».", "Le guide de la manche voit seul où se cache la cible, et écrit un seul indice : un objet, un film ou une situation qui se placerait à cet endroit.", "L'autre reçoit l'indice, déplace l'aiguille et valide.", "Points : 4 en plein dans le mille, 3 tout près, 2 pas loin. Six manches, les rôles alternent, le score est commun."],
+  synchro: ["Une catégorie s'affiche, par exemple « Un fruit ».", "Chacun écrit un mot de son côté, sans se concerter.", "Les deux mots apparaissent en même temps. Même mot ? Synchro réussie ! Sinon, à la manche suivante, chacun écrit un mot qui relie les deux derniers.", "Huit manches maximum."]
+};
+function startLiveArcade(game) {
+  const s = { kind: "arcade", game, i: 0, score: 0, first: Math.random() < 0.5 ? "a" : "b" };
+  if (game === "tp") s.deck = shuffle(TP.map((_, i) => i)).slice(0, 10);
+  else if (game === "flags") s.deck = shuffle(FLAGS.map((_, i) => i)).slice(0, 10);
+  else if (game === "onde") { s.deck = shuffle(SPECTRA.map((_, i) => i)).slice(0, 6); s.target = 5 + Math.floor(Math.random() * 91); }
+  else { s.game = "synchro"; s.prompt = pickOne(SYNC); s.round = 1; }
+  Live.start(s);
+}
+function liveArcadeView(L, me, head) {
+  const col = cvar(7), ans = L.ans || {}, o = other(me), deck = L.deck || [], total = deck.length;
+  const endScr = (big, txt) => head + `<div class="stack" style="text-align:center;justify-items:center;padding-top:24px"><p class="end-big">${esc(fr(big))}</p><p>${esc(fr(txt))}</p></div>
+    <div class="actions"><button class="btn wide c" style="${col}" data-a="lv-replay">Rejouer</button><button class="btn line wide" data-a="close-layer">Retour à l'accueil</button></div>`;
+  if (S.lvRules !== L.startAt) return head + rulesHtml(ARC_REMOTE_RULES[L.game] || []) + `<button class="btn wide c" style="${col}" data-a="lv-rules-ok">C'est parti</button>`;
+  const next = (label = "Suivant") => `<button class="btn wide" data-a="${L.game === "onde" ? "lv-onde-next" : "lv-arc-next"}">${L.i + 1 >= total ? "Terminer" : label}</button>`;
+
+  if (L.game === "tp" || L.game === "flags") {
+    if (L.ended) return endScr("C'était la dernière !", "Un choix vous a surpris ? C'est le bon moment pour en reparler.");
+    const it = L.game === "tp" ? TP[deck[L.i]] : FLAGS[deck[L.i]];
+    if (!it) return endScr("Partie terminée", "");
+    const opts = L.game === "tp" ? it : ["Green flag", "Red flag"];
+    const q = L.game === "tp"
+      ? `<div class="duel"><div class="side" style="${cvar(5)}">${esc(it[0])}</div><span class="ou">ou</span><div class="side" style="${cvar(6)}">${esc(it[1])}</div></div>`
+      : `<p class="flag-q">${esc(it)}</p>`;
+    const pick = k => (ans[k] === "1" ? 1 : 0);
+    if (ans[me] == null) return head + q + `<div class="pickers">${opts.map((t, i) => `<button class="btn c" style="${L.game === "flags" ? cvar(i ? 1 : 3) : cvar(i ? 6 : 5)};font-family:var(--f-body);font-size:1rem;font-weight:700" data-a="lv-pick" data-k="${me}" data-v="${i}">${esc(t)}</button>`).join("")}</div>`;
+    if (ans[o] == null) return head + q + liveSent + liveWaiting(o, false);
+    const same = pick("a") === pick("b");
+    return head + q + `<div class="reveal" style="${col}">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))}</b><p class="pick" style="font-size:1.15rem">${esc(opts[pick(k)])}</p></div>`).join("")}</div>
+      <p class="verdict" style="${col}">${same ? "Même choix !" : "Pas le même choix… plaidez !"}</p>` + next();
+  }
+
+  if (L.game === "onde") {
+    if (L.ended) {
+      const max = total * 4, r = (+L.score || 0) / max;
+      return endScr(`${+L.score || 0} / ${max}`, r >= 0.75 ? "Télépathie confirmée, même à distance." : r >= 0.5 ? "Vous êtes clairement sur la même fréquence." : r >= 0.25 ? "Quelques parasites sur la ligne, mais de très bons indices." : "La fréquence se cherche encore. Les indices, eux, étaient mémorables.");
+    }
+    const sp = SPECTRA[deck[L.i]] || ["", ""], guide = (L.i % 2 === 0) === (L.first === "a") ? "a" : "b", guesser = other(guide);
+    const t = Math.min(100, Math.max(0, +L.target || 50));
+    const labels = `<div class="spec-labels"><span>← ${esc(sp[0])}</span><span>${esc(sp[1])} →</span></div>`;
+    const score = `<p class="small muted" style="text-align:center">Score d'équipe : ${+L.score || 0} pt${(+L.score || 0) > 1 ? "s" : ""} · manche ${L.i + 1} sur ${total}</p>`;
+    if (ans.guess != null) {
+      const g = Math.min(100, Math.max(0, +ans.guess)), d = Math.abs(g - t), pts = d <= 4 ? 4 : d <= 10 ? 3 : d <= 16 ? 2 : 0;
+      const msg = ["Raté… mais l'indice valait le détour.", "", "Pas loin !", "Tout près !", "En plein dans le mille !"][pts];
+      return head + specHtml({ target: t, guess: g }, true, true) + labels + (ans.clue ? instr(`Indice de ${nm(guide)}`, esc(ans.clue)) : "")
+        + `<p class="verdict" style="${col}">+${pts} point${pts > 1 ? "s" : ""} · ${esc(fr(msg))}</p>` + score + next("Manche suivante");
+    }
+    if (me === guide) {
+      if (!ans.clue) return head + `<p class="lbl" style="text-align:center">Tu es le guide de cette manche</p>` + specHtml({ target: t }, true, false) + labels
+        + `<div class="field"><label for="lv-clue">${esc(fr(`Ton indice pour ${nm(guesser)}, qui se placerait pile dans la zone foncée`))}</label><input type="text" id="lv-clue" data-d maxlength="80" value="${dv("lv-clue")}" autocomplete="off"></div>
+        <button class="btn wide c" style="${col}" data-a="lv-clue">Envoyer l'indice</button>` + score;
+      return head + specHtml({ target: t }, true, false) + labels + instr("Indice envoyé ✓", esc(fr(`« ${ans.clue} ». ${nm(guesser)} place l'aiguille…`))) + score;
+    }
+    if (!ans.clue) return head + specHtml({ target: t }, false, false) + labels + `<p class="verdict" style="${col}">${esc(fr(`${nm(guide)} cherche un indice…`))}</p>` + score;
+    const g = S.lvGuess == null ? 50 : S.lvGuess;
+    return head + instr(`Indice de ${nm(guide)}`, `<span style="font-family:var(--f-hand);font-size:1.6rem">${esc(ans.clue)}</span>`) + specHtml({ target: t, guess: g }, false, true) + labels
+      + `<label class="lbl" for="lv-g">Place l'aiguille</label><input type="range" id="lv-g" min="0" max="100" step="1" value="${g}">
+      <button class="btn wide c" style="${col}" data-a="lv-guess">Valider</button>` + score;
+  }
+
+  // Synchro
+  if (L.ended) return L.result === "win" ? endScr("Synchro !", `Le même mot en ${L.round} manche${L.round > 1 ? "s" : ""}, à distance. Vos cerveaux se sont trouvés.`) : endScr("Presque…", "Pas de synchro cette fois, mais quel chemin pour y arriver. On retente ?");
+  const words = Array.isArray(L.words) ? L.words : [], lastW = words[words.length - 1];
+  const box = `<div class="panel" style="text-align:center;${col}">${L.round === 1 || !lastW
+    ? `<p class="card-for">Écrivez chacun, sans vous concerter…</p><p class="big-word">${esc(L.prompt)}</p>`
+    : `<p class="card-for">Manche ${L.round} · un mot qui relie</p><p class="big-word" style="font-size:1.7rem">« ${esc(lastW[0])} » et « ${esc(lastW[1])} »</p>`}</div>`;
+  if (ans.a != null && ans.b != null) {
+    const same = liveNorm(ans.a) === liveNorm(ans.b);
+    return head + box + `<div class="reveal" style="${col}">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))}</b><p class="pick">${esc(ans[k])}</p></div>`).join("")}</div>
+      <p class="verdict" style="${col}">${same ? "Même mot !" : "Pas encore…"}</p>
+      <button class="btn wide c" style="${col}" data-a="lv-sync-next" data-v="${same ? "win" : ""}">${same ? "Voir le résultat" : L.round >= 8 ? "Voir le résultat" : "Manche suivante"}</button>`;
+  }
+  if (ans[me] != null) return head + box + liveSent + liveWaiting(o, false);
+  const id = `lv-w-${L.round}`;
+  return head + box + `<div class="field"><label for="${id}">Ton mot</label><input type="text" id="${id}" data-d maxlength="40" value="${dv(id)}" autocomplete="off"></div>
+    <button class="btn wide c" style="${col}" data-a="lv-word">Envoyer mon mot</button>` + liveWaiting(o, false);
+}
+
+/* Il était une fois nous */
+function startLiveStory(id) { Live.start({ kind: "story", id, node: STORY[id].start, steps: 1 }); }
+function storyEnding(st, to) {
+  if (!st.nodes[to] || !st.nodes[to].end) return;
+  const p = Store.meta.progress, key = st.id + ":" + to, e = p.endings || [];
+  if (!e.includes(key)) Store.setMeta("progress", { ...p, endings: [...e, key] });
+}
+function liveStoryView(L, me, head) {
+  const st = STORY[L.id], n = st && st.nodes[L.node];
+  if (!n) return head + empty("Cette page est introuvable", "Relancez l'histoire depuis le menu.");
+  const col = cvar(st.c), o = other(me), votes = L.votes || {};
+  if (n.end) {
+    const [f, t] = endCount(st);
+    return head + `<article class="story-page end" style="${col}"><p class="card-for">Fin</p><h2 class="sheet-title">${esc(fr(n.end))}</h2><p class="story-text">${stx(n.t)}</p></article>
+      <p class="small muted" style="text-align:center">Fins découvertes dans cette histoire : ${f} sur ${t}</p>
+      <div class="actions">${(L.saved || {}).album ? `<p class="small muted">Gardée dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="lv-st-album">Garder cette fin dans l'album</button>`}
+      <button class="btn wide c" style="${col}" data-a="lv-replay">${f < t ? "Rejouer pour trouver une autre fin" : "Rejouer l'histoire"}</button>
+      <button class="btn line wide" data-a="close-layer">Retour à l'accueil</button></div>`;
+  }
+  const page = `<article class="story-page" style="${col}"><p class="story-text">${stx(n.t)}</p></article>` + (n.talk ? instr("Petite pause", stx(n.talk)) : "");
+  const go = (i, label = "Continuer l'histoire") => `<button class="btn wide c" style="${col}" data-a="lv-st-go" data-to="${n.ch[i][1]}">${label}</button>`;
+  if (n.ch.length === 1) return head + page + `<button class="btn wide c" style="${col}" data-a="lv-st-go" data-to="${n.ch[0][1]}">${stx(n.ch[0][0])}</button>`;
+  const va = votes.a, vb = votes.b, ok = v => Number.isInteger(v) && v >= 0 && v < n.ch.length;
+  if (!ok(votes[me])) return head + page + `<div class="stack"><p class="lbl">Ton choix, de ton côté :</p>${n.ch.map((c, i) => `<button class="choice" data-a="lv-st-vote" data-v="${i}">${stx(c[0])}</button>`).join("")}</div>` + liveWaiting(o, ok(votes[o]));
+  if (!ok(votes[o])) return head + page + `<div class="choice mine" style="${col}">${stx(n.ch[votes[me]][0])}</div>` + liveSent + liveWaiting(o, false);
+  if (va === vb) return head + page + `<p class="verdict" style="${col}">Même choix !</p><div class="choice mine" style="${col}">${stx(n.ch[va][0])}</div>` + go(va);
+  if (L.coinWho === "a" || L.coinWho === "b") {
+    const i = votes[L.coinWho];
+    return head + page + `<p class="verdict" style="${col}">Le hasard a parlé : ce sera le choix de ${esc(nm(L.coinWho))}.</p><div class="choice mine" style="${col}">${stx(n.ch[i][0])}</div>` + go(i);
+  }
+  return head + page + `<p class="verdict" style="${col}">Pas le même choix…</p>
+    <div class="reveal">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))} a choisi</b><p>${stx(n.ch[votes[k]][0])}</p></div>`).join("")}</div>
+    ${instr("À vous de négocier", "Chacun défend son choix en une phrase, puis vous décidez. Ou vous laissez le hasard trancher.")}
+    <div class="actions">${["a", "b"].map(k => `<button class="btn ghost wide" data-a="lv-st-go" data-to="${n.ch[votes[k]][1]}">On suit le choix de ${esc(nm(k))}</button>`).join("")}<button class="btn line wide" data-a="lv-st-coin">Pile ou face</button></div>`;
+}
+
+function liveView() {
+  const L = Live.state, me = whoAmI();
+  if (!L) return layerHead("") + empty("Aucune partie à distance en cours", "Lancez-en une depuis un jeu, en choisissant « À distance ».");
+  const right = L.kind === "cards" && !L.ended ? `Carte ${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && !L.ended && L.game !== "synchro" ? `${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && L.game === "synchro" ? `Manche ${L.round}` : L.kind === "story" ? `Chapitre ${L.steps || 1}` : "";
+  const head = `<div class="g-head"><button class="icon-btn" data-a="close-layer" aria-label="Fermer">×</button><div class="g-prog"><span>${esc(fr(liveTitle(L)))} · à distance</span></div><span class="g-timer">${right}</span></div>`;
+  if (!me) return head + `<div class="panel" style="text-align:center;${cvar(7)}"><p class="card-for">Sur ce téléphone…</p><p class="big-word" style="font-size:1.7rem">Qui es-tu ?</p></div>
+    <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${cvar(7)}" data-a="pzr-me" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
+    <p class="small muted" style="text-align:center">${esc(fr("Ce choix reste enregistré sur ce téléphone. Chacun fait le sien sur son propre téléphone."))}</p>`;
+  const body = L.kind === "cards" ? liveCardsView(L, me, head) : L.kind === "arcade" ? liveArcadeView(L, me, head) : liveStoryView(L, me, head);
+  return body + (L.ended ? "" : `<div class="joker" style="padding-top:8px"><button class="link" data-a="lv-end">Arrêter la partie pour vous deux</button></div>`);
+}
+
 /* ───────────────────────── Rendu ───────────────────────── */
 let pendingRender = false;
 function render(force) {
@@ -2037,7 +2312,8 @@ function render(force) {
   app.inert = !!S.layer;
   if (!S.layer) { layer.innerHTML = ""; return; }
   const key = S.layer.type + (S.game ? S.game.i + S.game.phase : "")
-    + (S.arc ? S.arc.game + S.arc.i + S.arc.phase + (S.arc.round || "") : "") + (S.story ? S.story.id + S.story.node + S.story.phase : "");
+    + (S.arc ? S.arc.game + S.arc.i + S.arc.phase + (S.arc.round || "") : "")
+    + (S.layer.type === "live" && Live.state ? "lv" + Live.state.startAt + (Live.state.i || 0) + (Live.state.node || "") + (Live.state.round || "") : "") + (S.story ? S.story.id + S.story.node + S.story.phase : "");
   const prev = layer.firstElementChild, keep = prev && prev.dataset.key === key ? prev.scrollTop : 0;
   let html = "";
   if (S.layer.type === "setup") html = setupView();
@@ -2047,6 +2323,7 @@ function render(force) {
   else if (S.layer.type === "arcade") html = arcadeView();
   else if (S.layer.type === "story") html = storyView();
   else if (S.layer.type === "puzzle") html = puzzleView();
+  else if (S.layer.type === "live") html = liveView();
   layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
 }
@@ -2086,7 +2363,7 @@ const ACT = {
     S.layer = null; S.editAv = null;
   },
   setup(d) { S.setup[d.k] = d.k === "dur" ? +d.v : d.v; },
-  start() { startGame(S.setup); },
+  start() { if (S.setup.style === "distance" && Store.backend === "shared") startLiveCards(S.setup); else startGame(S.setup); },
   "replay-same"() { startGame(S.game.setup); },
   replay(d) { startGame({ mode: "questions", style: couple().style || "partage", dur: 5 }, [d.id]); },
   "daily-play"() { startGame({ mode: "daily", style: couple().style || "partage", dur: 5 }, [daily().q.id]); },
@@ -2149,6 +2426,86 @@ const ACT = {
     if (!code) { toast("Colle d'abord le code reçu."); return; }
     mergeCode(code).then(() => { clearDrafts("sync-in"); render(true); });
   },
+  "lv-join"() { S.layer = { type: "live" }; },
+  "lv-rules-ok"() { if (Live.state) S.lvRules = Live.state.startAt; },
+  "lv-end"() { if (Live.state) Live.write({ ended: true }); S.layer = null; },
+  "lv-replay"() {
+    const L = Live.state; if (!L) return;
+    if (L.kind === "cards") startLiveCards({ ...L.setup });
+    else if (L.kind === "arcade") startLiveArcade(L.game);
+    else startLiveStory(L.id);
+  },
+  "lv-submit"(d) {
+    const L = Live.state; if (!L) return;
+    const id = `lv-${L.i}-${d.k}`, v = (S.drafts[id] || "").trim();
+    if (!v) { toast("Écris au moins quelques mots avant d'envoyer."); return; }
+    Live.answer("ans", d.k, v); clearDrafts(id);
+  },
+  "lv-pick"(d) { Live.answer("ans", d.k, d.v); },
+  "lv-next"() {
+    const L = Live.state; if (!L) return;
+    if (L.i + 1 >= (L.deck || []).length) { flushSeen(L.deck || [], true); Live.write({ ended: true }); }
+    else Live.write({ i: L.i + 1, ans: null, saved: null });
+  },
+  "lv-album-ok"() {
+    const L = Live.state, me = whoAmI(); if (!L || !me) return;
+    Live.answer("saved/ok", me, true);
+    const ok = (L.saved || {}).ok || {};
+    if (me === "a" && ok.b && !(L.saved || {}).album) liveSaveAlbum(L);
+  },
+  "lv-idea"(d) {
+    const L = Live.state, x = L && liveCard(L); if (!x) return;
+    addAventure(String(x.g.ans[d.v] || ""), { note: x.c.text.replace(/ /g, " "), source: x.c.id });
+    Live.answer("saved", "idea" + d.v, true);
+  },
+  "lv-defi"(d) {
+    const L = Live.state, x = L && liveCard(L); if (!x) return;
+    if (d.v === "done") defiDone(x.c); else defiAventure(x.c);
+    Live.answer("saved", d.v, true);
+  },
+  "lv-arc-next"() { const L = Live.state; if (!L) return; if (L.i + 1 >= (L.deck || []).length) Live.write({ ended: true }); else Live.write({ i: L.i + 1, ans: null }); },
+  "lv-clue"() {
+    const v = draft("lv-clue").trim();
+    if (!v) { toast("Écris ton indice avant de l'envoyer."); return; }
+    Live.answer("ans", "clue", v.slice(0, 80)); clearDrafts("lv-clue");
+  },
+  "lv-guess"() {
+    const L = Live.state; if (!L) return;
+    const g = S.lvGuess == null ? 50 : S.lvGuess, d = Math.abs(g - (+L.target || 50)), pts = d <= 4 ? 4 : d <= 10 ? 3 : d <= 16 ? 2 : 0;
+    Live.answer("ans", "guess", g); Live.write({ score: (+L.score || 0) + pts });
+  },
+  "lv-onde-next"() {
+    const L = Live.state; if (!L) return;
+    S.lvGuess = 50;
+    if (L.i + 1 >= (L.deck || []).length) Live.write({ ended: true });
+    else Live.write({ i: L.i + 1, ans: null, target: 5 + Math.floor(Math.random() * 91) });
+  },
+  "lv-word"() {
+    const L = Live.state, me = whoAmI(); if (!L || !me) return;
+    const id = `lv-w-${L.round}`, v = draft(id).trim();
+    if (!v) { toast("Écris ton mot avant de l'envoyer."); return; }
+    Live.answer("ans", me, v.slice(0, 40)); clearDrafts(id);
+  },
+  "lv-sync-next"(d) {
+    const L = Live.state; if (!L) return;
+    if (d.v === "win") { Live.write({ ended: true, result: "win" }); return; }
+    if (L.round >= 8) { Live.write({ ended: true, result: "lost" }); return; }
+    const ans = L.ans || {}, words = Array.isArray(L.words) ? L.words : [];
+    Live.write({ round: L.round + 1, words: [...words, [String(ans.a), String(ans.b)]], ans: null });
+  },
+  "lv-st-vote"(d) { const me = whoAmI(); if (me) Live.answer("votes", me, +d.v); },
+  "lv-st-coin"() { Live.write({ coinWho: Math.random() < 0.5 ? "a" : "b" }); },
+  "lv-st-go"(d) {
+    const L = Live.state, st = L && STORY[L.id]; if (!st || !st.nodes[d.to]) return;
+    storyEnding(st, d.to);
+    Live.write({ node: d.to, steps: (L.steps || 1) + 1, votes: null, coinWho: null, saved: null });
+  },
+  "lv-st-album"() {
+    const L = Live.state, st = L && STORY[L.id], n = st && st.nodes[L.node]; if (!n) return;
+    const plain = n.t.replace(/\{a\}/g, nm("a")).replace(/\{b\}/g, nm("b"));
+    Store.add("capsule", { kind: "souvenir", question: fr(st.title + " · " + n.end), entries: [{ who: "a", label: "Notre fin", text: fr(plain) }] });
+    Live.answer("saved", "album", true); toast("Gardée dans l'album");
+  },
   "pzr-open"() { S.pzRemote = true; S.pzSel = null; S.pzrSetup = false; pzRemoteOpen(); },
   "pzr-close"() { pzRemoteClose(); },
   "pzr-me"(d) { lsSet("entre-nous:me", d.v); },
@@ -2196,7 +2553,8 @@ const ACT = {
       const p = Store.meta.progress; Store.setMeta("progress", { ...p, puzzles: (p.puzzles || 0) + 1 });
     }
   },
-  "arc-start"(d) { startArc(d.g); },
+  "arc-start"(d) { if (S.arcRemote && Store.backend === "shared") startLiveArcade(d.g); else startArc(d.g); },
+  "arc-where"(d) { S.arcRemote = d.v === "1"; },
   "arc-begin"() { S.arc.phase = S.arc.start; },
   "arc-menu"() { S.arc = null; },
   "arc-replay"() { startArc(S.arc.game); },
@@ -2209,7 +2567,9 @@ const ACT = {
   "sync-same"() { S.arc.phase = "win"; },
   "sync-diff"() { const A = S.arc; if (A.round >= 8) A.phase = "lost"; else { A.round++; A.phase = "think"; } },
   "st-style"(d) { S.storyStyle = d.v; },
-  "st-open"(d) { S.story = { id: d.id, node: STORY[d.id].start, steps: 1, phase: "read", votes: {}, slot: 0 }; },
+  "st-open"(d) {
+    if (S.storyStyle === "distance" && Store.backend === "shared" && !S.story) { startLiveStory(d.id); return; }
+    S.story = { id: d.id, node: STORY[d.id].start, steps: 1, phase: "read", votes: {}, slot: 0 }; },
   "st-menu"() { S.story = null; },
   "st-go"(d) { storyGo(d.to); },
   "st-together"() { S.story.together = true; },
@@ -2318,6 +2678,10 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("input", e => {
   if (e.target.matches("[data-d]")) S.drafts[e.target.id] = e.target.value;
+  if (e.target.id === "lv-g") {
+    S.lvGuess = +e.target.value;
+    const n = document.getElementById("needle"); if (n) n.style.left = S.lvGuess + "%";
+  }
   if (e.target.id === "onde-g" && S.arc) {
     S.arc.guess = +e.target.value;
     const n = document.getElementById("needle"); if (n) n.style.left = S.arc.guess + "%";
