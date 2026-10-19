@@ -1166,7 +1166,7 @@ const syncLine = () => Store.backend === "shared" ? "Votre progression est commu
 
 function viewHome() {
   const c = couple(), named = c.a && c.b, h = new Date().getHours();
-  const hello = h < 5 ? "Douce nuit" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
+  const hello = h < 5 ? "Bonsoir" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
   return `
   <section class="greet">
     <p class="greet-date">${esc(fmtDay(todayStr(), { weekday: "long", day: "numeric", month: "long" }))}</p>
