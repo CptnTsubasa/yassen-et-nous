@@ -771,7 +771,15 @@ const Store = {
    Sur le site hébergé, la progression commune passe par une base Firebase Realtime Database.
    Tout est rangé sous couples/<code> : seul qui connaît le code (le lien d'invitation) y accède.
    Ces valeurs sont publiques par nature ; la protection vient des règles de la base et du code. */
-const FIREBASE = { apiKey: "", authDomain: "", databaseURL: "", projectId: "", appId: "" };
+const FIREBASE = {
+  apiKey: "AIzaSyBmV_FN88aiRdohcr-zYFbsayPoOtKNLo8",
+  authDomain: "y-s-14d43.firebaseapp.com",
+  databaseURL: "https://y-s-14d43-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "y-s-14d43",
+  storageBucket: "y-s-14d43.firebasestorage.app",
+  messagingSenderId: "386108389485",
+  appId: "1:386108389485:web:df3a699c641c1c20e92764"
+};
 const FB_VER = "10.12.2";
 const snapshotLocal = () => ({ v: 1, cols: JSON.parse(JSON.stringify(Store.cols)), meta: { couple: Store.meta.couple, progress: Store.meta.progress } });
 const Shared = {
@@ -1929,7 +1937,59 @@ function startPuzzle() {
   do { order = shuffle([...Array(N).keys()]); } while (order.every((p, i) => p === i));
   S.pz = { n, order, sel: null, moves: 0, startAt: Date.now(), done: false, turn: Math.random() < 0.5 ? "a" : "b", peek: false };
 }
+/* Puzzle à distance : la partie vit dans l'espace commun (live/puzzle) et chaque téléphone
+   l'affiche en direct. Seule la personne dont c'est le tour peut échanger deux pièces. */
+const pzMe = () => { const v = lsGet("entre-nous:me"); return v === "a" || v === "b" ? v : ""; };
+// L'état vient de la base partagée : on ne garde qu'un puzzle bien formé.
+function pzValid(L) {
+  if (!L || typeof L !== "object" || ![3, 4, 5].includes(L.n) || !Array.isArray(L.order)) return null;
+  const N = L.n * L.n, o = L.order;
+  if (o.length !== N || new Set(o).size !== N || o.some(p => !Number.isInteger(p) || p < 0 || p >= N)) return null;
+  return { n: L.n, order: o.slice(), turn: L.turn === "b" ? "b" : "a", moves: +L.moves || 0, startAt: +L.startAt || Date.now(), done: !!L.done, time: +L.time || 0 };
+}
+function pzGrid(n, order, sel, done, act, img) {
+  const pos = p => `${((p % n) / (n - 1)) * 100}% ${(Math.floor(p / n) / (n - 1)) * 100}%`;
+  return `<div class="pz${done ? " solved" : ""}" style="--n:${n};--pz:url('${img}')">${order.map((p, i) => `<button style="background-position:${pos(p)}" data-a="${act}" data-i="${i}" aria-pressed="${sel === i}" aria-label="Pièce ${i + 1}"${done ? " disabled" : ""}></button>`).join("")}</div>`;
+}
+function pzRemoteOpen() {
+  if (S.pzUnsub || !Store.db) return;
+  S.pzUnsub = Store.db.doc("live/puzzle").onSnapshot(s => { S.pzLive = s.exists ? pzValid(s.data()) : null; render(); }, e => Store.fail(e));
+}
+function pzRemoteClose() {
+  if (S.pzUnsub) { try { S.pzUnsub(); } catch (e) { /* déjà fermé */ } }
+  S.pzUnsub = null; S.pzRemote = false; S.pzSel = null; S.pzrSetup = false;
+}
+function pzRemoteView() {
+  const img = pzImage(), col = cvar(2), me = pzMe(), L = S.pzLive;
+  const head = (right = "") => `<div class="g-head"><button class="icon-btn" data-a="pzr-close" aria-label="Retour">×</button><div class="g-prog"><span>Puzzle à distance${L && !S.pzrSetup ? ` · ${L.n * L.n} pièces` : ""}</span></div>${right}</div>`;
+  if (!me) return head() + `<div class="panel" style="text-align:center;${col}"><p class="card-for">Sur ce téléphone…</p><p class="big-word" style="font-size:1.7rem">Qui es-tu ?</p></div>
+    <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${col}" data-a="pzr-me" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
+    <p class="small muted" style="text-align:center">${esc(fr("Ce choix reste enregistré sur ce téléphone. Chacun fait le sien sur son propre téléphone."))}</p>`;
+  if (!L || S.pzrSetup) {
+    const n = S.pzSize || 3;
+    return head() + rulesHtml(["Le même puzzle s'affiche en direct sur vos deux téléphones, même à distance.", "Chacun son tour : seule la personne dont c'est le tour peut échanger deux pièces. Le tour passe ensuite à l'autre.", "Lancez la partie depuis un téléphone : elle apparaît aussitôt sur l'autre."], "Comment on joue")
+      + `<div class="stack"><h2 class="sec">Nombre de pièces</h2><div class="chips">${[[3, "9 pièces"], [4, "16 pièces"], [5, "25 pièces"]].map(([v, l]) => `<button class="chip" aria-pressed="${n === v}" data-a="pz-size" data-v="${v}">${l}</button>`).join("")}</div></div>
+      <button class="btn wide c" style="${col}" data-a="pzr-start">Lancer la partie</button>
+      ${L && !L.done ? `<button class="btn line wide" data-a="pzr-resume">Reprendre la partie en cours</button>` : ""}
+      <p class="small muted" style="text-align:center">Tu joues en tant que ${esc(nm(me))}. <button class="link" data-a="pzr-me" data-v="">Changer</button></p>`;
+  }
+  const N = L.n * L.n, placed = L.order.filter((p, i) => p === i).length;
+  const right = `<span class="g-timer">${L.moves} échange${L.moves > 1 ? "s" : ""}</span>`;
+  if (L.done) {
+    const min = Math.max(1, Math.round(L.time / 60000));
+    return head(right) + pzGrid(L.n, L.order, null, true, "pzr-tap", img) + `<p class="verdict" style="${col}">Yassen Jr. est de retour !</p>
+      <p style="text-align:center">${esc(fr(`Reconstitué à distance en ${L.moves} échanges et environ ${min} minute${min > 1 ? "s" : ""}. Pièce par pièce, comme vous.`))}</p>
+      <div class="actions"><button class="btn wide c" style="${col}" data-a="pzr-new">Nouvelle partie</button></div>`;
+  }
+  const mine = L.turn === me;
+  return head(right) + `<p class="lbl" style="text-align:center">${mine ? "À toi de jouer" : `À ${esc(nm(L.turn))} de jouer…`}</p>`
+    + (S.pzPeek ? `<img class="pz-img peek" src="${img}" alt="Modèle du puzzle">` : "")
+    + `<div style="${mine ? "" : "opacity:.6"}">${pzGrid(L.n, L.order, S.pzSel, false, "pzr-tap", img)}</div>`
+    + `<p class="small muted" style="text-align:center">${placed} pièce${placed > 1 ? "s" : ""} bien placée${placed > 1 ? "s" : ""} sur ${N}</p>
+      <div class="actions"><div class="row"><button class="btn ghost" data-a="pzr-peek">${S.pzPeek ? "Cacher le modèle" : "Voir le modèle"}</button><button class="btn line" data-a="pzr-new">Nouvelle partie</button></div></div>`;
+}
 function puzzleView() {
+  if (S.pzRemote) return pzRemoteView();
   const z = S.pz, img = pzImage(), col = cvar(2);
   if (!z) {
     const n = S.pzSize || 3, custom = !!pzStored();
@@ -1939,7 +1999,11 @@ function puzzleView() {
     <div class="row"><label class="btn ghost" for="pz-file">Changer la photo</label><input class="vh" type="file" id="pz-file" accept="image/*">${custom ? `<button class="link" data-a="pz-reset-img">Revenir au portrait d'origine</button>` : ""}</div>
     ${rulesHtml(["Le portrait de Yassen Jr. est découpé en pièces mélangées.", "Touchez une pièce, puis une autre : elles échangent leur place.", "Jouez à deux en alternant : un échange chacun, à tour de rôle. Le prénom de la personne qui joue s'affiche au-dessus du puzzle.", "Besoin d'aide ? « Voir le modèle » affiche l'image complète.", "Aucun chrono ne presse : prenez votre temps."], "Comment on joue")}
     <div class="stack"><h2 class="sec">Nombre de pièces</h2><div class="chips">${[[3, "9 pièces"], [4, "16 pièces"], [5, "25 pièces"]].map(([v, l]) => `<button class="chip" aria-pressed="${n === v}" data-a="pz-size" data-v="${v}">${l}</button>`).join("")}</div></div>
-    <button class="btn wide c" style="${col}" data-a="pz-start">Commencer le puzzle</button>`;
+    <button class="btn wide c" style="${col}" data-a="pz-start">Commencer le puzzle</button>
+    ${Store.backend === "shared" ? `<section class="panel"><h2 class="sec">À distance, chacun sur son téléphone</h2>
+      <p class="small">${esc(fr("Le même puzzle s'affiche en direct sur vos deux téléphones. Chacun son tour, même si vous n'êtes pas ensemble."))}</p>
+      <button class="btn ghost" data-a="pzr-open">Jouer à distance</button></section>`
+    : Shared.available() ? `<p class="small muted">${esc(fr("Pour jouer à distance, chacun sur son téléphone, créez d'abord votre espace commun dans les Réglages."))}</p>` : ""}`;
   }
   const N = z.n * z.n, placed = z.order.filter((p, i) => p === i).length;
   const pos = p => { const c = p % z.n, r = Math.floor(p / z.n); return `${(c / (z.n - 1)) * 100}% ${(r / (z.n - 1)) * 100}%`; };
@@ -2016,6 +2080,7 @@ const ACT = {
     S.layer = { type: "setup" };
   },
   "close-layer"() {
+    if (S.pzRemote) pzRemoteClose();
     if (S.layer && S.layer.type === "game") return quitGame();
     if (S.layer && S.layer.type === "defis" && S.dfSeen.length) flushSeen(S.dfSeen, false);
     S.layer = null; S.editAv = null;
@@ -2083,6 +2148,35 @@ const ACT = {
     const code = draft("sync-in").trim();
     if (!code) { toast("Colle d'abord le code reçu."); return; }
     mergeCode(code).then(() => { clearDrafts("sync-in"); render(true); });
+  },
+  "pzr-open"() { S.pzRemote = true; S.pzSel = null; S.pzrSetup = false; pzRemoteOpen(); },
+  "pzr-close"() { pzRemoteClose(); },
+  "pzr-me"(d) { lsSet("entre-nous:me", d.v); },
+  "pzr-new"() { S.pzrSetup = true; },
+  "pzr-resume"() { S.pzrSetup = false; },
+  "pzr-peek"() { S.pzPeek = !S.pzPeek; },
+  "pzr-start"() {
+    const n = S.pzSize || 3, N = n * n;
+    let order;
+    do { order = shuffle([...Array(N).keys()]); } while (order.every((p, i) => p === i));
+    const L = { n, order, turn: pzMe() || "a", moves: 0, startAt: Date.now(), done: false, time: 0 };
+    S.pzLive = L; S.pzrSetup = false; S.pzSel = null;
+    Store.db.doc("live/puzzle").set(L).catch(e => Store.fail(e));
+  },
+  "pzr-tap"(d) {
+    const L = S.pzLive, me = pzMe(), i = +d.i;
+    if (!L || L.done) return;
+    if (L.turn !== me) { toast(`C'est au tour de ${nm(L.turn)}`); return; }
+    if (S.pzSel == null) { S.pzSel = i; return; }
+    if (S.pzSel === i) { S.pzSel = null; return; }
+    const order = L.order.slice();
+    [order[S.pzSel], order[i]] = [order[i], order[S.pzSel]];
+    S.pzSel = null;
+    const done = order.every((p, k) => p === k);
+    const next = { ...L, order, moves: L.moves + 1, turn: other(me), done, time: done ? Date.now() - L.startAt : 0 };
+    S.pzLive = next;
+    Store.db.doc("live/puzzle").set(next).catch(e => Store.fail(e));
+    if (done) { const p = Store.meta.progress; Store.setMeta("progress", { ...p, puzzles: (p.puzzles || 0) + 1 }); }
   },
   "pz-size"(d) { S.pzSize = +d.v; },
   "pz-start"() { startPuzzle(); },
@@ -2255,6 +2349,7 @@ function start(data) {
   }
   if (S.game && S.game.phase === "counting") S.game.phase = "talk";
   if (S.arc && S.arc.phase === "count") S.arc.phase = S.arc.after;
+  S.pzRemote = false; S.pzUnsub = null;
   render(true);
   Store.connect();
 }
