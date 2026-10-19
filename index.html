@@ -689,23 +689,36 @@ const Store = {
   },
   saveLocal() { if (this.backend === "local") lsSet(LS, JSON.stringify({ cols: this.cols, meta: this.meta })); },
   async connect() {
+    if (this.db) return;
     let db = null;
     try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
-    if (!db) return;
-    this.db = db; this.backend = "db";
+    if (!db) db = await Shared.open();
+    if (!db) { render(); return; }
+    this.db = db; this.backend = db.kind === "shared" ? "shared" : "db";
+    const firsts = [];
+    const first = () => { let r; firsts.push(new Promise(res => { r = res; })); return () => { if (r) { r(); r = null; } }; };
     for (const col of Object.keys(this.cols)) {
+      const done = first();
       this.unsubs.push(db.collection(col).onSnapshot(snap => {
         this.cols[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        render();
-      }, e => this.fail(e)));
+        done(); render();
+      }, e => { done(); this.fail(e); }));
     }
     for (const m of Object.keys(this.meta)) {
+      const done = first();
       this.unsubs.push(db.doc("meta/" + m).onSnapshot(s => {
         this.meta[m] = s.exists ? { ...DEFAULT_META[m], ...s.data() } : { ...DEFAULT_META[m] };
-        render();
-      }, e => this.fail(e)));
+        done(); render();
+      }, e => { done(); this.fail(e); }));
     }
     render();
+    // En rejoignant l'espace commun, ce que ce téléphone contenait déjà y est ajouté.
+    if (db.kind === "shared" && Shared.joining) {
+      await Promise.all(firsts);
+      const data = Shared.joining; Shared.joining = null;
+      await mergeData(data, true);
+      toast("Vous partagez maintenant la même progression");
+    }
   },
   // Écrit en ligne quand c'est possible. Si ce compte n'a pas le droit d'écrire (lien public,
   // accès en lecture), on bascule sur ce téléphone et la modification y est appliquée.
@@ -754,6 +767,84 @@ const Store = {
   }
 };
 
+/* ───────────────────────── Espace commun (Firebase) ─────────────────────────
+   Sur le site hébergé, la progression commune passe par une base Firebase Realtime Database.
+   Tout est rangé sous couples/<code> : seul qui connaît le code (le lien d'invitation) y accède.
+   Ces valeurs sont publiques par nature ; la protection vient des règles de la base et du code. */
+const FIREBASE = { apiKey: "", authDomain: "", databaseURL: "", projectId: "", appId: "" };
+const FB_VER = "10.12.2";
+const snapshotLocal = () => ({ v: 1, cols: JSON.parse(JSON.stringify(Store.cols)), meta: { couple: Store.meta.couple, progress: Store.meta.progress } });
+const Shared = {
+  key: "entre-nous:couple",
+  joining: null,
+  available: () => !!FIREBASE.databaseURL,
+  code() { const v = lsGet(this.key) || ""; return /^[A-Za-z0-9]{24,64}$/.test(v) ? v : ""; },
+  newCode() {
+    const abc = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", a = new Uint8Array(28);
+    crypto.getRandomValues(a);
+    return Array.from(a, n => abc[n % abc.length]).join("");
+  },
+  invite() { return location.origin + location.pathname + "#c-" + this.code(); },
+  // Un lien d'invitation (…#c-CODE) relie ce téléphone à l'espace commun.
+  takeInvite() {
+    const m = /^#c-([A-Za-z0-9]{24,64})$/.exec(location.hash || "");
+    if (!m) return;
+    if (m[1] !== this.code()) { lsSet(this.key, m[1]); this.joining = snapshotLocal(); }
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* facultatif */ }
+  },
+  async open() {
+    if (!this.available()) return null;
+    this.takeInvite();
+    const code = this.code();
+    if (!code) return null;
+    try {
+      const [A, F] = await Promise.all([
+        import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`),
+        import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-database.js`)
+      ]);
+      return rtdbAdapter(F, F.getDatabase(A.initializeApp(FIREBASE)), "couples/" + code);
+    } catch (e) {
+      toast("L'espace commun est injoignable pour le moment. La progression est gardée sur ce téléphone.");
+      return null;
+    }
+  }
+};
+// Donne à Firebase la même forme que la base des artifacts, pour que Store reste identique.
+function rtdbAdapter(F, fdb, base) {
+  const clean = d => JSON.parse(JSON.stringify(d));
+  const at = p => F.ref(fdb, base + "/" + p);
+  const docRef = path => ({
+    id: path.split("/").pop(),
+    set: d => F.set(at(path), clean(d)),
+    update: d => F.update(at(path), clean(d)),
+    delete: () => F.remove(at(path)),
+    onSnapshot: (next, err) => F.onValue(at(path), s => next({ exists: s.exists(), data: () => s.val() }), err)
+  });
+  return {
+    kind: "shared",
+    doc: docRef,
+    collection: col => ({
+      doc: id => docRef(col + "/" + (id || F.push(at(col)).key)),
+      onSnapshot: (next, err) => F.onValue(at(col), s => {
+        const v = s.val() || {};
+        next({ docs: Object.keys(v).map(id => ({ id, data: () => v[id] })) });
+      }, err)
+    })
+  };
+}
+function sharedPanel() {
+  if (Store.backend === "shared") return `<section class="panel" aria-labelledby="h-shared"><h2 class="sec" id="h-shared">Notre progression commune</h2>
+    <p class="small">${esc(fr("Ce téléphone est relié à votre espace commun : souvenirs, aventures, lettres et progression sont les mêmes sur vos deux téléphones."))}</p>
+    <button class="btn ghost" data-a="sh-copy">Copier le lien d'invitation</button>
+    ${S.shLink ? `<textarea readonly rows="2" style="font-size:.85rem;min-height:0" aria-label="Lien d'invitation">${esc(S.shLink)}</textarea>` : ""}
+    <p class="small muted">${esc(fr("Envoie ce lien à l'autre : en l'ouvrant, son téléphone rejoint le même espace, et ce qu'il contenait déjà y est ajouté. Gardez-le pour vous deux : il sert de clé."))}</p>
+    <button class="link" data-a="sh-leave">Détacher ce téléphone de l'espace commun</button></section>`;
+  return `<section class="panel" aria-labelledby="h-shared"><h2 class="sec" id="h-shared">Notre progression commune</h2>
+    <p class="small">${esc(fr("Créez votre espace commun : tout ce que vous faites se retrouve sur vos deux téléphones, sans compte à créer."))}</p>
+    <button class="btn" data-a="sh-create">Créer notre espace commun</button>
+    <p class="small muted">${esc(fr("Si l'autre l'a déjà créé, il suffit d'ouvrir le lien d'invitation reçu."))}</p></section>`;
+}
+
 /* ───────────────────────── Code de transfert ─────────────────────────
    Pour rassembler deux progressions sans compte : un code à s'envoyer par message.
    Les éléments gardent leur identifiant, donc fusionner deux fois ne crée pas de doublons. */
@@ -771,6 +862,9 @@ async function mergeCode(code) {
     data = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))));
   } catch (e) { data = null; }
   if (!data || data.v !== 1 || typeof data.cols !== "object") { toast("Ce code n'est pas reconnu. Copie-le en entier, depuis « YS1: » jusqu'au bout."); return; }
+  return mergeData(data);
+}
+async function mergeData(data, quiet) {
   const ts = o => o.updatedAt || o.createdAt || 0;
   let added = 0;
   for (const col of Object.keys(Store.cols)) {
@@ -791,7 +885,7 @@ async function mergeCode(code) {
   if ((!c.a || !c.b) && typeof qc.a === "string" && typeof qc.b === "string" && qc.a && qc.b) {
     await Store.setMeta("couple", { a: qc.a.slice(0, 24), b: qc.b.slice(0, 24), style: c.style || "partage" });
   }
-  toast(added ? `C'est fusionné : ${added} élément${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""} ou mis à jour` : "Tout était déjà à jour");
+  if (!quiet) toast(added ? `C'est fusionné : ${added} élément${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""} ou mis à jour` : "Tout était déjà à jour");
 }
 
 /* ───────────────────────── Transport des réponses ─────────────────────────
@@ -965,8 +1059,9 @@ function viewHome() {
   <section class="stack" aria-labelledby="h-modes"><h2 class="sec" id="h-modes">Choisir un jeu</h2><div class="tiles">${tiles}</div></section>
   ${cartesBlock()}
   ${carnetBlock()}
-  <p class="sync">${Store.backend === "db"
-    ? "Vos souvenirs, aventures et lettres sont partagés entre les personnes qui ont accès à cette page."
+  <p class="sync">${Store.backend === "shared" ? "Votre progression est commune à vos deux téléphones."
+    : Store.backend === "db" ? "Vos souvenirs, aventures et lettres sont partagés entre les personnes qui ont accès à cette page."
+    : Shared.available() ? "Tout est enregistré sur ce téléphone. Créez votre espace commun dans les Réglages pour partager la progression."
     : "Tout est enregistré sur ce téléphone. Pour réunir vos progressions, utilisez le code dans les Réglages."}</p>`;
 }
 
@@ -1392,8 +1487,9 @@ function sheetView() {
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "partage"}" data-a="set-draft" data-k="nstyle" data-v="partage">Mode partagé</button>
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "secret"}" data-a="set-draft" data-k="nstyle" data-v="secret">Réponses secrètes</button></div></div>
     <button class="btn wide" data-a="save-names">Enregistrer</button>
-    <p class="small muted">${Store.backend === "db" ? "Ces réglages, comme vos souvenirs, sont partagés avec les personnes qui ont accès à cette page." : "Sur ce téléphone, la progression est enregistrée ici même."}</p>
-    <section class="panel" aria-labelledby="h-sync">
+    <p class="small muted">${Store.backend !== "local" ? "Ces réglages, comme vos souvenirs, sont partagés avec l'autre." : "Sur ce téléphone, la progression est enregistrée ici même."}</p>
+    ${Shared.available() ? sharedPanel() : ""}
+    ${Store.backend !== "local" ? "" : `<section class="panel" aria-labelledby="h-sync">
       <h2 class="sec" id="h-sync">Rassembler nos progressions</h2>
       <p class="small">${esc(fr("Si vous jouez chacun sur votre téléphone, chaque progression reste sur le sien. Pour tout réunir : l'un copie son code et l'envoie par message, l'autre le colle ici. Faites-le dans les deux sens pour avoir la même chose des deux côtés."))}</p>
       <button class="btn ghost" data-a="sync-copy">Copier mon code</button>
@@ -1401,7 +1497,7 @@ function sheetView() {
       <div class="field"><label for="sync-in">Code reçu</label><textarea id="sync-in" data-d rows="3" style="min-height:0" placeholder="Colle ici le code envoyé par l'autre (il commence par YS1:)">${dv("sync-in")}</textarea></div>
       <button class="btn" data-a="sync-merge">Ajouter à ma progression</button>
       <p class="small muted">${esc(fr("La photo du puzzle n'est pas incluse dans le code. Un élément supprimé d'un côté n'est pas supprimé de l'autre."))}</p>
-    </section>`;
+    </section>`}`;
   }
   if (name === "mot") {
     const kind = S.mot;
@@ -1965,6 +2061,18 @@ const ACT = {
     if (!entries.length) { toast("Notez au moins une réponse pour la garder."); return; }
     Store.add("capsule", { kind: "souvenir", question: c.text, cardId: c.id, entries }); clearDrafts(ia, ib); g.saved.album = true; toast("Gardé dans l'album");
   },
+  "sh-create"() {
+    lsSet(Shared.key, Shared.newCode());
+    Shared.joining = snapshotLocal();
+    Store.connect().then(() => { if (Store.backend === "shared") { S.shLink = Shared.invite(); render(true); } });
+  },
+  "sh-copy"() {
+    S.shLink = Shared.invite();
+    try {
+      navigator.clipboard.writeText(S.shLink).then(() => toast("Lien copié : envoie-le à l'autre"), () => toast("Sélectionne le lien ci-dessous pour le copier"));
+    } catch (e) { toast("Sélectionne le lien ci-dessous pour le copier"); }
+  },
+  "sh-leave"() { lsSet(Shared.key, ""); Store.goLocal(); S.shLink = null; toast("Ce téléphone garde sa propre copie"); },
   "sync-copy"() {
     S.syncCode = makeCode();
     try {
@@ -2125,6 +2233,12 @@ document.addEventListener("change", e => {
   if (e.target.matches("[data-d]")) S.drafts[e.target.id] = e.target.value;
   if (e.target.id === "pz-file" && e.target.files && e.target.files[0]) pzUpload(e.target.files[0]);
   if (e.target.id === "av-s") render(true);
+});
+// Un lien d'invitation ouvert alors que le site est déjà affiché ne recharge pas la page.
+window.addEventListener("hashchange", () => {
+  if (!Shared.available() || !/^#c-/.test(location.hash)) return;
+  if (Store.backend === "shared") Store.goLocal();
+  Store.connect();
 });
 document.addEventListener("focusout", () => { setTimeout(() => { if (pendingRender) render(); }, 0); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && S.layer && S.layer.type !== "game") { ACT["close-layer"](); render(true); } });
