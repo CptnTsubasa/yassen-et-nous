@@ -305,6 +305,8 @@ body { background: var(--bg); }
 .buddy.grr .buddy-body { animation: grr .16s linear infinite; }
 @keyframes grr { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(1.5px); } }
 .av-happy, .av-grr { display: none; }
+.av-sparkle { opacity: 0; animation: avspark 4.5s ease-in-out infinite; }
+@keyframes avspark { 0%, 78%, 100% { opacity: 0; } 86% { opacity: 1; } }
 .buddy.blush .av-blush { opacity: .85; }
 .buddy.shy .buddy-body { animation: shysway 1.1s ease-in-out infinite alternate; }
 @keyframes shysway { from { transform: rotate(-5deg); } to { transform: rotate(5deg) translateY(2%); } }
@@ -1755,6 +1757,7 @@ function sheetView() {
     <div class="stack"><h2 class="sec">Couleur des cheveux</h2>${sw("hairColor", AV.hairColor, "Couleur")}</div>
     <div class="stack"><h2 class="sec">Haut</h2>${sw("top", AV.top, "Haut")}</div>
     <div class="stack"><h2 class="sec">Accessoire</h2>${ch("acc", AV.acc)}</div>
+    <div class="stack"><h2 class="sec">Piercing au nez</h2>${ch("pierce", AV.pierce)}</div>
     <div class="stack"><h2 class="sec">Personnalité</h2>${ch("perso", AV.perso)}<p class="small muted">${esc(fr("Elle change leur façon de parler et de se comporter sur la barre d'onglets."))}</p></div>
     <p class="small muted">${esc(fr("Vos personnages se baladent dans l'appli et jouent les héros de « Il était une fois nous ». Chacun peut personnaliser les deux, et les changements s'appliquent tout de suite."))}</p>
     <div style="height:110px" aria-hidden="true"></div>`;
@@ -2385,14 +2388,15 @@ const AV = {
   hair: [["court", "Court"], ["frange", "Frange"], ["boucles", "Bouclés"], ["ondules", "Ondulés"], ["carre", "Carré"], ["long", "Longs"], ["queue", "Queue de cheval"], ["chignon", "Chignon"], ["rase", "Rasé"]],
   acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["casquette", "Casquette"], ["beret", "Béret"], ["fleur", "Fleur"], ["oreilles", "Boucles d'oreilles"]],
   perso: [["timide", "Mignonne et timide"], ["fou", "Un peu fou"], ["classique", "Classique"]],
+  pierce: [["aucun", "Aucun"], ["diamant", "Petit diamant"], ["anneau", "Anneau doré"], ["argent", "Anneau argenté"]],
   len: [["auto", "Selon la coiffure"], ["courte", "Courte"], ["mi", "Mi-longue"], ["longue", "Longue"], ["tres", "Très longue"]]
 };
-const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", perso: "fou", len: "auto" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", perso: "timide", len: "auto" } };
+const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", perso: "fou", len: "auto", pierce: "aucun" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", perso: "timide", len: "auto", pierce: "aucun" } };
 function avOf(k) {
   const v = ((Store.meta.avatars || {})[k]) || {}, d = AV_DEFAULT[k];
   const idx = (f, list) => Number.isInteger(v[f]) && v[f] >= 0 && v[f] < list.length ? v[f] : d[f];
   const opt = (f, list) => list.some(o => o[0] === v[f]) ? v[f] : d[f];
-  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), perso: opt("perso", AV.perso), len: opt("len", AV.len) };
+  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), perso: opt("perso", AV.perso), len: opt("len", AV.len), pierce: opt("pierce", AV.pierce) };
 }
 // Cheveux de la longueur choisie : lisses, ou en vagues pour les coiffures ondulées et bouclées.
 function backHair(a, hc) {
@@ -2422,6 +2426,10 @@ function avatarSvg(k) {
   const front = { court: cap, frange: cap + `<path d="M27 40C32 26 46 22 58 24C68 26 74 32 75 42C66 36 62 38 56 34C50 40 40 38 34 36C31 38 29 40 27 40Z" fill="${hc}"/>`,
     boucles: curls, carre: cap + sides,
     ondules: `<path d="M22 47C17 35 23 24 30 24C29 13 41 8 47 15C52 6 65 8 67 17C76 15 84 26 78 38C81 42 80 46 77 49C73 41 67 38 62 41C60 34 53 33 51 38C47 31 40 33 39 39C35 34 29 37 28 44C26 44 24 45 22 47Z" fill="${hc}"/><path d="M23 46C22 52 23 56 26 59L28 49ZM77 46C78 52 77 56 74 59L72 49Z" fill="${hc}"/><g fill="none" stroke="#000" stroke-opacity=".2" stroke-width="1.6" stroke-linecap="round"><path d="M33 27q4 -5 8 -1"/><path d="M47 19q4 -5 8 -1"/><path d="M60 22q4 -4 8 0"/><path d="M38 33q3 -3 6 0"/><path d="M55 30q3 -3 6 0"/><path d="M68 32q3 -2 5 1"/></g>`, long: cap + sides, queue: cap, chignon: cap, rase: `<g opacity=".45">${cap}</g>` }[a.hair] + ((a.hair === "court" || a.hair === "frange") && ["mi", "longue", "tres"].includes(a.len) ? sides : "");
+  const nose = `<path d="M48.4 54.6q1.6 1.9 3.2 0" stroke="#7A4A3A" stroke-opacity=".38" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+  const pierce = a.pierce === "diamant" ? nose + `<circle cx="52.9" cy="54.9" r="1.3" fill="#F4F8FF" stroke="#A9B6C8" stroke-width=".5"/><circle cx="52.5" cy="54.5" r=".45" fill="#FFFFFF"/><path class="av-sparkle" d="M55.2 52.2l.45 1.05 1.05.45-1.05.45-.45 1.05-.45-1.05-1.05-.45 1.05-.45z" fill="#FFFFFF"/>`
+    : a.pierce === "anneau" || a.pierce === "argent" ? nose + `<path d="M52.7 55.2a1.45 1.45 0 1 0 1.8 .8" stroke="${a.pierce === "anneau" ? "#D8AE4E" : "#C3CBD6"}" stroke-width="1" fill="none" stroke-linecap="round"/><circle cx="54.3" cy="56.6" r=".3" fill="#FFFFFF" opacity=".85"/>`
+    : "";
   const acc = { lunettes: `<g fill="none" stroke="#2B1E2F" stroke-width="1.8"><circle cx="40.5" cy="50" r="6.5"/><circle cx="59.5" cy="50" r="6.5"/><path d="M47 50h6M34 49l-8-2M66 49l8-2"/></g>`,
     casquette: `<path d="M23 42C23 22 38 15 50 15C64 15 77 23 77 42Z" fill="#3A3346"/><path d="M50 40Q74 35 92 42Q72 47 50 44Z" fill="#3A3346"/>`,
     beret: `<ellipse cx="45" cy="22" rx="25" ry="8" fill="#C23B4E" transform="rotate(-12 45 22)"/><circle cx="47" cy="13" r="2.4" fill="#C23B4E"/>`,
@@ -2438,7 +2446,7 @@ function avatarSvg(k) {
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
     <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
     <ellipse class="av-blush" cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse class="av-blush" cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
-    <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${acc}</svg>`;
+    <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${pierce}${acc}</svg>`;
 }
 const castFig = k => `<figure>${avatarSvg(k)}<span class="tag">${esc(nm(k))}</span></figure>`;
 
