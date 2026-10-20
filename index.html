@@ -292,15 +292,27 @@ body { background: var(--bg); }
 #cozy i:nth-child(4) { background: var(--m2); right: -14vmax; bottom: 6vmax; width: 30vmax; height: 30vmax; animation-duration: 34s; }
 #cozy::after { content: ""; position: absolute; inset: 0; background-image: var(--doodle); background-size: 140px 140px; }
 @keyframes cozy { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, 4vmax) scale(1.12); } }
-/* Les petits compagnons, debout sur la barre d'onglets. */
+/* Les petits compagnons, debout sur la barre d'onglets. Leurs déplacements sont calculés en JS. */
 #buddies { position: fixed; left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); bottom: calc(75px + env(safe-area-inset-bottom, 0px)); height: 0; z-index: 21; pointer-events: none; }
-.buddy { position: absolute; bottom: -2px; width: 44px; transition-property: left; transition-timing-function: linear; transition-duration: 2s; pointer-events: auto; cursor: pointer; }
-.buddy.hop { animation: buddyhop .5s ease; }
-@keyframes buddyhop { 40% { transform: translateY(-16px); } }
+.buddy { position: absolute; left: 0; bottom: -2px; width: 44px; will-change: transform; pointer-events: auto; cursor: pointer; }
+.buddy-face { transform-origin: 50% 100%; }
+.buddy-body { transform-origin: 50% 100%; }
 .buddy-body svg { display: block; width: 100%; height: auto; overflow: visible; animation: bob 3.4s ease-in-out infinite; }
-.buddy.flip .buddy-body { transform: scaleX(-1); }
-.buddy.walking .buddy-body svg { animation: waddle .36s ease-in-out infinite alternate; }
-@keyframes waddle { from { transform: rotate(-5deg); } to { transform: rotate(5deg) translateY(-5%); } }
+.buddy.walking .buddy-body svg { animation: none; }
+.buddy.hop .buddy-body { animation: buddyhop .5s ease; }
+@keyframes buddyhop { 40% { transform: translateY(-16px); } }
+.buddy.sleep .buddy-body { transform: translateY(8%) rotate(-10deg); transition: transform .5s ease; }
+.buddy.grr .buddy-body { animation: grr .16s linear infinite; }
+@keyframes grr { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(1.5px); } }
+.av-happy, .av-grr { display: none; }
+.buddy.happy .av-eyes { display: none; }
+.buddy.happy .av-happy, .buddy.grr .av-grr { display: inline; }
+.buddy-fx { position: absolute; left: 0; right: 0; bottom: 0; height: 0; pointer-events: none; }
+.fx-heart, .fx-note { position: absolute; bottom: 44px; width: 14px; opacity: 0; animation: floatup 2s ease-out forwards; }
+.fx-note { font-size: 15px; font-weight: 700; color: var(--i4); width: auto; }
+@keyframes floatup { 0% { opacity: 0; transform: translateY(0) scale(.5); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-48px) scale(1.1); } }
+.fx-cloud { position: absolute; bottom: -6px; width: 74px; z-index: 2; animation: brawl .22s linear infinite; }
+@keyframes brawl { 0% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(2px, -2px) rotate(4deg); } 50% { transform: translate(-2px, 1px) rotate(-3deg); } 75% { transform: translate(1px, 2px) rotate(2deg); } }
 .bubble { position: absolute; bottom: calc(100% + 6px); left: 50%; width: max-content; max-width: 190px; padding: 8px 12px; border-radius: 16px; background: var(--surface); color: var(--fg); border: 1px solid var(--hair); box-shadow: var(--shadow); font-size: .8rem; font-weight: 600; line-height: 1.3; opacity: 0; transform: translateX(-50%) scale(.6); transform-origin: 50% 100%; transition: opacity .25s ease, transform .25s ease; pointer-events: none; }
 .bubble::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--surface); }
 .buddy.talking .bubble { opacity: 1; transform: translateX(-50%) scale(1); }
@@ -2370,6 +2382,8 @@ function avatarSvg(k) {
     <path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/><rect x="45" y="68" width="10" height="12" fill="${skin}"/>
     <circle cx="24" cy="50" r="5" fill="${skin}"/><circle cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
     <g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
+    <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
+    <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
     <ellipse cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
     <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${acc}</svg>`;
 }
@@ -2954,25 +2968,36 @@ function buddyLine(k) {
   return pickOne(pool).replace(/\{o\}/g, nm(other(k)));
 }
 const reduceMotion = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+const HUG_LINES = ["Câlin !", "Viens là, toi.", "Je ne te lâche plus.", "Recharge de câlins : 100 %."];
+const KISS_LINES = ["Smack !", "Un bisou, juste comme ça.", "Mmh, encore un ?"];
+const SQUABBLES = [["C'est moi qui ai raison !", "Même pas vrai !"], ["Le dernier cookie était à moi !", "Prouve-le !"], ["Tu ronfles.", "Et toi, tu voles la couette !"],
+  ["Ce soir, c'est moi qui choisis le film.", "Dans tes rêves !"], ["Tu triches au puzzle !", "Quelle mauvaise foi !"], ["C'est ton tour de faire la vaisselle.", "Pierre-feuille-ciseaux ?"]];
+const PEACE_LINES = ["Bon… on fait la paix ?", "Je t'aime quand même.", "Égalité !"];
+const REPLIES = ["Moi aussi !", "Oh, c'est mignon.", "Arrête, tu me fais rougir.", "Évidemment.", "Hihi.", "Tu dis ça à tout le monde ?"];
+const FX_HEART = '<svg viewBox="0 0 16 16"><path d="M8 14 2.5 8.6A3.2 3.2 0 0 1 8 4a3.2 3.2 0 0 1 5.5 4.6Z" fill="#FF6E89"/></svg>';
+const FX_CLOUD = '<svg viewBox="0 0 74 50"><g fill="#F4EFE9" stroke="#C9BFD0" stroke-width="1.5"><circle cx="20" cy="30" r="14"/><circle cx="37" cy="22" r="17"/><circle cx="54" cy="30" r="14"/><circle cx="37" cy="36" r="13"/></g><path d="M14 10l2 4 4 1-4 1-2 4-2-4-4-1 4-1z M60 6l1.6 3 3 1.4-3 1.4L60 15l-1.6-3.2-3-1.4 3-1.4z" fill="#F2B544"/><text x="37" y="31" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="14" fill="#B0506C">!#@</text></svg>';
 const Buddies = {
-  el: null, b: {}, sig: "",
+  el: null, fx: null, b: {}, sig: "", last: 0, busy: false, nextAct: 0,
   enabled() { return lsGet("entre-nous:buddies") !== "0"; },
   mount() {
     const el = this.el = document.createElement("div");
     el.id = "buddies"; el.setAttribute("aria-hidden", "true");
     document.body.appendChild(el);
+    this.fx = document.createElement("div"); this.fx.className = "buddy-fx"; el.appendChild(this.fx);
     ["a", "b"].forEach((k, i) => {
       const d = document.createElement("div");
       d.className = "buddy";
-      d.innerHTML = `<div class="bubble"></div><div class="buddy-body"></div>`;
+      d.innerHTML = `<div class="bubble"></div><div class="buddy-face"><div class="buddy-body"></div></div>`;
       d.addEventListener("click", () => this.poke(k));
       el.appendChild(d);
-      this.b[k] = { el: d, x: i ? 0.68 : 0.3, dir: i ? -1 : 1 };
+      this.b[k] = { k, el: d, faceEl: d.querySelector(".buddy-face"), x: (i ? 0.68 : 0.3) * this.W(), target: null, speed: 0, face: i ? -1 : 1, phase: 0, tilt: 0, run: false };
     });
-    this.place(true);
-    setInterval(() => this.wander(), 2600);
-    setTimeout(() => this.chatter(), 5000);
+    this.nextAct = performance.now() + 4000;
+    this.loop = this.loop.bind(this);
+    requestAnimationFrame(this.loop);
+    setTimeout(() => this.chatter(), 7000);
   },
+  W() { return (this.el && this.el.clientWidth) || 360; },
   sync() {
     if (!this.el) this.mount();
     const show = this.enabled() && !S.layer;
@@ -2981,27 +3006,131 @@ const Buddies = {
     const sig = JSON.stringify([avOf("a"), avOf("b")]);
     if (sig !== this.sig) { this.sig = sig; ["a", "b"].forEach(k => { this.b[k].el.querySelector(".buddy-body").innerHTML = avatarSvg(k); }); }
   },
-  place(instant) {
+  walkTo(o, x, run, cb) {
+    o.target = Math.max(24, Math.min(this.W() - 24, x)); o.run = !!run; o.onArrive = cb || null;
+    o.face = o.target >= o.x ? 1 : -1;
+  },
+  // Accélération au départ, freinage à l'arrivée, un rebond et un balancement à chaque pas.
+  loop(t) {
+    requestAnimationFrame(this.loop);
+    const dt = Math.min(0.05, (t - (this.last || t)) / 1000); this.last = t;
+    if (!this.el || this.el.hidden || document.hidden) return;
+    const still = reduceMotion(), W = this.W();
     for (const k in this.b) {
       const o = this.b[k];
-      if (instant) o.el.style.transitionDuration = "0s";
-      o.el.style.left = `calc(${(o.x * 100).toFixed(1)}% - 22px)`;
-      o.el.classList.toggle("flip", o.dir < 0);
-      o.el.classList.toggle("bl", o.x < 0.28);
-      o.el.classList.toggle("br", o.x > 0.72);
+      if (o.target != null) {
+        const d = o.target - o.x, want = Math.min(o.run ? 115 : 44, Math.abs(d) * 3 + 10);
+        o.speed += (want - o.speed) * Math.min(1, dt * 5);
+        o.x += Math.sign(d) * Math.min(Math.abs(d), still ? Math.abs(d) : o.speed * dt);
+        o.phase += dt * (o.run ? 9 : 5.4);
+        if (Math.abs(o.target - o.x) < 0.5) { o.x = o.target; o.target = null; o.speed = 0; const cb = o.onArrive; o.onArrive = null; if (cb) cb(); }
+      }
+      const moving = o.target != null && !still, sw = Math.sin(o.phase * Math.PI);
+      const lift = moving ? Math.abs(sw) * (o.run ? 7 : 4) : 0;
+      const tilt = moving ? sw * (o.run ? 6 : 4) + (o.run ? 8 : 3) : o.tilt;
+      o.el.style.transform = `translate3d(${(o.x - 22).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
+      o.faceEl.style.transform = `scaleX(${o.face}) rotate(${tilt.toFixed(1)}deg)`;
+      o.el.classList.toggle("walking", moving);
+      o.el.classList.toggle("bl", o.x < W * 0.28);
+      o.el.classList.toggle("br", o.x > W * 0.72);
     }
+    if (!this.busy && t > this.nextAct && !still) this.act();
   },
-  wander() {
-    if (!this.el || this.el.hidden || reduceMotion() || document.hidden || Math.random() < 0.35) return;
-    const k = Math.random() < 0.5 ? "a" : "b", o = this.b[k];
-    if (o.el.classList.contains("talking")) return;
-    const nx = Math.min(0.9, Math.max(0.1, o.x + (Math.random() - 0.5) * 0.55)), dur = 1 + Math.abs(nx - o.x) * 6;
-    o.dir = nx >= o.x ? 1 : -1; o.x = nx;
-    o.el.style.transitionDuration = dur.toFixed(1) + "s";
-    o.el.classList.add("walking");
-    clearTimeout(o.stop); o.stop = setTimeout(() => o.el.classList.remove("walking"), dur * 1000);
-    this.place(false);
+  done(pause = 2500) { this.busy = false; this.nextAct = performance.now() + pause + Math.random() * 4000; },
+  act() {
+    const A = this.b.a, B = this.b.b, W = this.W(), h = new Date().getHours(), r = Math.random();
+    this.busy = true;
+    if (r < 0.34) { const o = Math.random() < 0.5 ? A : B; this.walkTo(o, o.x + (Math.random() - 0.5) * W * 0.6, false, () => { if (Math.random() < 0.4) this.lookAround(o); this.done(); }); return; }
+    if (r < 0.46) return this.hug();
+    if (r < 0.58) return this.squabble();
+    if (r < 0.66) return this.chase();
+    if (r < 0.74) return this.dance();
+    if (r < 0.8) return this.kiss();
+    if (r < 0.9) return this.faceTalk();
+    if ((h >= 22 || h < 6) && r < 0.96) return this.nap();
+    this.walkTo(A, W * 0.36); this.walkTo(B, W * 0.62, false, () => this.done());
   },
+  // Les deux se rejoignent au milieu, face à face.
+  meet(gap, cb) {
+    const A = this.b.a, B = this.b.b, W = this.W(), mid = Math.max(30 + gap / 2, Math.min(W - 30 - gap / 2, (A.x + B.x) / 2));
+    const L = A.x <= B.x ? A : B, R = L === A ? B : A;
+    let n = 0;
+    const both = () => { if (++n === 2) { L.face = 1; R.face = -1; cb(L, R); } };
+    this.walkTo(L, mid - gap / 2, false, both); this.walkTo(R, mid + gap / 2, false, both);
+  },
+  apart(L, R, cb) { this.walkTo(L, L.x - 24 - Math.random() * 40); this.walkTo(R, R.x + 24 + Math.random() * 40, false, cb); },
+  mood(list, cls, on) { list.forEach(o => o.el.classList.toggle(cls, on)); },
+  hug() {
+    this.meet(27, (L, R) => {
+      this.mood([L, R], "happy", true); L.tilt = R.tilt = 10;
+      this.hearts((L.x + R.x) / 2, 5); this.say(pickOne(["a", "b"]), pickOne(HUG_LINES), 2400);
+      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 2700);
+    });
+  },
+  kiss() {
+    this.meet(29, (L, R) => {
+      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7;
+      this.hearts((L.x + R.x) / 2, 2); this.say(pickOne(["a", "b"]), pickOne(KISS_LINES), 1800);
+      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
+    });
+  },
+  squabble() {
+    this.meet(30, (L, R) => {
+      const pair = pickOne(SQUABBLES), first = Math.random() < 0.5 ? L : R, second = first === L ? R : L;
+      this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
+      this.say(first.k, pair[0], 1500);
+      setTimeout(() => this.say(second.k, pair[1], 1500), 1100);
+      setTimeout(() => this.cloud((L.x + R.x) / 2, 1500), 1900);
+      setTimeout(() => {
+        this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
+        if (Math.random() < 0.5) { this.mood([L, R], "happy", true); this.say(pickOne(["a", "b"]), pickOne(PEACE_LINES), 2200); this.hearts((L.x + R.x) / 2, 2);
+          setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 1800); }
+        else this.chase(second, first);
+      }, 3500);
+    });
+  },
+  chase(runner, chaser) {
+    const A = this.b.a, B = this.b.b, W = this.W();
+    if (!runner) { runner = Math.random() < 0.5 ? A : B; chaser = runner === A ? B : A; }
+    const edge = chaser.x < runner.x ? W - 28 : 28;
+    this.say(runner.k, "Attrape-moi si tu peux !", 1800);
+    this.walkTo(runner, edge, true);
+    setTimeout(() => this.walkTo(chaser, edge + (edge > W / 2 ? -34 : 34), true, () => {
+      runner.face = -chaser.face; this.mood([runner, chaser], "happy", true);
+      this.say(chaser.k, pickOne(["Trop rapide…", "Pause, je n'ai plus de souffle !", "Je t'attrape la prochaine fois."]), 2200);
+      setTimeout(() => { this.mood([runner, chaser], "happy", false); this.done(); }, 2000);
+    }), 300);
+  },
+  dance() {
+    this.meet(56, (L, R) => {
+      this.say(pickOne(["a", "b"]), pickOne(["On danse ?", "Petite choré !"]), 1600);
+      this.mood([L, R], "happy", true);
+      [0, 550, 1100, 1650].forEach((ms, i) => setTimeout(() => { this.hop(L); this.hop(R); if (i % 2) { L.face *= -1; R.face *= -1; } this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 40); }, ms));
+      setTimeout(() => { L.face = 1; R.face = -1; this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2300);
+    });
+  },
+  faceTalk() {
+    const A = this.b.a, B = this.b.b, k = Math.random() < 0.5 ? "a" : "b";
+    A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
+    this.say(k, buddyLine(k), 2600);
+    setTimeout(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); }, 2700);
+    setTimeout(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5300);
+  },
+  nap() {
+    const o = Math.random() < 0.5 ? this.b.a : this.b.b;
+    o.el.classList.add("sleep", "happy"); this.say(o.k, "Zzz…", 4200);
+    setTimeout(() => { o.el.classList.remove("sleep", "happy"); this.done(); }, 4600);
+  },
+  lookAround(o) { setTimeout(() => { o.face *= -1; }, 400); setTimeout(() => { o.face *= -1; }, 1300); },
+  hop(o) { o.el.classList.remove("hop"); void o.el.offsetWidth; o.el.classList.add("hop"); },
+  spawn(cls, html, x, delay, life) {
+    const s = document.createElement("span"); s.className = cls; s.innerHTML = html;
+    s.style.left = x.toFixed(0) + "px"; s.style.animationDelay = delay + "s";
+    this.fx.appendChild(s); setTimeout(() => s.remove(), life);
+  },
+  hearts(x, n) { for (let i = 0; i < n; i++) this.spawn("fx-heart", FX_HEART, x - 7 + (Math.random() - 0.5) * 26, i * 0.22, 2300 + i * 220); },
+  note(x) { this.spawn("fx-note", "♪︎", x, 0, 2100); },
+  cloud(x, ms) { this.spawn("fx-cloud", FX_CLOUD, x - 37, 0, ms); },
   say(k, text, ms = 4200) {
     const o = this.b[k], q = this.b[other(k)];
     q.el.classList.remove("talking");
@@ -3010,14 +3139,10 @@ const Buddies = {
     clearTimeout(o.hush); o.hush = setTimeout(() => o.el.classList.remove("talking"), ms);
   },
   chatter() {
-    if (this.el && !this.el.hidden && !document.hidden) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
-    setTimeout(() => this.chatter(), 14000 + Math.random() * 16000);
+    if (this.el && !this.el.hidden && !document.hidden && !this.busy) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
+    setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
   },
-  poke(k) {
-    const o = this.b[k];
-    o.el.classList.remove("hop"); void o.el.offsetWidth; o.el.classList.add("hop");
-    this.say(k, pickOne(POKE_LINES), 2600);
-  }
+  poke(k) { this.hop(this.b[k]); this.say(k, pickOne(POKE_LINES), 2600); }
 };
 
 /* ───────────────────────── Rendu ───────────────────────── */
