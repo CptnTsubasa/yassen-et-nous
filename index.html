@@ -409,7 +409,7 @@ body { background: var(--bg); }
 .perso-sum { font-family: var(--f-hand); font-size: 1.35rem; line-height: 1.15; }
 .buddy.blushy .av-blush { opacity: .6; }
 .buddy.shiver .buddy-body { animation: grr .12s linear infinite; }
-.yj-bud { position: absolute; left: 0; bottom: -2px; width: 32px; z-index: 3; will-change: transform; pointer-events: auto; cursor: pointer; }
+.yj-bud { position: absolute; left: 0; bottom: -2px; width: 42px; z-index: 3; will-change: transform; pointer-events: auto; cursor: pointer; }
 .yj-in { transform-origin: 50% 60%; }
 .buddy.sit .buddy-body { transform: translateY(12%) scaleY(.88); transition: transform .4s ease; }
 .buddy.sneak .buddy-body { transform: translateY(8%) scaleY(.9); transition: transform .3s ease; }
@@ -450,7 +450,7 @@ body { background: var(--bg); }
 .yj-bud.talking .bubble { opacity: 1; transform: translateX(-50%) scale(1); }
 .yj-bud.bl .bubble { left: 0; transform: scale(.6); transform-origin: 0 100%; }
 .yj-bud.bl.talking .bubble { transform: scale(1); }
-.yj-bud.bl .bubble::after { left: 14px; }
+.yj-bud.bl .bubble::after { left: 18px; }
 .yj-bud.br .bubble { left: auto; right: 0; transform: scale(.6); transform-origin: 100% 100%; }
 .yj-bud.br.talking .bubble { transform: scale(1); }
 .yj-bud.br .bubble::after { left: auto; right: 10px; }
@@ -3514,7 +3514,7 @@ const Buddies = {
     let lift = 0, rot = 0;
     if ((y.mode === "held" || y.mode === "shoulders") && y.holder) {
       y.x = y.holder.x + (y.mode === "held" ? y.holder.face * 7 : 0); y.face = y.holder.face;
-      lift = y.mode === "held" ? 22 : 54;
+      lift = y.mode === "held" ? 18 : 52;
     } else if (y.mode === "fly" && y.fly) {
       const f = y.fly, p = Math.min(1, (t - f.t0) / f.dur);
       y.x = f.x0 + (f.x1 - f.x0) * p; lift = 22 + 4 * f.h * p * (1 - p); rot = 360 * p * f.dir;
@@ -3522,7 +3522,7 @@ const Buddies = {
     } else if (y.mode === "swing") {
       y.x = (A.x + B.x) / 2; y.phase += dt * 5; lift = 14 + Math.abs(Math.sin(y.phase)) * 20; rot = Math.sin(y.phase) * 18;
     } else if (y.mode === "pinned") {
-      y.x = (A.x + B.x) / 2; lift = 18;
+      y.x = (A.x + B.x) / 2; lift = 22;
     } else {
       let goal = y.target;
       if (goal == null && !y.sleep) {
@@ -3539,7 +3539,7 @@ const Buddies = {
         } else if (y.target != null) { y.target = null; const cb = y.onArrive; y.onArrive = null; if (cb) cb(); }
       }
     }
-    y.el.style.transform = `translate3d(${(y.x - 16).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
+    y.el.style.transform = `translate3d(${(y.x - 21).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
     y.body.style.transform = `scaleX(${y.face}) rotate(${rot.toFixed(0)}deg)`;
     y.el.classList.toggle("bl", y.x < W * 0.28); y.el.classList.toggle("br", y.x > W * 0.72);
   },
