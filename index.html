@@ -815,7 +815,15 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sto
    Avec la base de l'artifact : synchronisées entre vos appareils.
    Sans elle (visiteur non connecté, aperçu) : enregistrées sur ce seul appareil. */
 const LS = "entre-nous:v1";
-const DEFAULT_META = { couple: { a: "", b: "", style: "partage" }, progress: { seen: [], parties: 0 }, puzzle: { img: "" }, avatars: {} };
+const DEFAULT_META = { couple: { a: "", b: "", style: "partage" }, progress: { seen: [], parties: 0 }, puzzle: { img: "" }, avatars: {}, space: { owner: "" } };
+// Identifiant de ce téléphone, pour savoir lequel a créé l'espace commun.
+const deviceId = () => { let v = lsGet("entre-nous:device"); if (!v) { v = uid() + uid(); lsSet("entre-nous:device", v); } return v; };
+// Seul le téléphone qui a créé l'espace commun peut tout effacer.
+const isOwner = () => {
+  if (Store.backend !== "shared") return true;
+  const o = (Store.meta.space || {}).owner;
+  return o ? o === deviceId() : lsGet("entre-nous:owner") === Shared.code();
+};
 const Store = {
   backend: "local", db: null, q: {}, unsubs: [],
   cols: { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [] },
@@ -1699,13 +1707,13 @@ function sheetView() {
       <button class="btn" data-a="sync-merge">Ajouter à ma progression</button>
       <p class="small muted">${esc(fr("La photo du puzzle n'est pas incluse dans le code. Un élément supprimé d'un côté n'est pas supprimé de l'autre."))}</p>
     </section>`}
-    <section class="panel" aria-labelledby="h-reset"><h2 class="sec" id="h-reset">Repartir de zéro</h2>
+    ${!isOwner() ? "" : `<section class="panel" aria-labelledby="h-reset"><h2 class="sec" id="h-reset">Repartir de zéro</h2>
       <p class="small">${esc(fr(Store.backend === "shared"
         ? "Efface tout dans votre espace commun et sur ce téléphone : prénoms, personnages, souvenirs, aventures, lettres, cartes et progression. Le lien d'invitation reste valable : l'autre arrivera dans un espace tout neuf."
         : "Efface tout sur ce téléphone : prénoms, personnages, souvenirs, aventures, lettres, cartes et progression. L'appli redevient comme au premier jour."))}</p>
       ${S.confirmReset ? `<div class="confirm"><span>Tout effacer pour de bon ?</span><button class="btn" data-a="reset-all">Oui, tout effacer</button><button class="btn ghost" data-a="reset-ask" data-v="">Annuler</button></div>`
         : `<button class="btn line" data-a="reset-ask" data-v="1">Tout effacer et repartir de zéro</button>`}
-    </section>`;
+    </section>`}`;
   }
   if (name === "mot") {
     const kind = S.mot;
@@ -3403,16 +3411,20 @@ const ACT = {
   "sh-create"(d) {
     lsSet(Shared.key, Shared.newCode());
     Shared.joining = d.v === "keep" ? snapshotLocal() : null;
-    Store.connect().then(() => { if (Store.backend === "shared") { S.shLink = Shared.invite(); render(true); } });
+    lsSet("entre-nous:owner", Shared.code());
+    Store.connect().then(() => { if (Store.backend === "shared") { Store.setMeta("space", { owner: deviceId() }); S.shLink = Shared.invite(); render(true); } });
   },
   "reset-ask"(d) { S.confirmReset = !!d.v; },
   async "reset-all"() {
+    if (!isOwner()) return;
     S.confirmReset = false;
-    try { if (Store.backend === "shared" && Store.db && Store.db.wipe) await Store.db.wipe(); } catch (e) { toast("L'espace commun n'a pas pu être vidé. Vérifie ta connexion puis réessaie."); return; }
+    try { if (Store.backend === "shared" && Store.db && Store.db.wipe) { await Store.db.wipe(); await Store.db.doc("meta/space").set({ owner: deviceId() }); } } catch (e) { toast("L'espace commun n'a pas pu être vidé. Vérifie ta connexion puis réessaie."); return; }
     // On garde seulement le lien vers l'espace commun ; tout le reste repart à zéro.
-    const keep = lsGet(Shared.key);
+    const keep = lsGet(Shared.key), owner = lsGet("entre-nous:owner"), device = deviceId();
     try { Object.keys(localStorage).filter(k => k.startsWith("entre-nous:")).forEach(k => localStorage.removeItem(k)); } catch (e) { /* stockage indisponible */ }
     if (keep) lsSet(Shared.key, keep);
+    if (owner) lsSet("entre-nous:owner", owner);
+    lsSet("entre-nous:device", device);
     location.reload();
   },
   "sh-copy"() {
