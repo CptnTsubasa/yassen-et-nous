@@ -5102,7 +5102,7 @@ const AI = {
     return this.ai;
   },
   // Après un échec, on laisse l'IA tranquille un moment au lieu de la réessayer à chaque étape.
-  ready() { return this.state !== "off" && !(this.cool > Date.now()); },
+  ready() { return this.state !== "off" && this.state !== "appcheck" && !(this.cool > Date.now()); },
   async json(prompt) {
     let ai;
     try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
@@ -5122,7 +5122,8 @@ const AI = {
         break;
       }
     }
-    this.state = /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(String(last && (last.code || "") + " " + (last && last.message))) ? "off" : "err";
+    const why = String(last && (last.code || "") + " " + (last && last.message));
+    this.state = /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
     if (this.state === "err") this.cool = Date.now() + 60000;
     throw last || new Error("IA indisponible");
   }
@@ -5521,10 +5522,10 @@ const cxCopy = o => JSON.parse(JSON.stringify(o));
 const SWORD = '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>';
 function cxAiPill() {
   const st = AI.state;
-  const label = st === "ok" ? "Écrit par l'IA" : st === "off" ? "Générateur intégré" : st === "err" ? "IA momentanément indisponible" : "IA Gemini";
+  const label = st === "ok" ? "Écrit par l'IA" : st === "appcheck" ? "IA bloquée par App Check" : st === "off" ? "Générateur intégré" : st === "err" ? "IA momentanément indisponible" : "IA Gemini";
   return `<button class="cx-pill ${st || "idle"}" data-a="cx-aihelp" aria-expanded="${!!S.cx.help}"><span class="dot" aria-hidden="true"></span>${label}</button>
   ${S.cx.help ? `<div class="panel cx-help"><p><b>${st === "ok" ? "L'IA est activée." : "Pour des histoires vraiment uniques, activez l'IA (gratuit) :"}</b></p>
-    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
+    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : st === "appcheck" ? `<p class="small">${esc(fr("L'IA est activée, mais la protection App Check de Firebase refuse les demandes de l'appli. Dans la console Firebase : App Check, onglet API, Firebase AI Logic, puis « Ne plus appliquer »."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
     <p class="small muted">${esc(fr("En attendant, le générateur intégré écrit vos histoires avec vos prénoms, votre contexte et vos détails. Les textes envoyés à l'IA passent par Google."))}</p>`}</div>` : ""}`;
 }
 function cxLoader(msg) {
