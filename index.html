@@ -1164,7 +1164,7 @@ function rtdbAdapter(F, fdb, base) {
 function sharedPanel() {
   if (Store.backend === "shared") return `<section class="panel" aria-labelledby="h-shared"><h2 class="sec" id="h-shared">Notre progression commune</h2>
     <p class="small">${esc(fr("Ce téléphone est relié à votre espace commun : souvenirs, aventures, lettres et progression sont les mêmes sur vos deux téléphones."))}</p>
-    <button class="btn ghost" data-a="sh-copy">Copier le lien d'invitation</button>
+    <div class="row">${navigator.share ? `<button class="btn" data-a="sh-share">Envoyer le lien d'invitation</button>` : ""}<button class="btn ghost" data-a="sh-copy">Copier le lien</button></div>
     ${S.shLink ? `<textarea readonly rows="2" style="font-size:.85rem;min-height:0" aria-label="Lien d'invitation">${esc(S.shLink)}</textarea>` : ""}
     <p class="small muted">${esc(fr("Envoie ce lien à l'autre : en l'ouvrant, son téléphone rejoint le même espace, et ce qu'il contenait déjà y est ajouté. Gardez-le pour vous deux : il sert de clé."))}</p>
     <button class="link" data-a="sh-leave">Détacher ce téléphone de l'espace commun</button></section>`;
@@ -1392,15 +1392,6 @@ const syncLine = () => Store.backend === "shared" ? "Votre progression est commu
   : Shared.available() ? "Tout est enregistré sur ce téléphone. Créez votre espace commun dans les Réglages pour partager la progression."
   : "Tout est enregistré sur ce téléphone. Pour réunir vos progressions, utilisez le code dans les Réglages.";
 
-// Sur chaque téléphone, une invitation à créer soi-même son personnage, tant qu'on ne l'a pas fait.
-function avInvite() {
-  const me = whoAmI(), av = Store.meta.avatars || {};
-  if (lsGet("entre-nous:avinvite") === "0" || (me && (av[me] || {}).self)) return "";
-  return `<section class="panel" aria-labelledby="h-chibi"><h2 class="sec" id="h-chibi">${me ? "Ton petit personnage" : "Vos petits personnages"}</h2>
-    <div class="stage mini">${sceneSvg("souvenir")}<div class="cast">${me ? castFig(me) : castFig("a") + castFig("b")}</div></div>
-    <p class="small">${esc(fr("Choisis toi-même ton look et ta personnalité : timidité, joie, courage, tendresse… Ton mini-toi parlera et réagira comme toi."))}</p>
-    <div class="row">${me ? `<button class="btn" data-a="av-mine">Créer mon personnage</button>` : ["a", "b"].map(k => `<button class="btn ghost" data-a="av-mine" data-v="${k}">Je suis ${esc(nm(k))}</button>`).join("")}<button class="link" data-a="av-later">Plus tard</button></div></section>`;
-}
 function viewHome() {
   const c = couple(), named = c.a && c.b, h = new Date().getHours();
   const hello = h < 5 ? "Bonsoir" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
@@ -1415,7 +1406,6 @@ function viewHome() {
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
       <div class="row"><button class="btn" data-a="sheet" data-name="names">Ajouter nos prénoms</button></div>
     </div>`}
-  ${avInvite()}
   ${liveBanner()}
   ${dailyBlock()}
   <section class="stack" aria-labelledby="h-quick"><div class="group-h"><h2 class="sec" id="h-quick">Envie de jouer ?</h2><button class="link" data-a="tab" data-tab="play">Tous les jeux</button></div>
@@ -4813,6 +4803,11 @@ const ACT = {
       navigator.clipboard.writeText(S.shLink).then(() => toast("Lien copié : envoie-le à l'autre"), () => toast("Sélectionne le lien ci-dessous pour le copier"));
     } catch (e) { toast("Sélectionne le lien ci-dessous pour le copier"); }
   },
+  // Ouvre le partage du téléphone (Messages, WhatsApp…) avec le lien d'invitation.
+  "sh-share"() {
+    S.shLink = Shared.invite();
+    navigator.share({ title: "Y&S", text: "Viens, c'est notre espace à nous deux 💕", url: S.shLink }).catch(() => {});
+  },
   "sh-leave"() { lsSet(Shared.key, ""); Store.goLocal(); S.shLink = null; toast("Ce téléphone garde sa propre copie"); },
   "sync-copy"() {
     S.syncCode = makeCode();
@@ -4978,8 +4973,6 @@ const ACT = {
     clearDrafts(...ids); avPatch(who, { tics: tics.length ? tics : [""] });
     toast(tics.length ? "Phrases fétiches enregistrées" : "Plus de phrases fétiches"); setTimeout(() => Buddies.preview(who), 60);
   },
-  "av-mine"(d) { if (d.v) lsSet("entre-nous:me", d.v); S.avWho = whoAmI() || "a"; S.layer = { type: "sheet", name: "avatars" }; },
-  "av-later"() { lsSet("entre-nous:avinvite", "0"); },
   "st-open"(d) {
     if (!STORY[d.id] || (STORY[d.id].secret && Jeu.stage() < 4)) return;
     if (S.storyStyle === "distance" && Store.backend === "shared" && !S.story) { startLiveStory(d.id); return; }
