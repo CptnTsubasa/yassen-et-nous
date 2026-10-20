@@ -383,6 +383,20 @@ body { background: var(--bg); }
 .sw-hiver { background: radial-gradient(circle at 30% 30%, #FFFFFF 0 3px, transparent 4px), radial-gradient(circle at 70% 60%, #FFFFFF 0 2px, transparent 3px), linear-gradient(160deg, #CFE3F5, #9FB4F0); }
 .sw-plage { background: linear-gradient(180deg, #F7E3B5 0 55%, #7FD0D6 55% 100%); }
 .sw-etoiles { background: radial-gradient(circle at 25% 30%, #F2D27A 0 2px, transparent 3px), radial-gradient(circle at 70% 45%, #FFFFFF 0 1.5px, transparent 2.5px), radial-gradient(circle at 45% 75%, #F2D27A 0 1.5px, transparent 2.5px), linear-gradient(160deg, #3D3470, #1F1B3D); }
+.ob-dots { display: flex; gap: 6px; justify-content: center; }
+.ob-dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width .25s ease, background .25s ease; }
+.ob-dots i.on { width: 22px; background: var(--accent); }
+.ob-dots i.done { background: var(--i3); }
+.ob { gap: 16px; }
+.ob-names { display: grid; gap: 4px; }
+.ob-amp { justify-self: center; font-family: var(--f-display); font-size: 1.6rem; color: var(--accent); line-height: 1; }
+.ob-who { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ob-pick { display: grid; justify-items: center; gap: 6px; padding: 14px 10px; border-radius: 20px; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow); }
+.ob-fig svg { width: 70px; height: auto; display: block; }
+.ob-live { display: flex; gap: 8px; align-items: center; font-size: .86rem; color: var(--i3); font-weight: 600; }
+.ob-live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--i3); flex: none; animation: obpulse 1.6s ease-in-out infinite; }
+.ob-finish { position: sticky; bottom: 12px; z-index: 2; }
+@keyframes obpulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
 .chromas { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .chroma { position: relative; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
 .chroma[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
@@ -1591,6 +1605,43 @@ function viewLettres() {
   <div class="stack">${list || empty("Aucune carte scellée", "Écrivez un mot à relire dans un mois, pour vos six mois ou pour votre premier anniversaire.")}</div>`;
 }
 
+/* ───────────────────────── Premiers pas ─────────────────────────
+   Tant que les prénoms ou son propre avatar ne sont pas renseignés, l'appli s'ouvre sur ces étapes.
+   Dans l'espace commun, tout ce qui est rempli ici apparaît en direct sur l'autre téléphone. */
+function onboardStep() {
+  if (!Store.ready) return null;
+  const c = couple();
+  if (!c.a || !c.b) return "noms";
+  const me = whoAmI();
+  if (!me) return "moi";
+  if (!((Store.meta.avatars || {})[me] || {}).self) return "avatar";
+  return null;
+}
+function onboardView() {
+  const st = onboardStep() || "fin", c = couple(), me = whoAmI(), steps = ["noms", "moi", "avatar"];
+  const live = Store.backend === "shared"
+    ? `<p class="ob-live"><span class="dot" aria-hidden="true"></span>${esc(fr("En direct : ce que vous remplissez ici apparaît aussi sur l'autre téléphone."))}</p>`
+    : `<p class="small muted">${esc(fr("Pour tout voir en direct sur vos deux téléphones, créez votre espace commun dans les réglages (ou ouvrez le lien d'invitation reçu)."))}</p>`;
+  const dots = `<div class="ob-dots" aria-hidden="true">${steps.map(k => `<i class="${k === st ? "on" : steps.indexOf(k) < steps.indexOf(st) || st === "fin" ? "done" : ""}"></i>`).join("")}</div>`;
+  let body = "";
+  if (st === "noms") body = `<h1 class="sheet-title">Veuillez renseigner vos noms</h1>
+    <p class="muted">${esc(fr("Ils apparaissent sur les cartes, dans les votes et dans les histoires dont vous êtes les héros."))}</p>
+    <div class="ob-names"><div class="field"><label for="ob-a">Premier prénom</label><input type="text" id="ob-a" data-d maxlength="24" autocomplete="off" value="${dv("ob-a", c.a)}" placeholder="Le tien ou le sien"></div>
+    <span class="ob-amp" aria-hidden="true">&amp;</span>
+    <div class="field"><label for="ob-b">Second prénom</label><input type="text" id="ob-b" data-d maxlength="24" autocomplete="off" value="${dv("ob-b", c.b)}" placeholder="Et l'autre"></div></div>
+    <button class="btn wide" data-a="ob-names">Continuer</button>`;
+  else if (st === "moi") body = `<h1 class="sheet-title">Et toi, qui es-tu ?</h1>
+    <p class="muted">${esc(fr("Pour savoir quel personnage est le tien sur ce téléphone."))}</p>
+    <div class="ob-who">${["a", "b"].map(k => `<button class="ob-pick" data-a="ob-me" data-v="${k}"><span class="ob-fig">${avatarSvg(k)}</span><b>${esc(nm(k))}</b></button>`).join("")}</div>`;
+  else if (st === "avatar") body = `<h1 class="sheet-title">Personnalisez vos avatars</h1>
+    <p class="muted">${esc(fr(`${nm(me)}, crée ton mini-toi : ton look, ta personnalité, tes phrases fétiches. ${nm(other(me))} fait pareil de son côté.`))}</p>
+    <div class="stage">${sceneSvg("souvenir")}<div class="cast">${castFig("a")}${castFig("b")}</div></div>
+    <p class="small muted">${["a", "b"].map(k => `${esc(nm(k))} : ${((Store.meta.avatars || {})[k] || {}).self ? "avatar prêt ✓" : k === me ? "à toi de jouer" : "pas encore"}`).join(" · ")}</p>
+    <button class="btn wide" data-a="ob-avatar">Personnaliser mon avatar</button>`;
+  else body = `<h1 class="sheet-title">Tout est prêt !</h1><p class="muted">${esc(fr("Vos personnages vous attendent sur l'accueil."))}</p><button class="btn wide" data-a="close-layer">C'est parti</button>`;
+  return `${layerHead("")}${dots}<section class="stack ob">${body}${live}<div class="joker"><button class="link" data-a="close-layer">Plus tard</button></div></section>`;
+}
+
 /* ───────────────────────── Vues : calque ───────────────────────── */
 function layerHead(title, back) {
   return `<div class="g-head"><button class="icon-btn" data-a="${back || "close-layer"}" aria-label="Fermer">×</button><div class="g-prog"></div></div>${title ? `<h1 class="sheet-title">${esc(title)}</h1>` : ""}`;
@@ -1931,6 +1982,7 @@ function sheetView() {
       ${[0, 1, 2].map(i => `<input type="text" id="av-tic-${who}-${i}" data-d maxlength="60" aria-label="Phrase fétiche ${i + 1}" placeholder="${["Par exemple : « On commande des sushis ? »", "Une autre ?", "Et une dernière ?"][i]}" value="${dv(`av-tic-${who}-${i}`, a.tics[i] || "")}">`).join("")}
       <div class="row"><button class="btn ghost" data-a="av-tics">Enregistrer les phrases</button></div></div>`}
     <p class="small muted">${esc(fr("Vos personnages se baladent dans l'appli et jouent les héros de « Il était une fois nous ». Chacun peut changer le look des deux ; la personnalité et les phrases fétiches appartiennent à chacun, une fois qu'il les a choisies sur son téléphone."))}</p>
+    ${S.fromOb && who === me ? `<div class="ob-finish"><button class="btn wide" data-a="ob-done">C'est parfait, terminer</button></div>` : ""}
     <div style="height:110px" aria-hidden="true"></div>`;
   }
   if (name === "cartes") {
@@ -4635,6 +4687,7 @@ function render(force) {
   const views = { home: viewHome, play: viewPlay, capsule: viewCapsule, aventures: viewAventures, lettres: viewLettres };
   const tabs = [["home", "Accueil"], ["play", "Jouer"], ["capsule", "Capsule"], ["aventures", "Aventures"], ["lettres", "Lettres"]];
   if (!views[S.tab]) S.tab = "home";
+  if (!S.layer && !S.obShown && onboardStep()) { S.obShown = true; S.layer = { type: "onboard" }; }
   const enter = S.tab !== render.lastTab; render.lastTab = S.tab;
   app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><span class="row" style="gap:2px"><button class="hearts-pill" data-a="tresors" aria-label="Nos trésors : ${Jeu.hearts()} cœurs">♥︎ ${Jeu.hearts()}</button><button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
@@ -4655,6 +4708,7 @@ function render(force) {
   else if (S.layer.type === "puzzle") html = puzzleView();
   else if (S.layer.type === "live") html = liveView();
   else if (S.layer.type === "tresors") html = tresorsView();
+  else if (S.layer.type === "onboard") html = onboardView();
   layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
 }
@@ -4691,7 +4745,7 @@ const ACT = {
     if (S.pzRemote) pzRemoteClose();
     if (S.layer && S.layer.type === "game") return quitGame();
     if (S.layer && S.layer.type === "defis" && S.dfSeen.length) flushSeen(S.dfSeen, false);
-    S.layer = null; S.editAv = null;
+    S.layer = null; S.editAv = null; S.fromOb = false;
   },
   setup(d) { S.setup[d.k] = d.k === "dur" ? +d.v : d.v; },
   start() { if (S.setup.style === "distance" && Store.backend === "shared") startLiveCards(S.setup); else startGame(S.setup); },
@@ -4966,6 +5020,17 @@ const ACT = {
   "cap-seg"(d) { S.capSeg = d.seg; S.confirm = null; },
   sheet(d) { if (d.kind) S.mot = d.kind; S.layer = { type: "sheet", name: d.name }; },
   "set-draft"(d) { S.drafts[d.k] = d.v; },
+  "ob-names"() {
+    const c = couple(), a = draft("ob-a", c.a).trim().slice(0, 24), b = draft("ob-b", c.b).trim().slice(0, 24);
+    if (!a || !b) { toast("Indiquez vos deux prénoms."); return; }
+    // Seuls les prénoms changés sont envoyés : si l'autre remplit en même temps, rien ne s'écrase.
+    const patch = {}; if (a !== c.a) patch.a = a; if (b !== c.b) patch.b = b;
+    if (Object.keys(patch).length) Store.patchMeta("couple", patch);
+    clearDrafts("ob-a", "ob-b");
+  },
+  "ob-me"(d) { lsSet("entre-nous:me", d.v); },
+  "ob-avatar"() { const me = whoAmI() || "a"; S.avWho = me; S.fromOb = true; S.layer = { type: "sheet", name: "avatars" }; },
+  "ob-done"() { const me = whoAmI(); if (me) avPatch(me, {}); S.fromOb = false; S.layer = onboardStep() ? { type: "onboard" } : null; toast("Ton avatar est prêt !"); },
   "save-names"() {
     const c = couple();
     const a = draft("na", c.a).trim(), b = draft("nb", c.b).trim();
