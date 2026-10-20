@@ -397,6 +397,18 @@ body { background: var(--bg); }
 .stage-row > .badge { margin-left: auto; }
 .stage-row.locked > svg { filter: grayscale(1); opacity: .35; }
 .mode-row.locked { opacity: .7; cursor: default; }
+.traits { display: grid; gap: 12px; }
+.trait { display: grid; gap: 6px; }
+.trait-h { display: flex; justify-content: space-between; gap: 10px; font-size: .86rem; font-weight: 600; color: var(--muted); }
+.trait-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; background: var(--surface-2); border-radius: 999px; padding: 4px; }
+.trait-steps button { height: 30px; border-radius: 999px; display: grid; place-items: center; }
+.trait-steps button i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: transform .15s ease, background .15s ease; }
+.trait-steps button:nth-child(3) i { width: 4px; height: 12px; border-radius: 2px; }
+.trait-steps button[aria-pressed="true"] { background: var(--accent); }
+.trait-steps button[aria-pressed="true"] i { background: var(--on-accent); transform: scale(1.3); }
+.perso-sum { font-family: var(--f-hand); font-size: 1.35rem; line-height: 1.15; }
+.buddy.blushy .av-blush { opacity: .6; }
+.buddy.shiver .buddy-body { animation: grr .12s linear infinite; }
 .pet { position: absolute; left: 0; bottom: -2px; width: 26px; will-change: transform; pointer-events: none; }
 .pet svg { display: block; width: 100%; height: auto; }
 .fx-pillow { position: absolute; bottom: 34px; width: 18px; height: 12px; border-radius: 5px; background: #F4EFE9; border: 1.5px solid #C9BFD0; opacity: 0; animation: pillow 1.2s ease-out forwards; }
@@ -1316,6 +1328,15 @@ const syncLine = () => Store.backend === "shared" ? "Votre progression est commu
   : Shared.available() ? "Tout est enregistré sur ce téléphone. Créez votre espace commun dans les Réglages pour partager la progression."
   : "Tout est enregistré sur ce téléphone. Pour réunir vos progressions, utilisez le code dans les Réglages.";
 
+// Sur chaque téléphone, une invitation à créer soi-même son personnage, tant qu'on ne l'a pas fait.
+function avInvite() {
+  const me = whoAmI(), av = Store.meta.avatars || {};
+  if (lsGet("entre-nous:avinvite") === "0" || (me && (av[me] || {}).self)) return "";
+  return `<section class="panel" aria-labelledby="h-chibi"><h2 class="sec" id="h-chibi">${me ? "Ton petit personnage" : "Vos petits personnages"}</h2>
+    <div class="stage mini">${sceneSvg("souvenir")}<div class="cast">${me ? castFig(me) : castFig("a") + castFig("b")}</div></div>
+    <p class="small">${esc(fr("Choisis toi-même ton look et ta personnalité : timidité, joie, courage, tendresse… Ton mini-toi parlera et réagira comme toi."))}</p>
+    <div class="row">${me ? `<button class="btn" data-a="av-mine">Créer mon personnage</button>` : ["a", "b"].map(k => `<button class="btn ghost" data-a="av-mine" data-v="${k}">Je suis ${esc(nm(k))}</button>`).join("")}<button class="link" data-a="av-later">Plus tard</button></div></section>`;
+}
 function viewHome() {
   const c = couple(), named = c.a && c.b, h = new Date().getHours();
   const hello = h < 5 ? "Bonsoir" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
@@ -1330,10 +1351,7 @@ function viewHome() {
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
       <div class="row"><button class="btn" data-a="sheet" data-name="names">Ajouter nos prénoms</button></div>
     </div>`}
-  ${(Store.meta.avatars || {}).a ? "" : `<section class="panel" aria-labelledby="h-chibi"><h2 class="sec" id="h-chibi">Vos petits personnages</h2>
-      <div class="stage mini">${sceneSvg("souvenir")}<div class="cast">${castFig("a")}${castFig("b")}</div></div>
-      <p class="small muted">${esc(fr("Créez vos mini-vous : ils se baladent dans l'appli et jouent les héros de vos histoires."))}</p>
-      <div class="row"><button class="btn" data-a="sheet" data-name="avatars">Créer nos personnages</button></div></section>`}
+  ${avInvite()}
   ${liveBanner()}
   ${dailyBlock()}
   <section class="stack" aria-labelledby="h-quick"><div class="group-h"><h2 class="sec" id="h-quick">Envie de jouer ?</h2><button class="link" data-a="tab" data-tab="play">Tous les jeux</button></div>
@@ -1838,12 +1856,12 @@ function sheetView() {
     <button class="btn wide" data-a="save-av">${ed ? "Enregistrer" : "Ajouter à la liste"}</button>`;
   }
   if (name === "avatars") {
-    const who = S.avWho === "b" ? "b" : "a", a = avOf(who);
+    const who = avWho(), a = avOf(who), me = whoAmI(), locked = persoLocked(who);
     const sw = (k, list, lab) => `<div class="swatches">${list.map((c, i) => `<button class="swatch" style="background:${c}" aria-pressed="${a[k] === i}" aria-label="${lab} ${i + 1}" data-a="av-set" data-k="${k}" data-v="${i}"></button>`).join("")}</div>`;
     const ch = (k, list) => `<div class="chips">${list.map(([v, l]) => `<button class="chip" aria-pressed="${a[k] === v}" data-a="av-set" data-k="${k}" data-v="${v}">${esc(l)}</button>`).join("")}</div>`;
     return `${layerHead("Nos personnages")}
     <div class="stage">${sceneSvg("souvenir")}<div class="cast">${castFig("a")}${castFig("b")}</div></div>
-    <div class="seg" role="group" aria-label="Personnage">${["a", "b"].map(k => `<button aria-pressed="${who === k}" data-a="av-who" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
+    <div class="seg" role="group" aria-label="Personnage">${["a", "b"].map(k => `<button aria-pressed="${who === k}" data-a="av-who" data-v="${k}">${esc(nm(k))}${me === k ? " (toi)" : ""}</button>`).join("")}</div>
     <div class="stack"><h2 class="sec">Peau</h2>${sw("skin", AV.skin, "Teinte")}</div>
     <div class="stack"><h2 class="sec">Coiffure</h2>${ch("hair", AV.hair)}</div>
     <div class="stack"><h2 class="sec">Longueur</h2>${ch("len", AV.len)}</div>
@@ -1851,8 +1869,18 @@ function sheetView() {
     <div class="stack"><h2 class="sec">Haut</h2>${sw("top", AV.top, "Haut")}</div>
     <div class="stack"><h2 class="sec">Accessoire</h2>${ch("acc", AV.acc)}</div>
     <div class="stack"><h2 class="sec">Piercing au nez</h2>${ch("pierce", AV.pierce)}</div>
-    <div class="stack"><h2 class="sec">Personnalité</h2>${ch("perso", AV.perso)}<p class="small muted">${esc(fr("Elle change leur façon de parler et de se comporter sur la barre d'onglets."))}</p></div>
-    <p class="small muted">${esc(fr("Vos personnages se baladent dans l'appli et jouent les héros de « Il était une fois nous ». Chacun peut personnaliser les deux, et les changements s'appliquent tout de suite."))}</p>
+    ${locked ? `<div class="stack"><h2 class="sec">Personnalité</h2><p class="perso-sum">${esc(fr(traitSummary(a.traits)))}</p>
+      <p class="small muted">${esc(fr(`C'est ${nm(who)} qui a choisi sa personnalité et ses phrases fétiches : elles lui appartiennent.`))}</p></div>`
+    : `<div class="stack"><h2 class="sec">Personnalité</h2>
+      <div class="chips">${PRESETS.map(([id, l, t]) => `<button class="chip" aria-pressed="${TRAIT_IDS.every(x => t[x] === a.traits[x])}" data-a="av-preset" data-v="${id}">${esc(fr(l))}</button>`).join("")}</div>
+      <div class="traits">${TRAITS.map(([id, lo, hi]) => `<div class="trait"><div class="trait-h"><span>${esc(lo)}</span><span>${esc(hi)}</span></div>
+        <div class="trait-steps" role="group" aria-label="${esc(lo)} ou ${esc(hi)}">${[0, 1, 2, 3, 4].map(v => `<button aria-pressed="${a.traits[id] === v}" aria-label="${esc(traitStep(id, v))}" data-a="av-trait" data-k="${id}" data-v="${v}"><i></i></button>`).join("")}</div></div>`).join("")}</div>
+      <p class="perso-sum">${esc(fr(traitSummary(a.traits)))}</p>
+      <p class="small muted">${esc(fr("La personnalité change ce que le personnage dit, sa façon de réagir quand on le touche, sa vitesse, et les petites scènes qu'il joue avec l'autre : câlins, chamailleries, frayeurs, siestes…"))}</p></div>
+    <div class="stack"><h2 class="sec">Phrases fétiches</h2><p class="small muted">${esc(fr("Jusqu'à trois petites phrases bien à soi, que le personnage lâchera de temps en temps."))}</p>
+      ${[0, 1, 2].map(i => `<input type="text" id="av-tic-${who}-${i}" data-d maxlength="60" aria-label="Phrase fétiche ${i + 1}" placeholder="${["Par exemple : « On commande des sushis ? »", "Une autre ?", "Et une dernière ?"][i]}" value="${dv(`av-tic-${who}-${i}`, a.tics[i] || "")}">`).join("")}
+      <div class="row"><button class="btn ghost" data-a="av-tics">Enregistrer les phrases</button></div></div>`}
+    <p class="small muted">${esc(fr("Vos personnages se baladent dans l'appli et jouent les héros de « Il était une fois nous ». Chacun peut changer le look des deux ; la personnalité et les phrases fétiches appartiennent à chacun, une fois qu'il les a choisies sur son téléphone."))}</p>
     <div style="height:110px" aria-hidden="true"></div>`;
   }
   if (name === "cartes") {
@@ -2342,7 +2370,7 @@ const STORIES = [
     fete: { sc: "village", t: "Tout le royaume vous a entendus. Les lanternes s'allument une à une, des lucioles dessinent vos initiales dans le ciel et un orchestre de grenouilles attaque une valse. Yassen Jr. danse sur la table, évidemment.",
       ch: [["Danser avec lui jusqu'à l'aube", "fin_fete"]] },
     fin_souvenir: { end: "La lanterne rallumée", sc: "souvenir", t: "La lanterne s'allume d'une lumière dorée, plus belle que toutes les autres. Yassen Jr. se blottit entre vous deux. « Vous voyez ? Tant que vous vous parlez comme ça, rien ne s'éteint vraiment. Pas même moi. »" },
-    fin_promesse: { end: "La promesse", sc: "chateaunuit", t: "Yassen Jr. tend son petit doigt de flamme. « Promis : je suis là chaque fois que vous ouvrez l'appli. Et si je fais la sieste, réveillez-moi avec une quête. » Le pacte est scellé par un câlin à trois, un peu chaud." },
+    fin_promesse: { end: "La promesse", sc: "chateaunuit", t: "Yassen Jr. tend son petit doigt de flamme. « Promis : je suis là chaque fois que vous ouvrez l'appli. Et si je fais la sieste, venez juste me faire un petit coucou. » Le pacte est scellé par un câlin à trois, un peu chaud." },
     fin_gardiens: { end: "Les gardiens du royaume", sc: "chateaunuit", t: "{a} et {b} reçoivent chacun une petite broche en forme de flamme. Yassen Jr. s'endort sur son trône, la couronne de travers, un sourire au coin des lèvres. Le royaume est entre de bonnes mains." },
     fin_fete: { end: "La grande fête", sc: "village", t: "Au lever du soleil, tout le monde dort en tas dans l'herbe, Yassen Jr. au milieu, qui ronfle comme une petite bougie. Le royaume n'a jamais été aussi lumineux." }
   } }
@@ -2495,6 +2523,24 @@ function sceneSvg(name) {
   return `<svg class="scene" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${out}</svg>`;
 }
 
+/* Personnalité : chaque trait va de 0 à 4, 2 étant l'équilibre. Plus un trait s'éloigne du milieu,
+   plus le personnage pioche ses répliques et ses réactions dans ce trait. */
+const TRAITS = [
+  ["soc", "Timidité", "Extraversion"], ["mood", "Colère", "Joie"], ["brave", "Peur", "Courage"],
+  ["energy", "Calme", "Énergie"], ["tender", "Pudeur", "Tendresse"], ["humor", "Sérieux", "Fantaisie"],
+  ["tease", "Sagesse", "Taquinerie"], ["food", "Sobriété", "Gourmandise"], ["chrono", "Lève-tôt", "Couche-tard"]
+];
+const TRAIT_IDS = TRAITS.map(t => t[0]);
+const NEUTRAL = Object.fromEntries(TRAIT_IDS.map(id => [id, 2]));
+const PRESETS = [
+  ["equilibre", "Équilibre", {}],
+  ["timide", "Cœur timide", { soc: 0, mood: 3, brave: 1, energy: 1, tender: 3, tease: 1 }],
+  ["tornade", "Tornade de joie", { soc: 4, mood: 4, brave: 3, energy: 4, tender: 3, humor: 4, tease: 3, food: 3, chrono: 3 }],
+  ["orage", "Nuage d'orage au grand cœur", { mood: 0, tender: 3, tease: 3, humor: 1 }],
+  ["aventure", "Âme aventurière", { soc: 3, brave: 4, energy: 3, humor: 3, chrono: 1 }],
+  ["colle", "Pot de colle", { soc: 3, mood: 3, tender: 4, tease: 1 }],
+  ["chat", "Petit chat paresseux", { energy: 0, mood: 3, food: 4, chrono: 4, tender: 3 }]
+].map(([id, label, t]) => [id, label, { ...NEUTRAL, ...t }]);
 /* Personnages */
 const AV = {
   skin: ["#F9DCC8", "#F0C29F", "#D9A27C", "#B67B56", "#8C5A3C", "#5E3D2A"],
@@ -2502,16 +2548,29 @@ const AV = {
   top: ["#5E8BD9", "#E07A8E", "#6DBE9B", "#F2B544", "#9B7BD6", "#3A3346", "#F4EFE9", "#E8845C"],
   hair: [["court", "Court"], ["frange", "Frange"], ["boucles", "Bouclés"], ["ondules", "Ondulés"], ["carre", "Carré"], ["long", "Longs"], ["queue", "Queue de cheval"], ["chignon", "Chignon"], ["rase", "Rasé"]],
   acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["casquette", "Casquette"], ["beret", "Béret"], ["fleur", "Fleur"], ["oreilles", "Boucles d'oreilles"]],
-  perso: [["timide", "Mignonne et timide"], ["fou", "Un peu fou"], ["classique", "Classique"]],
   pierce: [["aucun", "Aucun"], ["diamant", "Petit diamant"], ["anneau", "Anneau doré"], ["argent", "Anneau argenté"]],
   len: [["auto", "Selon la coiffure"], ["courte", "Courte"], ["mi", "Mi-longue"], ["longue", "Longue"], ["tres", "Très longue"]]
 };
-const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", perso: "fou", len: "auto", pierce: "aucun" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", perso: "timide", len: "auto", pierce: "aucun" } };
+// Le personnage de chacun arrive avec une personnalité équilibrée : c'est à chacun de choisir la sienne.
+const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", len: "auto", pierce: "aucun", traits: PRESETS[2][2], tics: ["J'aime troooow !", "Tu peux répéter mot pour mot ?"] }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", len: "auto", pierce: "aucun", traits: NEUTRAL, tics: [] } };
 function avOf(k) {
   const v = ((Store.meta.avatars || {})[k]) || {}, d = AV_DEFAULT[k];
   const idx = (f, list) => Number.isInteger(v[f]) && v[f] >= 0 && v[f] < list.length ? v[f] : d[f];
   const opt = (f, list) => list.some(o => o[0] === v[f]) ? v[f] : d[f];
-  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), perso: opt("perso", AV.perso), len: opt("len", AV.len), pierce: opt("pierce", AV.pierce) };
+  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), len: opt("len", AV.len), pierce: opt("pierce", AV.pierce),
+    traits: Object.fromEntries(TRAIT_IDS.map(id => { const t = v.traits || {}, x = t[id]; return [id, Number.isInteger(x) && x >= 0 && x <= 4 ? x : d.traits[id]]; })),
+    tics: Array.isArray(v.tics) ? v.tics.filter(x => typeof x === "string" && x.trim()).map(x => x.slice(0, 60)).slice(0, 3) : d.tics,
+    self: !!v.self };
+}
+const avWho = () => S.avWho === "a" || S.avWho === "b" ? S.avWho : whoAmI() || "a";
+// Une fois choisie par son propriétaire sur son téléphone, la personnalité ne se change que depuis ce téléphone.
+const persoLocked = k => { const me = whoAmI(); return !!(me && me !== k && ((Store.meta.avatars || {})[k] || {}).self); };
+// Chaque modification ne touche que ses propres champs : vos deux téléphones peuvent éditer en même temps.
+function avPatch(who, fields) {
+  const flat = {};
+  Object.entries(fields).forEach(([k, v]) => { flat[who + "/" + k] = v; });
+  if (whoAmI() === who) flat[who + "/self"] = true;
+  Store.patchMeta("avatars", flat);
 }
 // Cheveux de la longueur choisie : lisses, ou en vagues pour les coiffures ondulées et bouclées.
 function backHair(a, hc) {
@@ -3138,48 +3197,132 @@ const BUDDY_LINES = {
   lettres: ["Pas touche aux lettres scellées !", "J'ai hâte d'ouvrir la prochaine."]
 };
 const POKE_LINES = ["Hé, ça chatouille !", "Coucou toi !", "Encore ?", "Tu me cherches ?", "Bisou volé !", "Je suis là, je suis là."];
-const PERSO = {
-  timide: {
-    solo: ["Hihi…", "*rougit*", "Je… je voulais juste te faire un coucou.", "Tu me regardes ? …Arrête.", "J'ai un peu froid… un câlin ?", "Je suis bien, là."],
-    poke: ["Ah ! …tu m'as fait peur.", "Hihi, ça chatouille…", "*rougit*", "Encore… ?"],
-    hug: ["Je… je peux rester comme ça ?", "*fond complètement*", "Tout doux…"],
-    kiss: ["*rougit très fort*", "Oh… encore un ?"]
+// Des répliques pour chaque côté de chaque trait. Écrites sans accord masculin ou féminin.
+const TRAIT_LINES = {
+  soc: {
+    lo: { solo: ["Hihi…", "*rougit*", "Je… je voulais juste te faire un coucou.", "Tu me regardes ? …Arrête.", "Je suis bien, là, à côté de toi.", "*se cache un peu*"],
+      poke: ["Ah ! …tu m'as eu.", "Hihi, ça chatouille…", "*rougit*", "Encore… ?"], hug: ["Je… je peux rester comme ça ?", "*fond complètement*", "Tout doux…"],
+      kiss: ["*rougit très fort*", "Oh… encore un ?"], cheer: ["Hihi… bien joué.", "On est une bonne équipe…"] },
+    hi: { solo: ["Coucou tout le monde !", "Qui veut faire la fête ?", "J'ai envie de raconter ma journée à quelqu'un. Toi !", "On invite des amis ce week-end ?", "Je parle trop ? Non. Bref, je disais…"],
+      poke: ["PRÉSENT !", "Encore, encore !", "Oui ? Je suis tout ouïe !"], hug: ["CÂLIN DE GROUPE ! Bon, on est deux, mais quand même.", "Viens là, toi !"],
+      kiss: ["Smaaaack !", "Un bisou pour toi, un bisou pour moi !"], cheer: ["ON EST LES MEILLEURS !", "Applaudissements, s'il vous plaît !"] }
   },
-  fou: {
-    solo: ["J'aime troooooow !", "Quelqu'un a dit sushis ?!", "Le plus chanceux de l'univers, c'est moi. Vérifié scientifiquement.", "Coucou, c'est encore moi !", "Je danse, même sans musique.", "Tu peux répéter mot pour mot ce que t'as dit hier ?"],
-    poke: ["PRÉSENT !", "Encore, encore !", "Tu peux répéter mot pour mot ?", "Aïe ! …non je rigole, j'adore."],
-    hug: ["CÂLIN DE L'ANNÉE !", "Je te lâche plus, c'est officiel.", "Recharge de câlins : 300 % !"],
-    kiss: ["Smaaaaack !", "Bisou turbo !", "Un autre, un autre !"]
+  mood: {
+    lo: { solo: ["Grrr… rien. Ça va.", "Qui a mangé mon dernier biscuit ?", "Je boude. Mais viens quand même.", "Tout m'énerve. Sauf toi.", "*soupir très audible*"],
+      poke: ["Hé ! Ça va pas, non ?", "Grr.", "Touche encore pour voir… bon, d'accord, une dernière fois."], hug: ["Bon… d'accord. Juste un petit.", "Je fais semblant de pas aimer."],
+      kiss: ["…Ça compte pas, je m'y attendais pas.", "Hmpf. Encore un, alors."], cheer: ["Pas mal. Pas mal du tout, même.", "Bon. Ça mérite un câlin."] },
+    hi: { solo: ["Quelle belle journée !", "Je suis de trop bonne humeur, c'est grave ?", "Tout est trop bien aujourd'hui !", "Sourire activé !", "La vie est belle avec toi."],
+      poke: ["Hihihi !", "Coucou mon rayon de soleil !", "Tu me fais rire !"], hug: ["Le meilleur câlin du monde !", "Bonheur niveau maximum."],
+      kiss: ["Trop bien !", "Encore un, ça rend heureux."], cheer: ["Youpiii !", "Trop forts, nous deux !"] }
+  },
+  brave: {
+    lo: { solo: ["C'était quoi, ce bruit ?", "Tu restes près de moi, hein ?", "J'ai vu une ombre bouger…", "On laisse la lumière allumée ce soir ?"],
+      poke: ["AAAH ! …ah, c'est toi.", "Tu m'as fait peur !", "*sursaute*"], hug: ["Là, je me sens en sécurité.", "Personne peut m'attraper ici."], cheer: ["Ouf, on a réussi !"] },
+    hi: { solo: ["Une araignée ? Je m'en occupe.", "Prochaine aventure : le saut en parachute ?", "Rien ne me fait peur. Sauf finir notre série sans toi.", "Chevalier de service, à ton écoute."],
+      poke: ["En garde !", "Même pas sursauté."], hug: ["Je te protège de tout. Même des lundis."], cheer: ["Mission accomplie !", "Rien ne nous arrête !"] }
+  },
+  energy: {
+    lo: { solo: ["On se pose un peu ?", "Plaid, thé, toi. Parfait.", "*bâille*", "Rien ne presse.", "Je médite. Enfin, je somnole."],
+      poke: ["Mmh… cinq minutes encore.", "Doucement…"], hug: ["Je pourrais m'endormir là.", "On ne bouge plus jamais."], cheer: ["Bien joué. On se repose, maintenant ?"] },
+    hi: { solo: ["On fait quoi ? On fait quoi ? On fait quoi ?", "Je tiens pas en place !", "Course jusqu'au bout de l'écran ?", "J'ai bu un café. Peut-être deux."],
+      poke: ["Encore ! Plus vite !", "Batterie à 200 % !"], hug: ["Câlin express ! …et un deuxième !"], cheer: ["On en fait une autre ? Tout de suite ?"] }
+  },
+  tender: {
+    lo: { solo: ["Je t'aime bien. Voilà. C'est dit.", "Les sentiments, c'est pas trop mon truc. Mais toi, si.", "…"],
+      poke: ["Pas devant tout le monde…", "Hé, on nous regarde."], hug: ["Bon… un petit câlin, alors.", "Pas devant tout le monde…"], kiss: ["Chut, personne n'a vu.", "*regarde ailleurs*"] },
+    hi: { solo: ["Tu me manques. Et pourtant tu es juste là.", "Un câlin ? Deux ?", "Je t'aime, tu sais.", "Je pense à toi."],
+      poke: ["Un bisou contre un bisou ?", "Câlin !"], hug: ["Je ne te lâche plus.", "Recharge de câlins : 300 % !", "Reste encore un peu…"],
+      kiss: ["Un autre, un autre !", "Mmh, j'adore."], cheer: ["Bravo, mon cœur !"] }
+  },
+  humor: {
+    lo: { solo: ["Il faudrait qu'on parle de notre prochaine sortie.", "J'ai fait une liste. Pour nos listes.", "On a pensé à boire de l'eau aujourd'hui ?"],
+      poke: ["Oui ?", "Je t'écoute."], cheer: ["Objectif atteint."] },
+    hi: { solo: ["Si j'étais un légume, je serais une patate. Mignonne, mais patate.", "Quelqu'un a dit sushis ?!", "Je danse, même sans musique.", "Blague du jour : … j'ai oublié la fin.", "Le plus chanceux de l'univers, c'est moi. Vérifié scientifiquement."],
+      poke: ["Aïe ! …non je rigole, j'adore.", "Bip bip, vous avez un nouveau câlin."], hug: ["Câlin de l'année ! Je vote pour nous."], cheer: ["Champagne ! …enfin, jus de pomme."] }
+  },
+  tease: {
+    lo: { solo: ["Tu as passé une bonne journée ?", "Je range tes chaussettes, t'inquiète.", "Sage comme une image, moi."] },
+    hi: { solo: ["J'ai caché ton chargeur. Ou pas.", "Devine qui a gagné la dernière partie ? Moi.", "Tu ronfles, tu sais.", "J'ai mangé ton dessert. Par amour."],
+      poke: ["Tu me cherches ?", "Raté !", "Chat ! C'est toi le chat."], cheer: ["Grâce à moi, surtout. Non, je rigole. Un peu."] }
+  },
+  food: {
+    lo: { solo: ["Une pomme, et ça me suffit.", "J'ai pas faim. Mais je goûte le tien."] },
+    hi: { solo: ["J'ai faim. Encore.", "Pizza ce soir ? Dis oui.", "Tu sens le cookie. C'est un compliment.", "Quelqu'un a parlé de crêpes ?"],
+      poke: ["C'est l'heure du goûter ?", "Tu as un bonbon ?"], cheer: ["On fête ça avec un gâteau ?"] }
   }
 };
-// Elle complimente tout bas, il répond n'importe quoi. Ou l'inverse.
-const SHY_TO_CRAZY = [
-  ["Tu… tu es beau aujourd'hui.", "Tu peux répéter mot pour mot ? Je prends des notes."],
-  ["J'aime bien quand tu souris…", "J'aime troooooow."],
-  ["T'es mon préféré…", "Attends, je fais une capture d'écran de ce moment."],
+// Lève-tôt ou couche-tard : les répliques dépendent de l'heure.
+const CHRONO_LINES = {
+  lo: { matin: ["Bonjour, bonjour ! Le soleil est levé !", "Le meilleur moment de la journée, c'est maintenant."], nuit: ["*bâille* Au lit !", "Il est tard… on dort ?"] },
+  hi: { matin: ["Mmh… il est quelle heure ?", "Pas un mot avant le café."], nuit: ["La nuit est jeune !", "Encore un épisode ?"] }
+};
+const trait = (k, id) => avOf(k).traits[id];
+// Une réplique en accord avec la personnalité : phrase fétiche, trait marqué, ou à défaut une réplique commune.
+function lineFor(k, cat, fallback) {
+  const a = avOf(k), t = a.traits, h = new Date().getHours(), part = h >= 5 && h < 11 ? "matin" : h >= 22 || h < 5 ? "nuit" : "";
+  if (a.tics.length && ["solo", "poke", "cheer"].includes(cat) && Math.random() < 0.22) return pickOne(a.tics);
+  const opts = [];
+  TRAIT_IDS.forEach(id => {
+    const v = t[id]; if (v === 2) return;
+    const pole = v < 2 ? "lo" : "hi";
+    const lines = id === "chrono" ? (cat === "solo" && part ? CHRONO_LINES[pole][part] : null) : ((TRAIT_LINES[id] || {})[pole] || {})[cat];
+    if (lines && lines.length) opts.push([(v - 2) * (v - 2), lines]);
+  });
+  const total = opts.reduce((n, o) => n + o[0], 0);
+  if (!total || (fallback && Math.random() < 0.25)) return fallback ? pickOne(fallback) : null;
+  let r = Math.random() * total;
+  for (const [w, lines] of opts) { if ((r -= w) <= 0) return pickOne(lines); }
+  return pickOne(opts[opts.length - 1][1]);
+}
+const de = w => (/^[aeiouyéèêâîôûh]/i.test(w) ? "d'" : "de ") + w;
+// Le libellé d'un cran : « Beaucoup de timidité », « Entre les deux »…
+function traitStep(id, v) {
+  const [, lo, hi] = TRAITS.find(t => t[0] === id);
+  if (v === 2) return "Entre les deux";
+  if (id === "chrono") return ["Un vrai oiseau du matin", "Plutôt du matin", "", "Plutôt du soir", "Un vrai oiseau de nuit"][v];
+  return `${v === 0 || v === 4 ? "Beaucoup" : "Un peu"} ${de((v < 2 ? lo : hi).toLowerCase())}`;
+}
+// Un petit portrait en une phrase, à partir des traits.
+function traitSummary(t) {
+  const parts = TRAITS.filter(([id]) => t[id] !== 2).map(([id, lo, hi]) => {
+    const v = t[id];
+    if (id === "chrono") return ["un vrai oiseau du matin", "plutôt du matin", "", "plutôt du soir", "un vrai oiseau de nuit"][v];
+    return `${v === 0 || v === 4 ? "beaucoup" : "un peu"} ${de((v < 2 ? lo : hi).toLowerCase())}`;
+  });
+  if (!parts.length) return "Un bel équilibre : un peu de tout.";
+  const txt = parts.length > 1 ? parts.slice(0, -1).join(", ") + " et " + parts[parts.length - 1] : parts[0];
+  return txt.charAt(0).toUpperCase() + txt.slice(1) + ".";
+}
+// L'un timide, l'autre extraverti : ils se répondent. {tic} = une phrase fétiche de celui qui parle.
+const SHY_TO_BOLD = [
+  ["Tu… tu es magnifique aujourd'hui.", "Tu peux répéter ? Je prends des notes."],
+  ["J'aime bien quand tu souris…", "{tic}"],
+  ["Tu es mon humain préféré…", "Attends, je fais une capture d'écran de ce moment."],
   ["Je pensais à toi…", "Répète, c'était pas assez fort !"],
   ["Tu sens bon…", "C'est naturel. Enfin, c'est le gel douche. Mais c'est naturel."],
   ["Merci d'être là.", "Je suis lààà ! Toujours là ! Même quand tu veux pas !"],
   ["On reste encore un peu ensemble ?", "Pour toujours, ou un peu plus ?"],
   ["Je t'aime… un peu.", "UN PEU ?! J'ai entendu « énormément », c'est validé."],
-  ["T'es drôle, tu sais…", "Je sais. Mais redis-le, c'est bon pour mon ego."]
+  ["Tu es drôle, tu sais…", "Je sais. Mais redis-le, c'est bon pour mon ego."]
 ];
-const CRAZY_TO_SHY = [
-  ["J'aime troooooow !", "Chut… tout le monde nous regarde…"],
-  ["T'es la plus belle ! Je le crie : LA PLUS BELLE !", "Arrête… *se cache derrière ses mains*"],
+const BOLD_TO_SHY = [
+  ["{tic}", "Chut… tout le monde nous regarde…"],
+  ["Tu es magnifique ! Je le crie : MAGNIFIQUE !", "Arrête… *se cache derrière ses mains*"],
   ["Programme de ce soir : câlin, sushis, câlin, sushis.", "D'accord… mais câlin d'abord."],
-  ["Si t'étais un dessert, tu serais mon préféré. Je suis pas sûr de ma phrase.", "Hihi… c'est mignon quand même."],
+  ["Si tu étais un dessert, tu serais mon préféré. Je sais pas où va cette phrase.", "Hihi… c'est mignon quand même."],
   ["Bisou gratuit, aujourd'hui seulement !", "Je… j'en prends un."],
   ["Question très sérieuse : chat ou chien ?", "…Toi."],
   ["Je t'aime plus que les frites. Et j'aime BEAUCOUP les frites.", "Oh… *rougit*"]
 ];
-const CRAZY_SQUABBLES = [["C'est moi le plus beau du couple !", "…Non, c'est moi."], ["J'ai mangé ton dessert. Par amour.", "Méchant…"],
+const TEASE_SQUABBLES = [["C'est moi la star du couple !", "…Non, c'est moi."], ["J'ai mangé ton dessert. Par amour.", "Pas cool…"],
   ["Je t'aime plus que toi tu m'aimes !", "Même pas vrai…"], ["J'ai renommé le chat « Sire Bisou ».", "On n'a pas de chat…"],
-  ["Ce soir, film : « Les aventures de moi ».", "Non… *boude*"]];
-const persoLines = (k, kind, fallback) => ((PERSO[avOf(k).perso] || {})[kind]) || fallback;
+  ["Ce soir, film : « Mes aventures à moi ».", "Non… *boude*"]];
+// Remplace {tic} par une phrase fétiche ; sans phrase fétiche, la paire est écartée.
+const withTic = (pairs, k) => pairs.filter(p => !p.join("").includes("{tic}") || avOf(k).tics.length)
+  .map(p => p.map(l => l.replace("{tic}", () => pickOne(avOf(k).tics))));
 function buddyLine(k) {
-  const own = (PERSO[avOf(k).perso] || {}).solo;
-  if (own && Math.random() < 0.6) return pickOne(own);
+  const own = lineFor(k, "solo", null);
+  if (own && Math.random() < 0.65) return own;
   const h = new Date().getHours(), tab = BUDDY_LINES[S.tab] || [];
   const pool = [...BUDDY_LINES.all, ...tab, ...tab];
   if (h >= 22 || h < 5) pool.push("Il est tard… un dernier jeu ?", "Je bâille, mais je reste avec toi.");
@@ -3232,6 +3375,7 @@ const Buddies = {
       ["a", "b"].forEach(k => {
         const o = this.b[k], pet = Jeu.equipOf(k).pet;
         o.el.querySelector(".buddy-body").innerHTML = avatarSvg(k);
+        o.el.classList.toggle("blushy", trait(k, "soc") === 0);
         o.pet.el.hidden = !pet; o.pet.el.innerHTML = pet ? PETS[pet] : "";
       });
     }
@@ -3249,7 +3393,7 @@ const Buddies = {
     for (const k in this.b) {
       const o = this.b[k];
       if (o.target != null) {
-        const d = o.target - o.x, want = Math.min(o.run ? 115 : 44, Math.abs(d) * 3 + 10);
+        const d = o.target - o.x, want = Math.min(o.run ? 115 : 44 * (0.8 + trait(k, "energy") * 0.1), Math.abs(d) * 3 + 10);
         o.speed += (want - o.speed) * Math.min(1, dt * 5);
         o.x += Math.sign(d) * Math.min(Math.abs(d), still ? Math.abs(d) : o.speed * dt);
         o.phase += dt * (o.run ? 9 : 5.4);
@@ -3277,25 +3421,152 @@ const Buddies = {
   },
   done(pause = 2500) { this.busy = false; this.nextAct = performance.now() + pause + Math.random() * 4000; },
   act() {
-    const A = this.b.a, B = this.b.b, W = this.W(), h = new Date().getHours(), r = Math.random();
+    const A = this.b.a, B = this.b.b, W = this.W(), h = new Date().getHours(), night = h >= 22 || h < 6;
+    const avg = id => (trait("a", id) + trait("b", id)) / 2;
     this.busy = true;
-    const em = Jeu.emotes();
-    if (em.length && Math.random() < 0.16) return pickOne(em) === "disco" ? this.disco() : this.pillows();
-    if (this.persoOf("fou") && this.persoOf("timide")) {
-      const q = Math.random();
-      if (q < 0.24) return this.banter();
-      if (q < 0.32) return this.zoomies();
-      if (q < 0.38) return this.shyMoment();
-    }
-    if (r < 0.34) { const o = Math.random() < 0.5 ? A : B; this.walkTo(o, o.x + (Math.random() - 0.5) * W * 0.6, false, () => { if (Math.random() < 0.4) this.lookAround(o); this.done(); }); return; }
-    if (r < 0.46) return this.hug();
-    if (r < 0.58) return this.squabble();
-    if (r < 0.66) return this.chase();
-    if (r < 0.74) return this.dance();
-    if (r < 0.8) return this.kiss();
-    if (r < 0.9) return this.faceTalk();
-    if ((h >= 22 || h < 6) && r < 0.96) return this.nap();
-    this.walkTo(A, W * 0.36); this.walkTo(B, W * 0.62, false, () => this.done());
+    const wander = () => { const o = Math.random() < 0.5 ? A : B; this.walkTo(o, o.x + (Math.random() - 0.5) * W * 0.6, false, () => { if (Math.random() < 0.4) this.lookAround(o); this.done(); }); };
+    // Chaque scène a plus ou moins de chances d'arriver selon leurs personnalités.
+    const opts = [
+      [3, wander],
+      [0.8 + avg("tender") * 0.35, () => this.hug()],
+      [0.4 + avg("tender") * 0.2, () => this.kiss()],
+      [0.3 + avg("tease") * 0.3 + (4 - avg("mood")) * 0.15, () => this.squabble()],
+      [0.3 + avg("energy") * 0.25, () => this.chase()],
+      [0.4 + avg("mood") * 0.15 + avg("energy") * 0.1, () => this.dance()],
+      [1.2, () => this.faceTalk()],
+      [this.shyDuo() ? 2 : 0, () => this.banter()],
+      [this.most("energy", 3) ? 0.7 : 0, () => this.zoomies()],
+      [this.least("soc", 1) ? 0.6 : 0, () => this.shyMoment()],
+      [this.least("brave", 1) ? 0.6 : 0, () => this.scare()],
+      [night ? 1 + (4 - avg("energy")) * 0.2 : (4 - avg("energy")) * 0.12, () => this.nap()],
+      ...Jeu.emotes().map(id => [0.6, () => (id === "disco" ? this.disco() : this.pillows())])
+    ];
+    let r = Math.random() * opts.reduce((n, o) => n + o[0], 0);
+    for (const [w, f] of opts) { if ((r -= w) <= 0) return f(); }
+    wander();
+  },
+  hug() {
+    this.meet(27, (L, R) => {
+      this.mood([L, R], "happy", true); L.tilt = R.tilt = 10;
+      const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
+      setTimeout(() => this.hearts(mid, 5), 1100);
+      { const k = pickOne(["a", "b"]); this.say(k, lineFor(k, "hug", HUG_LINES), 2400); }
+      [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
+      setTimeout(() => [L, R].forEach(o => o.el.classList.remove("blush")), 2700);
+      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 2700);
+    });
+  },
+  kiss() {
+    this.meet(29, (L, R) => {
+      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7;
+      this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); { const k = pickOne(["a", "b"]); this.say(k, lineFor(k, "kiss", KISS_LINES), 1800); }
+      [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
+      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
+    });
+  },
+  // Le plus taquin lance la chamaillerie ; plus ils sont soupe au lait, plus la réconciliation se fait attendre.
+  squabble() {
+    this.meet(30, (L, R) => {
+      const first = trait(L.k, "tease") === trait(R.k, "tease") ? (Math.random() < 0.5 ? L : R) : trait(L.k, "tease") > trait(R.k, "tease") ? L : R, second = first === L ? R : L;
+      const teasing = trait(first.k, "tease") >= 3, pair = pickOne(teasing ? TEASE_SQUABBLES : SQUABBLES);
+      const angry = trait(L.k, "mood") + trait(R.k, "mood"), long = angry <= 2;
+      this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
+      this.say(first.k, pair[0], 1500);
+      setTimeout(() => this.say(second.k, pair[1], 1500), 1100);
+      setTimeout(() => this.cloud((L.x + R.x) / 2, long ? 2600 : 1500), 1900);
+      setTimeout(() => {
+        this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
+        if (Math.random() < 0.3 + angry * 0.06) {
+          const peace = trait(first.k, "mood") <= trait(second.k, "mood") ? second : first;
+          this.mood([L, R], "happy", true);
+          this.say(peace.k, pickOne(teasing && peace === first ? ["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, c'est toi la star."] : PEACE_LINES), 2200);
+          this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 4);
+          setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 1800);
+        } else this.chase(second, first);
+      }, long ? 4600 : 3500);
+    });
+  },
+  // Le personnage le plus marqué sur un trait (au moins min), ou le moins marqué (au plus max).
+  most(id, min) { const [x] = [this.b.a, this.b.b].sort((p, q) => trait(q.k, id) - trait(p.k, id) || Math.random() - 0.5); return trait(x.k, id) >= min ? x : null; },
+  least(id, max) { const [x] = [this.b.a, this.b.b].sort((p, q) => trait(p.k, id) - trait(q.k, id) || Math.random() - 0.5); return trait(x.k, id) <= max ? x : null; },
+  shyDuo() { const T = this.least("soc", 1), O = T && this.b[other(T.k)]; return O && trait(O.k, "soc") >= 3 ? [T, O] : null; },
+  banter() {
+    const duo = this.shyDuo(); if (!duo) return this.faceTalk();
+    const [T, F] = duo, A = this.b.a, B = this.b.b;
+    A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
+    const shyFirst = Math.random() < 0.6, [l1, l2] = pickOne(withTic(shyFirst ? SHY_TO_BOLD : BOLD_TO_SHY, F.k));
+    const first = shyFirst ? T : F, second = shyFirst ? F : T;
+    T.el.classList.add("blush", "shy");
+    this.say(first.k, l1, 2800); if (first === F) this.hop(F);
+    setTimeout(() => {
+      this.say(second.k, l2, 3000);
+      if (second === F) { this.spin(F); this.hearts(F.x, 3, 16); } else { T.face *= -1; setTimeout(() => { T.face *= -1; }, 900); this.hearts(T.x, 3, 16); }
+    }, 3000);
+    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 6400);
+  },
+  zoomies() {
+    const F = this.most("energy", 3); if (!F) return this.done();
+    const T = this.b[other(F.k)], W = this.W();
+    this.say(F.k, avOf(F.k).tics.length && Math.random() < 0.5 ? pickOne(avOf(F.k).tics) : pickOne(["Trop de bonheur, je dois courir !", "Je dois courir !", "Attrape-moi si tu peux !"]), 2000);
+    this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => {
+      this.spin(F); T.face = F.x > T.x ? 1 : -1;
+      const shy = trait(T.k, "soc") <= 1, calm = trait(T.k, "energy") <= 1;
+      if (shy) T.el.classList.add("blush"); T.el.classList.add("happy");
+      this.say(T.k, pickOne(shy ? ["Hihi… quelle énergie.", "*regarde avec des cœurs dans les yeux*", "Reviens… j'ai le tournis."] : calm ? ["Moi, je reste là. Bon courage.", "*bâille en regardant la course*"] : ["Quelle énergie !", "Attends-moi !", "Tu vas t'épuiser !"]), 2600);
+      this.hearts(T.x, 3, 16);
+      setTimeout(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 2700);
+    }));
+  },
+  shyMoment() {
+    const T = this.least("soc", 1); if (!T) return this.done();
+    const F = this.b[other(T.k)];
+    T.el.classList.add("blush", "shy"); T.face = F.x > T.x ? 1 : -1;
+    this.say(T.k, pickOne(TRAIT_LINES.soc.lo.solo), 2400);
+    setTimeout(() => {
+      F.face = T.x > F.x ? 1 : -1; this.hop(F);
+      this.say(F.k, pickOne(trait(F.k, "tease") >= 3 ? ["Tu rougis ! Tu rougis !", "Je l'ai vu, ce sourire."] : trait(F.k, "tender") >= 3 || trait(F.k, "soc") >= 3 ? ["Adorable !!", "Ce rire… je fonds.", "Arrête, je fonds."] : ["C'est mignon.", "Viens là, toi."]), 2400);
+      this.hearts(F.x, 3, 14);
+    }, 2500);
+    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 5200);
+  },
+  // Un bruit fait peur au plus peureux : il court se cacher, l'autre le rassure (ou panique aussi).
+  scare() {
+    const P = this.least("brave", 1); if (!P) return this.done();
+    const O = this.b[other(P.k)], W = this.W();
+    this.spawn("fx-note", "!", P.x + 10, 0, 1200);
+    P.el.classList.add("shiver");
+    this.say(P.k, pickOne(["C'était quoi, ce bruit ?!", "AAAH ! Une araignée !", "Il y a quelque chose qui bouge…"]), 1800);
+    setTimeout(() => this.walkTo(P, O.x + (O.x > W / 2 ? 22 : -22), true, () => {
+      P.face = O.x > P.x ? 1 : -1; O.face = -P.face;
+      const ob = trait(O.k, "brave");
+      if (ob <= 1) {
+        O.el.classList.add("shiver"); this.say(O.k, pickOne(["AAAH ! …c'était quoi ?", "On court ?"]), 1600);
+        setTimeout(() => { const edge = O.x > W / 2 ? 28 : W - 28; this.walkTo(O, edge, true); this.walkTo(P, edge + (edge < W / 2 ? 30 : -30), true, () => { [O, P].forEach(o => o.el.classList.remove("shiver")); this.say(P.k, "…C'était juste le frigo.", 2200); this.hearts((O.x + P.x) / 2, 3); setTimeout(() => this.done(), 2200); }); }, 1500);
+        return;
+      }
+      this.say(O.k, pickOne(ob >= 3 ? ["Pas de panique, je suis là.", "Je m'en occupe !", "Je te protège."] : ["C'est juste le vent.", "Ce n'est rien, viens là."]), 2400);
+      if (ob >= 3) this.hop(O);
+      setTimeout(() => { P.el.classList.remove("shiver"); this.mood([P, O], "happy", true); this.hearts((O.x + P.x) / 2, 4); }, 1600);
+      setTimeout(() => { this.mood([P, O], "happy", false); this.apart(P.x < O.x ? P : O, P.x < O.x ? O : P, () => this.done()); }, 3600);
+    }), 700);
+  },
+  // Quête réussie, succès, achat : les deux fêtent ça.
+  cheer() {
+    if (!this.el || this.el.hidden) return;
+    ["a", "b"].forEach((k, i) => setTimeout(() => { this.hop(this.b[k]); this.hearts(this.b[k].x, 3, 20); }, i * 220));
+    const k = pickOne(["a", "b"]);
+    this.say(k, lineFor(k, "cheer", CHEERS), 2400);
+  },
+  // Aperçu dans l'éditeur : le personnage essaie sa nouvelle personnalité.
+  preview(k) {
+    if (!this.el || this.el.hidden || !this.b[k]) return;
+    this.hop(this.b[k]);
+    this.say(k, lineFor(k, "solo", null) || pickOne(BUDDY_LINES.all).replace(/\{o\}/g, nm(other(k))), 2800);
+  },
+  nap() {
+    const o = this.least("energy", 4);
+    o.el.classList.add("sleep", "happy"); this.say(o.k, "Zzz…", 4200);
+    setTimeout(() => { o.el.classList.remove("sleep", "happy"); this.done(); }, 4600);
   },
   // Les deux se rejoignent au milieu, face à face.
   meet(gap, cb) {
@@ -3307,40 +3578,6 @@ const Buddies = {
   },
   apart(L, R, cb) { this.walkTo(L, L.x - 24 - Math.random() * 40); this.walkTo(R, R.x + 24 + Math.random() * 40, false, cb); },
   mood(list, cls, on) { list.forEach(o => o.el.classList.toggle(cls, on)); },
-  hug() {
-    this.meet(27, (L, R) => {
-      this.mood([L, R], "happy", true); L.tilt = R.tilt = 10;
-      const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
-      setTimeout(() => this.hearts(mid, 5), 1100);
-      { const k = pickOne(["a", "b"]); this.say(k, pickOne(persoLines(k, "hug", HUG_LINES)), 2400); }
-      [L, R].forEach(o => { if (avOf(o.k).perso === "timide") o.el.classList.add("blush"); });
-      setTimeout(() => [L, R].forEach(o => o.el.classList.remove("blush")), 2700);
-      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 2700);
-    });
-  },
-  kiss() {
-    this.meet(29, (L, R) => {
-      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7;
-      this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); { const k = pickOne(["a", "b"]); this.say(k, pickOne(persoLines(k, "kiss", KISS_LINES)), 1800); }
-      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
-    });
-  },
-  squabble() {
-    this.meet(30, (L, R) => {
-      const F = this.persoOf("fou"), duo = F && this.persoOf("timide");
-      const pair = pickOne(duo ? CRAZY_SQUABBLES : SQUABBLES), first = duo ? F : Math.random() < 0.5 ? L : R, second = first === L ? R : L;
-      this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
-      this.say(first.k, pair[0], 1500);
-      setTimeout(() => this.say(second.k, pair[1], 1500), 1100);
-      setTimeout(() => this.cloud((L.x + R.x) / 2, 1500), 1900);
-      setTimeout(() => {
-        this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
-        if (Math.random() < 0.5) { this.mood([L, R], "happy", true); if (duo) this.say(first.k, pickOne(["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, c'est toi la plus belle."]), 2200); else this.say(pickOne(["a", "b"]), pickOne(PEACE_LINES), 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 4);
-          setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 1800); }
-        else this.chase(second, first);
-      }, 3500);
-    });
-  },
   chase(runner, chaser) {
     const A = this.b.a, B = this.b.b, W = this.W();
     if (!runner) { runner = Math.random() < 0.5 ? A : B; chaser = runner === A ? B : A; }
@@ -3362,7 +3599,6 @@ const Buddies = {
       setTimeout(() => { L.face = 1; R.face = -1; this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2300);
     });
   },
-  persoOf(p) { return Object.values(this.b).find(o => avOf(o.k).perso === p) || null; },
   // Émotes de la boutique.
   pillows() {
     this.meet(34, (L, R) => {
@@ -3387,43 +3623,6 @@ const Buddies = {
       setTimeout(() => { this.el.classList.remove("disco"); L.face = 1; R.face = -1; this.hearts((L.x + R.x) / 2, 5); this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2800);
     });
   },
-  // Quête réussie, succès, achat : les deux fêtent ça.
-  cheer() {
-    if (!this.el || this.el.hidden) return;
-    ["a", "b"].forEach((k, i) => setTimeout(() => { this.hop(this.b[k]); this.hearts(this.b[k].x, 3, 20); }, i * 220));
-    const k = pickOne(["a", "b"]);
-    this.say(k, pickOne(CHEERS[avOf(k).perso] || CHEERS.classique), 2400);
-  },
-  banter() {
-    const F = this.persoOf("fou"), T = this.persoOf("timide"), A = this.b.a, B = this.b.b;
-    A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
-    const shyFirst = Math.random() < 0.6, [l1, l2] = pickOne(shyFirst ? SHY_TO_CRAZY : CRAZY_TO_SHY);
-    const first = shyFirst ? T : F, second = shyFirst ? F : T;
-    T.el.classList.add("blush", "shy");
-    this.say(first.k, l1, 2800); if (first === F) this.hop(F);
-    setTimeout(() => {
-      this.say(second.k, l2, 3000);
-      if (second === F) { this.spin(F); this.hearts(F.x, 3, 16); } else { T.face *= -1; setTimeout(() => { T.face *= -1; }, 900); this.hearts(T.x, 3, 16); }
-    }, 3000);
-    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 6400);
-  },
-  zoomies() {
-    const F = this.persoOf("fou"), T = this.persoOf("timide"), W = this.W();
-    this.say(F.k, pickOne(["J'aime troooow !", "Je suis trop heureux, je dois courir !"]), 2000);
-    this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => {
-      this.spin(F); T.el.classList.add("blush", "happy"); T.face = F.x > T.x ? 1 : -1;
-      this.say(T.k, pickOne(["Hihi… il est fou.", "*le regarde avec des cœurs dans les yeux*", "Reviens… j'ai le tournis."]), 2600);
-      this.hearts(T.x, 3, 16);
-      setTimeout(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 2700);
-    }));
-  },
-  shyMoment() {
-    const F = this.persoOf("fou"), T = this.persoOf("timide");
-    T.el.classList.add("blush", "shy"); T.face = F.x > T.x ? 1 : -1;
-    this.say(T.k, pickOne(PERSO.timide.solo), 2400);
-    setTimeout(() => { F.face = T.x > F.x ? 1 : -1; this.hop(F); this.say(F.k, pickOne(["Trop mignonne !!", "Ce rire… j'aime troooow.", "Arrête, je fonds."]), 2400); this.hearts(F.x, 3, 14); }, 2500);
-    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 5200);
-  },
   spin(o) { o.el.classList.remove("spin"); void o.el.offsetWidth; o.el.classList.add("spin"); },
   faceTalk() {
     const A = this.b.a, B = this.b.b, k = Math.random() < 0.5 ? "a" : "b";
@@ -3431,11 +3630,6 @@ const Buddies = {
     this.say(k, buddyLine(k), 2600);
     setTimeout(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
     setTimeout(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5300);
-  },
-  nap() {
-    const o = Math.random() < 0.5 ? this.b.a : this.b.b;
-    o.el.classList.add("sleep", "happy"); this.say(o.k, "Zzz…", 4200);
-    setTimeout(() => { o.el.classList.remove("sleep", "happy"); this.done(); }, 4600);
   },
   lookAround(o) { setTimeout(() => { o.face *= -1; }, 400); setTimeout(() => { o.face *= -1; }, 1300); },
   hop(o) { o.el.classList.remove("hop"); void o.el.offsetWidth; o.el.classList.add("hop"); },
@@ -3469,7 +3663,13 @@ const Buddies = {
     if (this.el && !this.el.hidden && !document.hidden && !this.busy) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
     setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
   },
-  poke(k) { this.hop(this.b[k]); this.hearts(this.b[k].x, 1, 10); this.say(k, pickOne(persoLines(k, "poke", POKE_LINES)), 2600); if (avOf(k).perso === "fou") this.spin(this.b[k]); }
+  poke(k) {
+    const o = this.b[k];
+    this.hop(o); this.hearts(o.x, 1, 10); this.say(k, lineFor(k, "poke", POKE_LINES), 2600);
+    if (trait(k, "energy") >= 3 || trait(k, "humor") >= 3) this.spin(o);
+    const face = trait(k, "mood") === 0 ? "grr" : trait(k, "mood") >= 3 ? "happy" : trait(k, "soc") <= 1 ? "blush" : "";
+    if (face) { o.el.classList.add(face); setTimeout(() => o.el.classList.remove(face), 1200); }
+  }
 };
 
 /* ───────────────────────── Quêtes, cœurs, boutique et succès ─────────────────────────
@@ -3536,7 +3736,7 @@ const ACH = [
 ];
 const YJ_LINES = ["Yassen Jr. se tortille de joie.", "Yassen Jr. fait une pirouette pour vous.", "Yassen Jr. vous trouve trop mignons.", "Yassen Jr. réclame un câlin à trois.", "Yassen Jr. brille un peu plus fort."];
 const YJ_SLEEPY = ["Yassen Jr. ronronne dans son sommeil.", "Chut… Yassen Jr. rêve de vous deux.", "Yassen Jr. ouvre un œil, sourit, et se rendort."];
-const CHEERS = { fou: ["ON EST LES MEILLEURS !", "J'aime troooow les quêtes !"], timide: ["Hihi… bien joué.", "On est une bonne équipe…"], classique: ["Bravo nous !", "Yassen Jr. est content !"] };
+const CHEERS = ["Bravo nous !", "Yassen Jr. est content !", "Trop forts !"];
 
 // Les gains s'affichent en haut de l'écran, pour ne pas cacher le message de l'action qui les a rapportés.
 function gainToast(msg) {
@@ -3684,7 +3884,7 @@ function yassenCard() {
     <div class="yj-info"><p class="sec" id="h-yj">Yassen Jr.</p><p class="yj-stage">${esc(fr(STAGE_NAMES[st]))}</p>
       <div class="bar"><i style="width:${pct}%"></i></div>
       <p class="small muted">${d} jour${d > 1 ? "s" : ""} ensemble${next != null ? ` · encore ${next - d} pour grandir` : " · stade maximal"}</p>
-      ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Il fait la sieste. Une quête le réveillera."))}</p>` : ""}</div>
+      ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Yassen Jr. se repose. Il vous attend tranquillement, sans rien vous demander."))}</p>` : ""}</div>
     <p class="yj-dedi">À la mémoire de Yassen Jr., montrons-lui que ses parents s'aiment vraiment.</p>
     <div class="quests">${qs.map(q => `<div class="quest${done[q.id] ? " ok" : ""}"><span class="qcheck" aria-hidden="true">${done[q.id] ? "✓" : ""}</span><span class="qtxt">${esc(fr(q.label))}</span><b>+${q.reward}</b></div>`).join("")}
       <p class="small muted">${qs.every(q => done[q.id]) ? "Les 3 quêtes sont faites. Bravo !" : `Les 3 quêtes du jour rapportent ${QUEST_BONUS} cœurs en bonus.`}</p></div>
@@ -3724,7 +3924,7 @@ function tresorsView() {
     body = `<div class="stack"><h2 class="sec">Les quêtes du jour</h2><div class="quests">${qs.map(q => `<div class="quest${done[q.id] ? " ok" : ""}"><span class="qcheck" aria-hidden="true">${done[q.id] ? "✓" : ""}</span><span class="qtxt">${esc(fr(q.label))}</span><b>+${q.reward}</b></div>`).join("")}</div>
       <p class="small muted">${esc(fr(`Elles se valident toutes seules quand vous jouez, sur l'un ou l'autre téléphone. Les 3 ensemble rapportent ${QUEST_BONUS} cœurs en bonus. De nouvelles quêtes arrivent chaque jour à minuit.`))}</p></div>
       <div class="stack"><h2 class="sec">Yassen Jr. grandit avec vous</h2><div class="stages">${STAGE_NAMES.map((n, i) => `<div class="stage-row${i > st ? " locked" : ""}">${yassenSvg(i, false)}<span><b>${esc(fr(n))}</b><br><span class="small muted">${STAGE_DAYS[i] ? `Après ${STAGE_DAYS[i]} jour${STAGE_DAYS[i] > 1 ? "s" : ""} ensemble` : "Au tout début"}${i === 4 ? " · débloque une histoire secrète" : i === 5 ? " · débloque une lettre de Yassen Jr." : ""}</span></span>${i <= st ? `<span class="badge">✓</span>` : ""}</div>`).join("")}</div>
-      <p class="small muted">${esc(fr(`Un jour compte dès que l'un de vous fait quelque chose dans l'appli. Vous en êtes à ${d}. Les jours sans activité, Yassen Jr. fait juste la sieste : il ne disparaît jamais.`))}</p></div>`;
+      <p class="small muted">${esc(fr(`Un jour compte dès que l'un de vous fait quelque chose dans l'appli. Vous en êtes à ${d}. Les autres jours, Yassen Jr. se repose tranquillement : il ne disparaît jamais.`))}</p></div>`;
   } else if (seg === "boutique") {
     const cat = S.shopCat || "outfit", who = S.shopWho === "b" ? "b" : "a", wearable = ["outfit", "hat", "pet"].includes(cat);
     const items = SHOP.filter(i => i.slot === cat);
@@ -4049,12 +4249,17 @@ const ACT = {
   "buddies"(d) { lsSet("entre-nous:buddies", d.v); },
   "music"() { Music.toggle(visibleStoryTheme()); },
   "av-who"(d) { S.avWho = d.v; },
-  "av-set"(d) {
-    const who = S.avWho === "b" ? "b" : "a", cur = { a: avOf("a"), b: avOf("b") };
-    cur[who][d.k] = ["skin", "hairColor", "top"].includes(d.k) ? +d.v : d.v;
-    Store.setMeta("avatars", cur);
-    setTimeout(() => Buddies.react(who), 0);
+  "av-set"(d) { const who = avWho(); avPatch(who, { [d.k]: ["skin", "hairColor", "top"].includes(d.k) ? +d.v : d.v }); setTimeout(() => Buddies.react(who), 0); },
+  "av-trait"(d) { const who = avWho(); if (persoLocked(who)) return; avPatch(who, { ["traits/" + d.k]: +d.v }); setTimeout(() => Buddies.preview(who), 60); },
+  "av-preset"(d) { const who = avWho(), p = PRESETS.find(x => x[0] === d.v); if (!p || persoLocked(who)) return; avPatch(who, { traits: { ...p[2] } }); setTimeout(() => Buddies.preview(who), 60); },
+  "av-tics"() {
+    const who = avWho(); if (persoLocked(who)) return;
+    const ids = [0, 1, 2].map(i => `av-tic-${who}-${i}`), tics = ids.map((id, i) => draft(id, avOf(who).tics[i] || "").trim().slice(0, 60)).filter(Boolean);
+    clearDrafts(...ids); avPatch(who, { tics: tics.length ? tics : [""] });
+    toast(tics.length ? "Phrases fétiches enregistrées" : "Plus de phrases fétiches"); setTimeout(() => Buddies.preview(who), 60);
   },
+  "av-mine"(d) { if (d.v) lsSet("entre-nous:me", d.v); S.avWho = whoAmI() || "a"; S.layer = { type: "sheet", name: "avatars" }; },
+  "av-later"() { lsSet("entre-nous:avinvite", "0"); },
   "st-open"(d) {
     if (!STORY[d.id] || (STORY[d.id].secret && Jeu.stage() < 4)) return;
     if (S.storyStyle === "distance" && Store.backend === "shared" && !S.story) { startLiveStory(d.id); return; }
