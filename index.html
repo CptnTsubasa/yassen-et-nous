@@ -2335,7 +2335,7 @@ const AV = {
   skin: ["#F9DCC8", "#F0C29F", "#D9A27C", "#B67B56", "#8C5A3C", "#5E3D2A"],
   hairColor: ["#2A1E1B", "#5B3A24", "#8A5530", "#D8A85C", "#B4512E", "#D9D2CA", "#C2679C"],
   top: ["#5E8BD9", "#E07A8E", "#6DBE9B", "#F2B544", "#9B7BD6", "#3A3346", "#F4EFE9", "#E8845C"],
-  hair: [["court", "Court"], ["frange", "Frange"], ["boucles", "Bouclés"], ["carre", "Carré"], ["long", "Longs"], ["queue", "Queue de cheval"], ["chignon", "Chignon"], ["rase", "Rasé"]],
+  hair: [["court", "Court"], ["frange", "Frange"], ["boucles", "Bouclés"], ["ondules", "Ondulés"], ["carre", "Carré"], ["long", "Longs"], ["queue", "Queue de cheval"], ["chignon", "Chignon"], ["rase", "Rasé"]],
   acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["casquette", "Casquette"], ["beret", "Béret"], ["fleur", "Fleur"], ["oreilles", "Boucles d'oreilles"]]
 };
 const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur" } };
@@ -2352,9 +2352,11 @@ function avatarSvg(k) {
   const curls = [[28, 36], [36, 26], [47, 21], [58, 22], [68, 28], [74, 38], [24, 46], [77, 46]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${hc}"/>`).join("");
   const back = { long: `<path d="M22 46C20 16 80 16 78 46L82 104Q50 114 18 104Z" fill="${hc}"/>`, carre: `<path d="M21 46C21 17 79 17 79 46L80 74Q50 82 20 74Z" fill="${hc}"/>`,
     queue: `<path d="M72 30q24 8 14 46q-6 -16 -18 -26z" fill="${hc}"/>`, chignon: `<circle cx="50" cy="15" r="11" fill="${hc}"/>`,
-    boucles: `<circle cx="22" cy="60" r="8" fill="${hc}"/><circle cx="78" cy="60" r="8" fill="${hc}"/>` }[a.hair] || "";
+    boucles: `<circle cx="22" cy="60" r="8" fill="${hc}"/><circle cx="78" cy="60" r="8" fill="${hc}"/>`,
+    ondules: `<path d="M22 46C20 18 80 18 78 46Q85 57 78 67Q85 79 76 89Q66 98 58 91Q50 99 42 91Q34 98 24 89Q15 79 22 67Q15 57 22 46Z" fill="${hc}"/>` }[a.hair] || "";
   const front = { court: cap, frange: cap + `<path d="M27 40C32 26 46 22 58 24C68 26 74 32 75 42C66 36 62 38 56 34C50 40 40 38 34 36C31 38 29 40 27 40Z" fill="${hc}"/>`,
-    boucles: curls, carre: cap + sides, long: cap + sides, queue: cap, chignon: cap, rase: `<g opacity=".45">${cap}</g>` }[a.hair];
+    boucles: curls, carre: cap + sides,
+    ondules: `<path d="M24 46C24 22 38 16 50 16C64 16 77 24 76 46C72 40 68 36 63 38C58 32 52 36 48 33C43 37 37 34 33 39C29 38 26 42 24 46Z" fill="${hc}"/><path d="M24 46C21 56 27 62 23 70C21 76 26 80 29 78C27 72 31 66 28 58C27 52 29 48 30 44ZM76 46C79 56 73 62 77 70C79 76 74 80 71 78C73 72 69 66 72 58C73 52 71 48 70 44Z" fill="${hc}"/>`, long: cap + sides, queue: cap, chignon: cap, rase: `<g opacity=".45">${cap}</g>` }[a.hair];
   const acc = { lunettes: `<g fill="none" stroke="#2B1E2F" stroke-width="1.8"><circle cx="40.5" cy="50" r="6.5"/><circle cx="59.5" cy="50" r="6.5"/><path d="M47 50h6M34 49l-8-2M66 49l8-2"/></g>`,
     casquette: `<path d="M23 42C23 22 38 15 50 15C64 15 77 23 77 42Z" fill="#3A3346"/><path d="M50 40Q74 35 92 42Q72 47 50 44Z" fill="#3A3346"/>`,
     beret: `<ellipse cx="45" cy="22" rx="25" ry="8" fill="#C23B4E" transform="rotate(-12 45 22)"/><circle cx="47" cy="13" r="2.4" fill="#C23B4E"/>`,
