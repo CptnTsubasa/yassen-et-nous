@@ -5096,7 +5096,7 @@ const CX_IDEAS = ["On se rencontre pour la première fois dans un train de nuit"
 
 // App Check prouve à Google que les demandes viennent bien de ce site (obligatoire pour l'IA à partir du 2 novembre 2026).
 // La clé du site reCAPTCHA v3 est publique par nature ; la clé secrète reste dans la console Firebase.
-const APPCHECK_SITE_KEY = "";
+const APPCHECK_SITE_KEY = "6Leta_gtAAAAAELfFwPvU9yqXCUvBIGTSuZOwx3l";
 // L'IA : Gemini par Firebase AI Logic. Son SDK est chargé à part, à la demande.
 const AI = {
   ver: "12.0.0", models: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"], mi: 0, state: "",
@@ -5113,30 +5113,41 @@ const AI = {
   },
   // Après un échec, on laisse l'IA tranquille un moment au lieu de la réessayer à chaque étape.
   ready() { return this.state !== "off" && this.state !== "appcheck" && !(this.cool > Date.now()); },
+  // Bouton « Continuer sans attendre » : on lâche la demande en cours et le générateur prend le relais.
+  skip() { if (this.giveUp) this.giveUp(new Error("abandon")); },
   async json(prompt) {
     let ai;
     try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
-    let last;
-    while (this.mi < this.models.length) {
-      try {
-        const m = this.M.getGenerativeModel(ai, { model: this.models[this.mi], systemInstruction: CX_SYSTEM, generationConfig: { responseMimeType: "application/json", temperature: 1, maxOutputTokens: 4096 } });
-        const r = await Promise.race([m.generateContent(prompt), new Promise((_, no) => setTimeout(() => no(new Error("délai dépassé")), 60000))]);
-        const out = parseJsonLoose(r.response.text());
-        if (!out) throw new Error("réponse illisible");
-        this.state = "ok";
-        return out;
-      } catch (e) {
-        last = e;
-        // Modèle retiré ou inconnu : on prend celui que Google recommande, sinon le suivant. Toute autre erreur remonte.
-        const msg = String(e && e.message);
-        if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) {
-          const rec = /use (?:models\/)?(gemini-[\w.-]+)/i.exec(msg);
-          if (rec && !this.models.includes(rec[1])) this.models.splice(this.mi + 1, 0, rec[1]);
-          this.mi++; continue;
+    const stop = new Promise((_, no) => { this.giveUp = no; });
+    let last, busyTries = 0;
+    try {
+      while (this.mi < this.models.length) {
+        try {
+          // Réflexion réduite au minimum : les réponses arrivent bien plus vite.
+          const cfg = { responseMimeType: "application/json", temperature: 1, maxOutputTokens: 4096, ...(this.noThink ? {} : { thinkingConfig: { thinkingLevel: "low" } }) };
+          const m = this.M.getGenerativeModel(ai, { model: this.models[this.mi], systemInstruction: CX_SYSTEM, generationConfig: cfg });
+          const r = await Promise.race([m.generateContent(prompt), stop, new Promise((_, no) => setTimeout(() => no(new Error("délai dépassé")), 150000))]);
+          const out = parseJsonLoose(r.response.text());
+          if (!out) throw new Error("réponse illisible");
+          this.state = "ok";
+          return out;
+        } catch (e) {
+          last = e;
+          const msg = String(e && e.message);
+          if (msg === "abandon") throw e;
+          if (/thinking/i.test(msg) && !this.noThink) { this.noThink = true; continue; }
+          // Google surchargé : on patiente un peu et on réessaie, deux fois au plus.
+          if (/high demand|overloaded|unavailable|try again|\b50[03]\b|internal/i.test(msg) && busyTries++ < 2) { await Promise.race([new Promise(ok => setTimeout(ok, 4000 * busyTries)), stop]); continue; }
+          // Modèle retiré ou inconnu : on prend celui que Google recommande, sinon le suivant. Toute autre erreur remonte.
+          if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) {
+            const rec = /use (?:models\/)?(gemini-[\w.-]+)/i.exec(msg);
+            if (rec && !this.models.includes(rec[1])) this.models.splice(this.mi + 1, 0, rec[1]);
+            this.mi++; continue;
+          }
+          break;
         }
-        break;
       }
-    }
+    } finally { this.giveUp = null; }
     const why = String(last && (last.code || "") + " " + (last && last.message));
     this.state = /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
     if (this.state === "err") this.cool = Date.now() + 60000;
@@ -5544,8 +5555,16 @@ function cxAiPill() {
     <p class="small muted">${esc(fr("En attendant, le générateur intégré écrit vos histoires avec vos prénoms, votre contexte et vos détails. Les textes envoyés à l'IA passent par Google."))}</p>`}</div>` : ""}`;
 }
 function cxLoader(msg) {
+  const slow = S.cx && S.cx.slow;
   return `<div class="cx-loader" role="status"><div class="quill" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M40 6C24 8 14 18 10 34l-2 8 6-5c14-2 24-12 26-31z" fill="var(--m4)" stroke="var(--i4)" stroke-width="2" stroke-linejoin="round"/><path d="M10 40L28 18" stroke="var(--i4)" stroke-width="2" stroke-linecap="round"/></svg></div>
-    <p>${esc(fr(msg))}<span class="dots"><i>.</i><i>.</i><i>.</i></span></p><div class="sk"><i></i><i></i><i style="width:70%"></i></div></div>`;
+    <p>${esc(fr(msg))}<span class="dots"><i>.</i><i>.</i><i>.</i></span></p><div class="sk"><i></i><i></i><i style="width:70%"></i></div>
+    ${slow ? `<p class="small muted">${esc(fr("L'IA est très demandée en ce moment, elle prend son temps…"))}</p><button class="btn ghost" data-a="cx-skip">Continuer sans attendre</button>` : ""}</div>`;
+}
+// Après 15 secondes d'attente, on propose de continuer avec le générateur intégré.
+function cxWatchSlow() {
+  const t = S.cx.waitId = uid();
+  S.cx.slow = false;
+  setTimeout(() => { if (S.cx.busy && S.cx.waitId === t) { S.cx.slow = true; if (S.layer && S.layer.type === "conte") render(true); } }, 15000);
 }
 function cxStage(sc, st) {
   const on = Music.on();
@@ -5710,7 +5729,7 @@ function cxSave(st) {
 async function cxGenerate(outcome) {
   const base = cxStory(); if (!base || S.cx.busy) return;
   const n = cxSteps(base).length;
-  S.cx.busy = true; S.cx.err = ""; S.cx.busyMsg = n ? "La suite s'écrit" : "L'histoire commence à s'écrire"; render(true);
+  S.cx.busy = true; S.cx.err = ""; S.cx.busyMsg = n ? "La suite s'écrit" : "L'histoire commence à s'écrire"; cxWatchSlow(); render(true);
   let res;
   try { res = await cxNextStep(cxCopy(base), outcome); } catch (e) { res = null; }
   S.cx.busy = false;
@@ -5745,9 +5764,10 @@ const CX_ACT = {
   "cx-set"(d) { if (d.k === "yassen") S.cx.yassen = !!d.v; else if (d.k === "mode") S.cx.mode = d.v === "rpg" ? "rpg" : "conte"; else if (d.k === "genre" && CX_GENRES[d.v]) S.cx.genre = d.v; else if (d.k === "length" && CX_LENGTHS[d.v]) S.cx.length = d.v; },
   "cx-idea"(d) { S.drafts["cx-ctx"] = fr(CX_IDEAS[+d.i] || ""); },
   "cx-aihelp"() { S.cx.help = !S.cx.help; },
+  "cx-skip"() { AI.skip(); },
   async "cx-pitch"() {
     const cx = S.cx, o = { mode: cx.mode, genre: cx.genre, length: cx.length, context: draft("cx-ctx").trim().slice(0, 400), details: draft("cx-det").trim().slice(0, 500), yassen: cx.yassen !== false };
-    cx.opts = o; cx.view = "pitch"; cx.busy = true; render(true);
+    cx.opts = o; cx.view = "pitch"; cx.busy = true; cxWatchSlow(); render(true);
     const r = await cxPitches(o);
     cx.pitches = r.list; cx.pitchAi = r.ai; cx.busy = false;
     if (S.layer && S.layer.type === "conte") render(true);
