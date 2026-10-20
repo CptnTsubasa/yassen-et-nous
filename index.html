@@ -2095,6 +2095,61 @@ const STORIES = [
     fin_premierrang: { end: "Le premier rang", sc: "festival", t: "Vous dansez jusqu'à ne plus sentir vos pieds, couverts de confettis. Sur l'écran géant, la caméra s'attarde une seconde sur vous deux. Vous ne la voyez même pas." },
     fin_aube: { end: "Le lever du soleil", sc: "tournesols", t: "Le ciel passe du noir au rose. Le festival dort encore. Vous partagez la dernière gorgée d'eau et vous vous promettez de revenir l'an prochain, au même endroit." },
     fin_campement: { end: "La nuit au campement", sc: "camping", t: "Fausses notes, rires, couvertures partagées : la plus belle scène du festival, finalement, c'était celle-là. Vos amis jurent de ne plus jamais vous perdre de vue." }
+  } },
+  { id: "dragon", title: "La quête du dragon timide", mood: "Fantasy · aventure tendre", c: 3, start: "convoc", nodes: {
+    convoc: { sc: "chateau", t: "Royaume d'Ombrevert. Le roi, un petit homme à la couronne beaucoup trop grande, vous convoque en urgence : un dragon s'est installé sur la montagne, et depuis, plus personne n'ose sortir le soir. Il vous confie la mission, une carte froissée et deux épées… en bois. « Les vraies sont chez le forgeron. »",
+      ch: [["Partir tout de suite par la forêt", "foret"], ["Passer d'abord à la taverne pour glaner des infos", "taverne"]] },
+    taverne: { sc: "taverne", t: "À la taverne du Sanglier Rieur, un barde vous raconte que le dragon n'a jamais mangé personne : il soupire, très fort, toutes les nuits. Une marchande vous propose deux objets pour la route : une potion de courage, ou un luth magique qui apaise toutes les bêtes.",
+      talk: "Pour de vrai : face à un dragon, lequel de vous deux garderait son sang-froid ?",
+      ch: [["Prendre la potion de courage", "foret"], ["Prendre le luth magique", "luth"], ["Oublier la quête et rester danser à la taverne", "fin_taverne"]] },
+    foret: { sc: "foret", t: "La forêt d'Ombrevert scintille de champignons lumineux. Au détour d'un sentier, une fée minuscule vous barre la route : « Pour passer, répondez à mon énigme, ou dansez avec moi. Les deux me conviennent. »",
+      ch: [["Répondre à l'énigme", "enigme"], ["Danser avec la fée", "danse"]] },
+    enigme: { sc: "foret", t: "« Je n'ai pas de voix, et pourtant je dis tout. Je ne pèse rien, et pourtant je peux tout porter. Qui suis-je ? » {a} et {b} se regardent.",
+      talk: "Cherchez ensemble avant de choisir : qu'est-ce qui dit tout sans parler ?",
+      ch: [["« Un regard »", "grotte"], ["« Une lettre »", "grotte"], ["« Un dragon très discret »", "fee_rire"]] },
+    fee_rire: { sc: "foret", t: "La fée rit tellement qu'elle tombe de sa feuille. « Mauvaise réponse, mais excellente quand même ! » Pour vous remercier, elle vous montre un raccourci secret jusqu'à la grotte du dragon.",
+      ch: [["Suivre le raccourci", "grotte"]] },
+    danse: { sc: "foret", t: "Vous dansez une gigue improvisée au milieu des champignons. La fée applaudit, les lucioles vous suivent en rythme, et {b} découvre que {a} a un talent caché pour les pas de côté.",
+      talk: "Pour de vrai : qui de vous deux danse le mieux ? Et le plus mal ?",
+      ch: [["Remercier la fée et repartir", "grotte"]] },
+    luth: { sc: "foret", t: "Le luth à l'épaule, vous traversez la forêt. À chaque note, les loups s'assoient, les sangliers bâillent et un hibou bat la mesure. Vous arrivez devant la grotte suivis d'une petite troupe d'admirateurs.",
+      ch: [["Entrer dans la grotte en musique", "grotte_musique"]] },
+    grotte: { sc: "grotte", t: "Entre les cristaux, un énorme dragon vert vous regarde… et rougit jusqu'aux écailles. « Pardon pour les soupirs, dit-il d'une toute petite voix. Je voudrais inviter la dragonne de la montagne d'en face, mais je n'ose pas. »",
+      talk: "Pour de vrai : quel conseil donneriez-vous à quelqu'un de trop timide pour faire le premier pas ?",
+      ch: [["L'aider à écrire une déclaration", "declaration"], ["Lui organiser un rendez-vous surprise", "rdv"]] },
+    grotte_musique: { sc: "grotte", t: "Au son du luth, le dragon sort de l'ombre en se dandinant, les yeux humides. « C'est exactement la chanson que je voudrais chanter à la dragonne de la montagne d'en face, soupire-t-il. Mais je n'ose pas. »",
+      ch: [["Lui apprendre la chanson", "fin_serenade"], ["L'aider à écrire une déclaration", "declaration"]] },
+    declaration: { sc: "grotte", t: "Vous passez la nuit à trois sur une déclaration. Le dragon veut des rimes, {a} veut du sincère, {b} tient à glisser une blague. Le résultat tient sur un parchemin de trois mètres.",
+      ch: [["Aller la lire avec lui sous la fenêtre de la dragonne", "fin_balcon"]] },
+    rdv: { sc: "pont", t: "Vous organisez un pique-nique sur le pont de pierre, entre les deux montagnes, avec des lanternes et une énorme tarte aux pommes. Il ne reste qu'à décider qui fera les présentations.",
+      ch: [["{a} fait les présentations", "fin_pique"], ["{b} fait les présentations", "fin_pique"]] },
+    fin_taverne: { end: "La gigue du Sanglier Rieur", sc: "taverne", t: "Le barde vous dédie une chanson, toute la taverne danse, et au petit matin vous apprenez que le dragon est descendu… pour danser lui aussi. Quête accomplie, par accident." },
+    fin_serenade: { end: "La sérénade", sc: "dragonnuit", t: "Le dragon chante terriblement faux, mais avec tout son cœur. Sur la montagne d'en face, une lueur s'allume : la dragonne répond par un petit feu en forme de cœur. Le royaume dort enfin tranquille." },
+    fin_balcon: { end: "Le parchemin de trois mètres", sc: "chateaunuit", t: "La dragonne lit la déclaration jusqu'au bout, éclate de rire à la blague et accepte un rendez-vous. Le roi vous nomme « Chevaliers de l'Amour courtois », avec médaille en chocolat." },
+    fin_pique: { end: "Le pique-nique du pont de pierre", sc: "pont", t: "Les deux dragons partagent la tarte en rougissant. Vous rentrez au château à dos de dragon, au-dessus du royaume, au coucher du soleil. Pour une première quête, c'est une réussite." }
+  } },
+  { id: "grimoire", title: "Le grimoire de Mirabelle", mood: "Fantasy · fous rires", c: 8, start: "marche", nodes: {
+    marche: { sc: "marche", t: "Jour de foire au village de Pierrebrune. Entre un jongleur et un marchand de fromages qui sentent très fort, une vieille femme vous tend un grimoire poussiéreux : « Pour vous, mes tourtereaux. Gratuit. Mais surtout, ne lisez pas la page 12. »",
+      ch: [["Lire la page 12, évidemment", "page12"], ["Le rendre poliment et suivre le jongleur", "jongleur"]] },
+    jongleur: { sc: "marche", t: "Le jongleur vous entraîne dans un tournoi de lancer de tartes. Vous gagnez une couronne en carton… et la vieille femme réapparaît, vexée : « Vous avez oublié votre grimoire. » Il est revenu tout seul dans le sac de {a}.",
+      ch: [["Lire la page 12, cette fois", "page12"]] },
+    page12: { sc: "magie", t: "À peine la première ligne lue, un nuage violet vous enveloppe. Quand il se dissipe, {a} se retrouve dans le corps de {b}, et {b} dans celui de {a}. Le marchand de fromages en lâche son plateau.",
+      talk: "Pour de vrai : si vous échangiez vos corps pour une journée, quelle serait la première chose que vous feriez ?",
+      ch: [["Courir rattraper la vieille femme", "sorciere"], ["Profiter de la situation une heure ou deux", "echange"]] },
+    echange: { sc: "marche", t: "Une heure dans la peau de l'autre : sa démarche, ses manies, la vue à sa hauteur. {b} imite {a} un peu trop bien. {a} découvre que la tunique de {b} gratte affreusement.",
+      talk: "Pour de vrai : imitez l'autre pendant trente secondes. Avec tendresse.",
+      ch: [["Il est temps de trouver la sorcière", "sorciere"]] },
+    sorciere: { sc: "chaumiere", t: "Dans sa chaumière remplie de fioles, la sorcière Mirabelle éclate de rire. « Je vous avais prévenus ! Pour inverser le sort, il me faut la preuve que vous vous connaissez vraiment. » Elle sort trois flacons et une liste de questions.",
+      ch: [["Passer l'épreuve des questions", "epreuve"], ["Proposer plutôt de l'aider à ranger sa chaumière", "rangement"]] },
+    epreuve: { sc: "chaumiere", t: "Première question : « Quelle est la peur secrète de l'autre ? » Deuxième : « Son plat préféré les jours de pluie ? » Mirabelle note vos réponses avec une plume qui écrit toute seule.",
+      talk: "Faites l'épreuve pour de vrai : chacun répond pour l'autre, puis l'autre dit si c'est juste.",
+      ch: [["Toutes les réponses sont justes", "fin_retour"], ["Quelques erreurs… mais de bonne foi", "fin_moitie"]] },
+    rangement: { sc: "chaumiere", t: "Vous rangez les fioles, chassez les toiles d'araignée et nourrissez un chat qui parle (il se plaint beaucoup). Touchée, Mirabelle inverse le sort en un claquement de doigts, et vous propose un dernier cadeau.",
+      ch: [["Apprendre un vrai sortilège", "fin_sortilege"], ["Adopter le chat qui parle", "fin_chat"]] },
+    fin_retour: { end: "Chacun chez soi", sc: "village", t: "Un nuage rose, cette fois, et chacun retrouve son corps. Vous rentrez de la foire main dans la main, en vous connaissant un peu mieux qu'au réveil. Le grimoire, lui, a disparu." },
+    fin_moitie: { end: "Le sort à moitié", sc: "marche", t: "Le sort ne s'inverse qu'à moitié : vous retrouvez vos corps, mais vous gardez la voix de l'autre jusqu'au coucher du soleil. Toute la foire en parle encore." },
+    fin_sortilege: { end: "Le sortilège secret", sc: "magie", t: "Mirabelle vous apprend le seul sortilège qui compte vraiment : un mot à se dire quand l'un de vous deux a besoin de réconfort. Personne ne sait lequel. Sauf vous." },
+    fin_chat: { end: "Sire Moustache", sc: "chaumiere", t: "Vous repartez avec un chat qui parle et commente absolument tout. Il s'appelle Sire Moustache, il a un avis sur votre couple, et cet avis est très favorable." }
   } }
 ];
 const STORY = Object.fromEntries(STORIES.map(s => [s.id, s]));
@@ -2171,6 +2226,18 @@ const PROPS = {
   wood: () => Array.from({ length: 10 }, (_, i) => `<rect x="${i * 40}" y="0" width="40" height="170" fill="${i % 2 ? "#C98F63" : "#BD8358"}"/>`).join(""),
   snowwindow: () => `<rect x="250" y="40" width="100" height="80" rx="6" fill="#DCE8F7"/><rect x="250" y="40" width="100" height="80" rx="6" fill="none" stroke="#7A4E34" stroke-width="6"/><path d="M300 40V120M250 80H350" stroke="#7A4E34" stroke-width="4"/>` + [0, 1, 2, 3, 4].map(i => `<circle cx="${262 + i * 18}" cy="${54 + (i % 2) * 30}" r="2" fill="#FFFFFF"/>`).join(""),
   farstage: () => `<rect x="150" y="150" width="100" height="18" fill="#1C1428"/>` + [170, 200, 230].map((x, i) => `<path class="beam" style="animation-delay:-${i}s" d="M${x} 150L${x - 30} 40L${x + 30} 40Z" fill="${["#FF7AC8", "#7AD0FF", "#FFE07A"][i]}" opacity=".22"/>`).join(""),
+  castle: () => `<g fill="#B9A9CF"><rect x="120" y="76" width="160" height="96"/><rect x="98" y="54" width="40" height="118"/><rect x="262" y="54" width="40" height="118"/><rect x="180" y="38" width="40" height="134"/>` + [[98, 46], [114, 46], [130, 46], [262, 46], [278, 46], [294, 46], [120, 68], [140, 68], [240, 68], [260, 68]].map(([x, y]) => `<rect x="${x}" y="${y}" width="9" height="10"/>`).join("") + `</g><path d="M94 56L118 22L142 56ZM258 56L282 22L306 56ZM176 40L200 6L224 40Z" fill="#8A5A9E"/><path class="float" d="M200 6V-6l14 4-14 4" fill="#E07A8E"/><rect x="192" y="62" width="16" height="24" rx="8" fill="#3A3346"/><rect x="110" y="80" width="12" height="18" rx="6" fill="#3A3346"/><rect x="276" y="80" width="12" height="18" rx="6" fill="#3A3346"/><path d="M184 172V144a16 16 0 0 1 32 0V172Z" fill="#5A4030"/>`,
+  bunting: () => { const y = x => 22 + 14 * Math.sin((x / 400) * Math.PI * 2) ** 2; return `<polyline points="${Array.from({ length: 21 }, (_, i) => i * 20 + "," + y(i * 20).toFixed(1)).join(" ")}" stroke="#6B4E5E" stroke-width="1.2" fill="none"/>` + Array.from({ length: 20 }, (_, i) => { const x = i * 20 + 4, t = y(x); return `<path d="M${x} ${t.toFixed(1)}L${x + 12} ${t.toFixed(1)}L${x + 6} ${(t + 13).toFixed(1)}Z" fill="${["#E07A8E", "#F2B544", "#6DBE9B", "#5E8BD9", "#9B7BD6"][i % 5]}"/>`; }).join(""); },
+  barrels: () => [[40, 140], [84, 140], [62, 108]].map(([x, y]) => `<rect x="${x - 20}" y="${y}" width="40" height="32" rx="10" fill="#9A6A44"/><rect x="${x - 20}" y="${y + 8}" width="40" height="3" fill="#5A4030"/><rect x="${x - 20}" y="${y + 21}" width="40" height="3" fill="#5A4030"/>`).join("") + `<rect x="300" y="110" width="80" height="60" rx="4" fill="#7A5038"/><rect x="306" y="100" width="12" height="12" rx="3" fill="#E8C35A"/><rect x="330" y="96" width="12" height="16" rx="3" fill="#C9576B"/>`,
+  pines: () => [[20, 1], [70, 0.8], [330, 0.9], [385, 1.1]].map(([x, s]) => `<path d="M${x} ${180 - 130 * s}L${x - 34 * s} ${180 - 40 * s}H${x + 34 * s}Z M${x} ${180 - 100 * s}L${x - 40 * s} 182H${x + 40 * s}Z" fill="#1F3A3A"/>`).join(""),
+  mushrooms: r => Array.from({ length: 9 }, (_, i) => { const x = 20 + i * 45 + r() * 20, y = 176 + r() * 18, c = ["#7AF0E0", "#FF9ED8", "#FFE07A"][i % 3]; return `<circle cx="${x.toFixed(0)}" cy="${(y - 8).toFixed(0)}" r="14" fill="${c}" opacity=".18"/><rect x="${(x - 2).toFixed(0)}" y="${(y - 8).toFixed(0)}" width="4" height="10" fill="#F4EFE9"/><path class="tw" style="animation-delay:${(r() * 3).toFixed(1)}s" d="M${(x - 9).toFixed(0)} ${(y - 7).toFixed(0)}a9 7 0 0 1 18 0Z" fill="${c}"/>`; }).join("") + `<path d="M0 186Q200 172 400 186V220H0Z" fill="#163030"/>`,
+  crystals: () => [[30, 170, "#9FD6FF"], [80, 176, "#C6A8FF"], [330, 172, "#FF9ED8"], [372, 168, "#9FD6FF"], [200, 60, "#C6A8FF"]].map(([x, y, c], i) => `<circle cx="${x}" cy="${y - 20}" r="26" fill="${c}" opacity=".15"/><path class="tw" style="animation-delay:${i * 0.6}s" d="M${x} ${y - 46}L${x + 12} ${y - 14}L${x} ${y}L${x - 12} ${y - 14}Z" fill="${c}" opacity=".85"/>`).join(""),
+  dragon: () => `<g class="float"><path d="M318 200q-6 -70 40 -96q40 -18 60 12v84z" fill="#5FB57A"/><path d="M330 130q-46 -36 -26 -72q8 30 44 44z" fill="#4FA06A"/><circle cx="366" cy="98" r="32" fill="#6CC488"/><path d="M348 70l-8 -18l16 10zM382 68l6 -18l-16 10z" fill="#F2D27A"/><ellipse cx="355" cy="98" rx="4.5" ry="6.5" fill="#2B1E2F"/><ellipse cx="378" cy="98" rx="4.5" ry="6.5" fill="#2B1E2F"/><ellipse cx="346" cy="112" rx="7" ry="4" fill="#F07A8E" opacity=".55"/><ellipse cx="388" cy="112" rx="7" ry="4" fill="#F07A8E" opacity=".55"/><path d="M360 116q6 5 12 0" stroke="#2B1E2F" stroke-width="2.5" fill="none" stroke-linecap="round"/></g>`,
+  bridge: () => `<path d="M0 130Q60 110 90 150V220H0Z M400 130Q340 110 310 150V220H400Z" fill="#6E5A8A"/><path d="M70 160Q200 92 330 160V178H70Z" fill="#A79A90"/><path d="M130 178Q200 128 270 178Z" fill="#6E5A8A"/>` + [110, 160, 240, 290].map((x, i) => `<circle class="tw" style="animation-delay:${i * 0.5}s" cx="${x}" cy="${i === 1 || i === 2 ? 118 : 132}" r="5" fill="#FFD27A"/>`).join(""),
+  stalls: () => [[20, "#E07A8E"], [270, "#5E8BD9"]].map(([x, c]) => `<rect x="${x + 6}" y="110" width="98" height="62" fill="#C99B73"/>` + Array.from({ length: 5 }, (_, i) => `<path d="M${x + i * 22} 92H${x + i * 22 + 22}L${x + i * 22 + 20} 112H${x + i * 22 + 2}Z" fill="${i % 2 ? "#F4F0EA" : c}"/>`).join("") + `<circle cx="${x + 30}" cy="128" r="8" fill="#F2C48B"/><circle cx="${x + 54}" cy="128" r="8" fill="#E8C35A"/><circle cx="${x + 78}" cy="128" r="8" fill="#C9576B"/>`).join(""),
+  magicswirl: () => `<g class="float"><ellipse cx="200" cy="110" rx="150" ry="60" fill="#B48CFF" opacity=".25"/><ellipse cx="160" cy="90" rx="90" ry="40" fill="#D9B8FF" opacity=".35"/><ellipse cx="250" cy="130" rx="100" ry="40" fill="#FFB8E8" opacity=".3"/></g>`,
+  potions: () => `<rect x="20" y="40" width="150" height="6" fill="#6B4430"/><rect x="20" y="96" width="150" height="6" fill="#6B4430"/>` + [[34, 40, "#7AF0E0"], [60, 40, "#FF9ED8"], [90, 40, "#C6A8FF"], [124, 40, "#B9F5A0"], [44, 96, "#FFE07A"], [80, 96, "#FF8A6E"], [118, 96, "#9FD6FF"], [150, 96, "#FF9ED8"]].map(([x, y, c]) => `<rect x="${x - 3}" y="${y - 24}" width="6" height="8" fill="#E8DCC8"/><circle cx="${x}" cy="${y - 9}" r="9" fill="${c}"/>`).join(""),
+  cauldron: () => `<ellipse cx="320" cy="170" rx="40" ry="10" fill="#FF8A3D" opacity=".35"/><path d="M280 128H360Q362 172 320 174Q278 172 280 128Z" fill="#2A2433"/><rect x="276" y="122" width="88" height="10" rx="5" fill="#3A3346"/><ellipse cx="320" cy="124" rx="38" ry="6" fill="#7AF08A"/>` + [0, 1, 2].map(i => `<g class="float" style="animation-delay:-${i * 1.2}s"><circle cx="${304 + i * 14}" cy="${108 - i * 8}" r="${5 - i}" fill="#B9F5A0" opacity=".8"/></g>`).join(""),
   bigheart: () => `<g class="float"><path d="${heartPath(200, 34, 4)}" fill="#FF6E89" opacity=".85" style="filter:drop-shadow(0 0 8px #FF4FB0)"/></g>`
 };
 const SCENES = {
@@ -2211,7 +2278,17 @@ const SCENES = {
   festival: ["neon", "stars", "stagelights", "stage", "crowd"],
   foodtruck: ["dusk", "lights", "truck", "ground:#6E5A6B"],
   colline: ["night", "stars", "moon", "farstage", "hill:#3E4A6A"],
-  camping: ["night", "stars", "tents", "ground:#3E5240", "fireflies"]
+  camping: ["night", "stars", "tents", "ground:#3E5240", "fireflies"],
+  chateau: ["day", "sun", "clouds", "hill:#9CC98A", "castle", "bunting"],
+  chateaunuit: ["night", "stars", "moon", "hill:#3E4A6A", "castle"],
+  taverne: ["warm", "wood", "bunting", "barrels", "candles", "floor:#7A5038"],
+  foret: ["night", "stars", "fireflies", "pines", "mushrooms"],
+  grotte: ["dark", "crystals", "dragon", "floor:#3A2E44"],
+  dragonnuit: ["night", "stars", "moon", "mountains", "bigheart"],
+  pont: ["sunset", "sun:#FF9E6B", "clouds:#FFD6C2", "bridge"],
+  marche: ["day", "clouds", "bunting", "stalls", "ground:#C9B48A"],
+  magie: ["dream", "magicswirl", "sparkles"],
+  chaumiere: ["dark", "potions", "cauldron", "candles", "floor:#5A4030"]
 };
 function sceneSvg(name) {
   const def = SCENES[name] || SCENES.salon;
@@ -2272,6 +2349,7 @@ const THEMES = {
   mystere: { bpm: 58, chords: [[45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59], [40, 47, 52, 56]], lead: "sine", arp: [3, 2, 1, 2, 0, 1, 2, 3], up: 24, noise: "rain" },
   douceur: { bpm: 64, chords: [[48, 52, 55, 59], [45, 48, 52, 55], [50, 53, 57, 60], [43, 47, 50, 53]], lead: "sine", arp: [0, 1, 2, 3, 2, 1, 2, 3], noise: "crackle" },
   pop: { bpm: 104, chords: [[48, 52, 55, 60], [43, 47, 50, 55], [45, 48, 52, 57], [41, 45, 48, 53]], lead: "square", arp: [0, 1, 2, 3, 2, 1, 0, 2], drums: true },
+  medieval: { bpm: 84, chords: [[50, 57, 62], [48, 55, 60], [50, 57, 62], [45, 52, 57]], lead: "triangle", arp: [0, 1, 2, 1, 2, 0, 1, 2], drums: "soft", drone: 38 },
   fete: { bpm: 90, chords: [[50, 54, 57, 61], [47, 50, 54, 57], [43, 47, 50, 54], [45, 49, 52, 55]], lead: "triangle", arp: [0, 1, 2, 3, 2, 1, 0, 3], drums: "soft", noise: "crowd" }
 };
 const Music = {
@@ -2358,6 +2436,7 @@ const Music = {
       const t = this.next, s = this.step, chord = th.chords[Math.floor(s / 8) % th.chords.length];
       if (s % 8 === 0) chord.forEach(m => this.tone(hz(m), t, spb * 8.5, "sine", 0.035, 0.9));
       if (s % 8 === 0) this.tone(hz(chord[0] - 12), t, spb * 8, "triangle", 0.05, 0.05, 400);
+      if (th.drone && s % 16 === 0) this.tone(hz(th.drone), t, spb * 16.5, "sawtooth", 0.018, 1.2, 450);
       const m = chord[th.arp[s % th.arp.length] % chord.length] + (th.up || 12);
       if (th.lead === "square") this.tone(hz(m), t, spb * 0.9, "square", 0.025, 0.005, 1600);
       else this.tone(hz(m), t, th.up ? spb * 3 : spb * 1.6, th.lead, th.up ? 0.04 : 0.05, 0.005);
@@ -2368,7 +2447,7 @@ const Music = {
     }
   }
 };
-const STORY_MUSIC = { train: "nuit", manoir: "mystere", boulangerie: "douceur", cupidon: "pop", viral: "pop", villa: "pop", festival: "fete" };
+const STORY_MUSIC = { train: "nuit", manoir: "mystere", boulangerie: "douceur", cupidon: "pop", viral: "pop", villa: "pop", festival: "fete", dragon: "medieval", grimoire: "medieval" };
 const SCENE_OF = {
   train: { quai: "quai", chat: "train", piano: "train", bar: "train", indice: "train", aube: "aube", mer: "mer", alpes: "neige", chalet: "chalet", fin_concert: "village", fin_crique: "crique", fin_inconnu: "tournesols", fin_cafe: "mer", fin_plongeon: "mer", fin_luge: "neige", fin_chalet: "chalet" },
   manoir: { hall: "manoir", biblio: "biblio", trappe: "cuisine", passage: "passage", grenier: "grenier", malle: "grenier", costumes: "grenier", cuisine: "cuisine", pate: "cuisine", bal: "bal", portraits: "passage", fin_lettre: "grenier", fin_photo: "grenier", fin_gateau: "cuisine", fin_jardin: "jardin", fin_bal: "bal", fin_portrait: "passage" },
