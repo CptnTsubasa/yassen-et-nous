@@ -425,6 +425,16 @@ body { background: var(--bg); }
 .fx-anger { animation: anger .9s ease-out forwards; }
 .fx-star { animation: twinkle 1.1s ease-in-out infinite alternate; }
 .fx-sun { animation: sunrise 3.6s ease-out forwards; }
+.fx-flower { animation: gift-up 2.4s ease-out forwards; }
+.fx-rain { width: 1.5px; height: 10px; border-radius: 1px; background: #8FA9D8; opacity: 0; animation: rain .7s linear forwards; }
+.fx-bolt { animation: bolt .55s ease-out forwards; }
+#buddies.flash::before { content: ""; position: absolute; left: -20px; right: -20px; bottom: -10px; height: 150px; border-radius: 30px; background: radial-gradient(ellipse at 50% 30%, rgba(255, 244, 200, .55), transparent 70%); animation: flash .5s ease-out forwards; pointer-events: none; }
+.yj-bud.shiver .yj-in svg { animation: grr .12s linear infinite; }
+.yj-bud.tiny .bubble { font-size: .72rem; padding: 5px 9px; }
+@keyframes gift-up { 0% { transform: translateY(8px) scale(.4); opacity: 0; } 20% { transform: none; opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+@keyframes rain { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .8; } 100% { transform: translateY(116px); opacity: 0; } }
+@keyframes bolt { 0% { opacity: 0; transform: scale(.6); } 20% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0; } }
+@keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
 .fx-cup .steam { animation: steam 1.6s ease-in-out infinite; }
 @keyframes crawl { to { transform: translateX(var(--dx)); } }
 @keyframes gift { 0% { transform: translate(0, 0) scale(.5); opacity: 0; } 15% { opacity: 1; } 50% { transform: translate(calc(var(--dx) * .5), -34px) scale(1.25); } 100% { transform: translate(var(--dx), 0) scale(1); opacity: .9; } }
@@ -3408,6 +3418,8 @@ const FX_SUN = '<svg viewBox="0 0 40 40" width="30"><g stroke="#F2B544" stroke-w
 const FX_STAR = '<svg viewBox="0 0 10 10" width="10"><path d="M5 0l1.3 3.4L10 5 6.3 6.6 5 10 3.7 6.6 0 5l3.7-1.6z" fill="#F2D27A"/></svg>';
 const FX_ANGER = '<svg viewBox="0 0 16 16" width="16"><path d="M6 1v4H2M10 1v4h4M6 15v-4H2M10 15v-4h4" stroke="#E0457A" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>';
 const FX_APPLE = '<svg viewBox="0 0 16 18" width="14"><path d="M8 5C4 2 0 5 1 10s4 8 7 7c3 1 6-2 7-7S12 2 8 5z" fill="#E0566B"/><path d="M8 5q0-3 2-4" stroke="#5B3A24" stroke-width="1.2" fill="none"/><path d="M9 3q3-2 5 0q-3 2-5 0z" fill="#6DBE9B"/></svg>';
+const FX_FLOWER = '<svg viewBox="0 0 16 22" width="16"><path d="M8 10v11" stroke="#6DBE9B" stroke-width="1.6"/><path d="M8 17q-4-1-5-4q4 0 5 4z" fill="#6DBE9B"/><g fill="#F7A8C4"><circle cx="8" cy="3.5" r="3"/><circle cx="12.3" cy="6.6" r="3"/><circle cx="10.7" cy="11.4" r="3"/><circle cx="5.3" cy="11.4" r="3"/><circle cx="3.7" cy="6.6" r="3"/></g><circle cx="8" cy="7.6" r="2.4" fill="#F2C84B"/></svg>';
+const FX_BOLT = '<svg viewBox="0 0 16 26" width="14"><path d="M10 0L2 14h5l-3 12 10-16H9z" fill="#F2D27A" stroke="#E8B04A" stroke-width=".8"/></svg>';
 const Buddies = {
   el: null, fx: null, b: {}, sig: "", last: 0, busy: false, nextAct: 0,
   enabled() { return lsGet("entre-nous:buddies") !== "0"; },
@@ -3541,9 +3553,9 @@ const Buddies = {
     const opts = [
       [2.2, wander],
       // Le socle romantique ne dépend pas des personnalités : la tendresse ne fait qu'en rajouter.
-      [2.2, () => this.loveTalk()],
-      [1.6 + avg("tender") * 0.25, () => this.hug()],
-      [0.9 + avg("tender") * 0.15, () => this.kiss()],
+      [2.8, () => this.loveTalk()],
+      [2 + avg("tender") * 0.25, () => this.hug()],
+      [1.1 + avg("tender") * 0.15, () => this.kiss()],
       [0.9, () => this.yjCarry()],
       [0.8, () => this.yjFamilyHug()],
       [this.yj.sleep ? 0 : 0.7, () => this.yjThrow()],
@@ -3551,6 +3563,8 @@ const Buddies = {
       [this.yj.sleep ? 0 : 0.45, () => this.yjShoulders()],
       [this.yj.sleep ? 0 : 0.4, () => this.yjChase()],
       [this.yj.sleep ? 1.2 : night ? 0.4 : 0, () => this.yjTuck()],
+      [this.yj.sleep || !(avOf("a").tics.length || avOf("b").tics.length) ? 0 : 0.7, () => this.yjMimic()],
+      [!this.yj.sleep && (h >= 20 || h < 5) ? 0.45 : 0, () => this.yjStorm()],
       // Une scène à soi pour chaque trait marqué : plus il est marqué, plus elle revient.
       [this.tw("soc", "lo"), () => this.peek()],
       [this.tw("soc", "hi"), () => this.showOff()],
@@ -3693,6 +3707,65 @@ const Buddies = {
     };
     const [L, R] = this.b.a.x <= this.b.b.x ? [this.b.a, this.b.b] : [this.b.b, this.b.a];
     this.walkTo(L, x - 26, false, both); this.walkTo(R, x + 26, false, both);
+  },
+  // Quête réussie : Yassen Jr. vous apporte une fleur.
+  yjGift() {
+    const y = this.yj;
+    if (y.sleep) { this.yjSay("*sourit dans son sommeil*", 1800); return; }
+    const give = () => {
+      this.prop("fx-flower", FX_FLOWER, y.x - 8, 34, 2400); this.yjHop();
+      this.yjSay(pickOne(["Pour vous !", "Une fleur pour mes deux préférés !", "Bravo, vous deux !"]), 2000); this.hearts(y.x, 3, 12);
+    };
+    if (this.busy || y.mode !== "follow" || y.target != null) return give();
+    y.target = (this.b.a.x + this.b.b.x) / 2; y.onArrive = give;
+  },
+  // Pendant une chamaillerie, Yassen Jr. s'interpose et les réconcilie.
+  yjPeace(L, R) {
+    const y = this.yj;
+    y.run = true; y.target = (L.x + R.x) / 2;
+    y.onArrive = () => {
+      y.run = false; y.mode = "pinned"; this.yjHop();
+      this.yjSay(pickOne(["Hé ! On se fait un câlin ?", "Pas de dispute, je vous aime tous les deux !", "Stop ! Câlin obligatoire."]), 2000);
+      setTimeout(() => {
+        this.mood([L, R], "grr", false); this.mood([L, R], "happy", true); L.tilt = R.tilt = 8;
+        this.say(pickOne([L, R]).k, pickOne(["Il a raison…", "D'accord, d'accord. Câlin.", "Comment lui dire non ?"]), 2000);
+        this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 6);
+      }, 1700);
+      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 4200);
+    };
+  },
+  // Yassen Jr. imite vos phrases fétiches, en tout petit.
+  yjMimic() {
+    const y = this.yj, ks = ["a", "b"].filter(k => avOf(k).tics.length);
+    if (y.sleep || !ks.length) return this.done();
+    const k = pickOne(ks), o = this.b[k], tic = pickOne(avOf(k).tics);
+    y.target = o.x + (o.x < this.W() / 2 ? 26 : -26);
+    y.onArrive = () => {
+      o.face = y.x > o.x ? 1 : -1;
+      this.say(k, tic, 1800);
+      setTimeout(() => { y.el.classList.add("tiny"); this.yjHop(); this.yjSay(tic.charAt(0).toLowerCase() + tic.slice(1), 1800); }, 1900);
+      setTimeout(() => { y.el.classList.remove("tiny"); this.hop(o); o.el.classList.add("happy"); this.say(k, pickOne(["Il m'imite !", "Hahaha, trop mignon !", "C'est qui ton modèle ? C'est moi !"]), 2000); this.hearts(o.x, 4, 14); }, 3800);
+      setTimeout(() => { o.el.classList.remove("happy"); this.done(); }, 5900);
+    };
+  },
+  // Le soir, l'orage : Yassen Jr. a peur, vous le rassurez à deux.
+  yjStorm() {
+    const y = this.yj, W = this.W(); if (y.sleep) return this.yjTuck();
+    const rain = () => { for (let i = 0; i < 16; i++) this.prop("fx-rain", "", Math.random() * W, 120, 1300, { "animation-delay": (Math.random() * 0.9).toFixed(2) + "s" }); };
+    const bolt = () => { this.prop("fx-bolt", FX_BOLT, 30 + Math.random() * (W - 60), 104, 600); this.el.classList.remove("flash"); void this.el.offsetWidth; this.el.classList.add("flash"); };
+    rain(); bolt();
+    const rainy = setInterval(rain, 1100);
+    y.el.classList.add("shiver"); this.yjSay(pickOne(["Ah ! L'orage !", "J'ai peur du tonnerre…"]), 1800);
+    y.run = true; y.target = (this.b.a.x + this.b.b.x) / 2;
+    this.meet(34, (L, R) => {
+      y.run = false; y.target = null; y.mode = "pinned"; L.tilt = R.tilt = 10;
+      const scared = [L, R].find(o => trait(o.k, "brave") <= 1), calm = scared ? (scared === L ? R : L) : pickOne([L, R]);
+      this.say(calm.k, pickOne(["Ce n'est que l'orage, on est là.", "Rien ne peut t'arriver avec nous.", "Viens, on te serre fort."]), 2400);
+      if (scared && scared !== calm) setTimeout(() => this.say(scared.k, "…moi aussi, j'ai un peu peur.", 2000), 2500);
+      setTimeout(bolt, 2600);
+      setTimeout(() => { clearInterval(rainy); y.el.classList.remove("shiver"); this.yjSay("Je n'ai plus peur avec vous.", 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 6); this.mood([L, R], "happy", true); }, 4700);
+      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 7200);
+    });
   },
   pokeYj() {
     const y = this.yj; if (!y || y.mode !== "follow") return;
@@ -3994,6 +4067,7 @@ const Buddies = {
       setTimeout(() => this.say(second.k, pair[1], 1500), 1100);
       setTimeout(() => this.cloud((L.x + R.x) / 2, long ? 2600 : 1500), 1900);
       setTimeout(() => {
+        if (!this.yj.sleep && this.yj.mode === "follow" && Math.random() < 0.4) return this.yjPeace(L, R);
         this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
         if (Math.random() < 0.3 + angry * 0.06) {
           const peace = trait(first.k, "mood") <= trait(second.k, "mood") ? second : first;
@@ -4075,6 +4149,7 @@ const Buddies = {
     ["a", "b"].forEach((k, i) => setTimeout(() => { this.hop(this.b[k]); this.hearts(this.b[k].x, 3, 20); }, i * 220));
     const k = pickOne(["a", "b"]);
     this.say(k, lineFor(k, "cheer", CHEERS), 2400);
+    setTimeout(() => this.yjGift(), 1200);
   },
   // Aperçu dans l'éditeur : le personnage essaie sa nouvelle personnalité.
   preview(k) {
