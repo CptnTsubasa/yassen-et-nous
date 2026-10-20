@@ -305,6 +305,11 @@ body { background: var(--bg); }
 .buddy.grr .buddy-body { animation: grr .16s linear infinite; }
 @keyframes grr { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(1.5px); } }
 .av-happy, .av-grr { display: none; }
+.buddy.blush .av-blush { opacity: .85; }
+.buddy.shy .buddy-body { animation: shysway 1.1s ease-in-out infinite alternate; }
+@keyframes shysway { from { transform: rotate(-5deg); } to { transform: rotate(5deg) translateY(2%); } }
+.buddy.spin .buddy-body { animation: spin .7s ease; transform-origin: 50% 60%; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .buddy.happy .av-eyes { display: none; }
 .buddy.happy .av-happy, .buddy.grr .av-grr { display: inline; }
 .buddy-fx { position: absolute; left: 0; right: 0; bottom: 0; height: 0; pointer-events: none; }
@@ -1732,6 +1737,7 @@ function sheetView() {
     <div class="stack"><h2 class="sec">Couleur des cheveux</h2>${sw("hairColor", AV.hairColor, "Couleur")}</div>
     <div class="stack"><h2 class="sec">Haut</h2>${sw("top", AV.top, "Haut")}</div>
     <div class="stack"><h2 class="sec">Accessoire</h2>${ch("acc", AV.acc)}</div>
+    <div class="stack"><h2 class="sec">Personnalité</h2>${ch("perso", AV.perso)}<p class="small muted">${esc(fr("Elle change leur façon de parler et de se comporter sur la barre d'onglets."))}</p></div>
     <p class="small muted">${esc(fr("Vos personnages se baladent dans l'appli et jouent les héros de « Il était une fois nous ». Chacun peut personnaliser les deux, et les changements s'appliquent tout de suite."))}</p>
     <div style="height:110px" aria-hidden="true"></div>`;
   }
@@ -2359,14 +2365,15 @@ const AV = {
   hairColor: ["#2A1E1B", "#5B3A24", "#8A5530", "#D8A85C", "#B4512E", "#D9D2CA", "#C2679C"],
   top: ["#5E8BD9", "#E07A8E", "#6DBE9B", "#F2B544", "#9B7BD6", "#3A3346", "#F4EFE9", "#E8845C"],
   hair: [["court", "Court"], ["frange", "Frange"], ["boucles", "Bouclés"], ["ondules", "Ondulés"], ["carre", "Carré"], ["long", "Longs"], ["queue", "Queue de cheval"], ["chignon", "Chignon"], ["rase", "Rasé"]],
-  acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["casquette", "Casquette"], ["beret", "Béret"], ["fleur", "Fleur"], ["oreilles", "Boucles d'oreilles"]]
+  acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["casquette", "Casquette"], ["beret", "Béret"], ["fleur", "Fleur"], ["oreilles", "Boucles d'oreilles"]],
+  perso: [["timide", "Mignonne et timide"], ["fou", "Un peu fou"], ["classique", "Classique"]]
 };
-const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur" } };
+const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", perso: "fou" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", perso: "timide" } };
 function avOf(k) {
   const v = ((Store.meta.avatars || {})[k]) || {}, d = AV_DEFAULT[k];
   const idx = (f, list) => Number.isInteger(v[f]) && v[f] >= 0 && v[f] < list.length ? v[f] : d[f];
   const opt = (f, list) => list.some(o => o[0] === v[f]) ? v[f] : d[f];
-  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc) };
+  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), perso: opt("perso", AV.perso) };
 }
 function avatarSvg(k) {
   const a = avOf(k), skin = AV.skin[a.skin], hc = AV.hairColor[a.hairColor], top = AV.top[a.top];
@@ -2395,7 +2402,7 @@ function avatarSvg(k) {
     <g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
     <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
-    <ellipse cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
+    <ellipse class="av-blush" cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse class="av-blush" cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
     <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${acc}</svg>`;
 }
 const castFig = k => `<figure>${avatarSvg(k)}<span class="tag">${esc(nm(k))}</span></figure>`;
@@ -2971,7 +2978,48 @@ const BUDDY_LINES = {
   lettres: ["Pas touche aux lettres scellées !", "J'ai hâte d'ouvrir la prochaine."]
 };
 const POKE_LINES = ["Hé, ça chatouille !", "Coucou toi !", "Encore ?", "Tu me cherches ?", "Bisou volé !", "Je suis là, je suis là."];
+const PERSO = {
+  timide: {
+    solo: ["Hihi…", "*rougit*", "Je… je voulais juste te faire un coucou.", "Tu me regardes ? …Arrête.", "J'ai un peu froid… un câlin ?", "Je suis bien, là."],
+    poke: ["Ah ! …tu m'as fait peur.", "Hihi, ça chatouille…", "*rougit*", "Encore… ?"],
+    hug: ["Je… je peux rester comme ça ?", "*fond complètement*", "Tout doux…"],
+    kiss: ["*rougit très fort*", "Oh… encore un ?"]
+  },
+  fou: {
+    solo: ["J'aime troooooow !", "Quelqu'un a dit sushis ?!", "Le plus chanceux de l'univers, c'est moi. Vérifié scientifiquement.", "Coucou, c'est encore moi !", "Je danse, même sans musique.", "Tu peux répéter mot pour mot ce que t'as dit hier ?"],
+    poke: ["PRÉSENT !", "Encore, encore !", "Tu peux répéter mot pour mot ?", "Aïe ! …non je rigole, j'adore."],
+    hug: ["CÂLIN DE L'ANNÉE !", "Je te lâche plus, c'est officiel.", "Recharge de câlins : 300 % !"],
+    kiss: ["Smaaaaack !", "Bisou turbo !", "Un autre, un autre !"]
+  }
+};
+// Elle complimente tout bas, il répond n'importe quoi. Ou l'inverse.
+const SHY_TO_CRAZY = [
+  ["Tu… tu es beau aujourd'hui.", "Tu peux répéter mot pour mot ? Je prends des notes."],
+  ["J'aime bien quand tu souris…", "J'aime troooooow."],
+  ["T'es mon préféré…", "Attends, je fais une capture d'écran de ce moment."],
+  ["Je pensais à toi…", "Répète, c'était pas assez fort !"],
+  ["Tu sens bon…", "C'est naturel. Enfin, c'est le gel douche. Mais c'est naturel."],
+  ["Merci d'être là.", "Je suis lààà ! Toujours là ! Même quand tu veux pas !"],
+  ["On reste encore un peu ensemble ?", "Pour toujours, ou un peu plus ?"],
+  ["Je t'aime… un peu.", "UN PEU ?! J'ai entendu « énormément », c'est validé."],
+  ["T'es drôle, tu sais…", "Je sais. Mais redis-le, c'est bon pour mon ego."]
+];
+const CRAZY_TO_SHY = [
+  ["J'aime troooooow !", "Chut… tout le monde nous regarde…"],
+  ["T'es la plus belle ! Je le crie : LA PLUS BELLE !", "Arrête… *se cache derrière ses mains*"],
+  ["Programme de ce soir : câlin, sushis, câlin, sushis.", "D'accord… mais câlin d'abord."],
+  ["Si t'étais un dessert, tu serais mon préféré. Je suis pas sûr de ma phrase.", "Hihi… c'est mignon quand même."],
+  ["Bisou gratuit, aujourd'hui seulement !", "Je… j'en prends un."],
+  ["Question très sérieuse : chat ou chien ?", "…Toi."],
+  ["Je t'aime plus que les frites. Et j'aime BEAUCOUP les frites.", "Oh… *rougit*"]
+];
+const CRAZY_SQUABBLES = [["C'est moi le plus beau du couple !", "…Non, c'est moi."], ["J'ai mangé ton dessert. Par amour.", "Méchant…"],
+  ["Je t'aime plus que toi tu m'aimes !", "Même pas vrai…"], ["J'ai renommé le chat « Sire Bisou ».", "On n'a pas de chat…"],
+  ["Ce soir, film : « Les aventures de moi ».", "Non… *boude*"]];
+const persoLines = (k, kind, fallback) => ((PERSO[avOf(k).perso] || {})[kind]) || fallback;
 function buddyLine(k) {
+  const own = (PERSO[avOf(k).perso] || {}).solo;
+  if (own && Math.random() < 0.6) return pickOne(own);
   const h = new Date().getHours(), tab = BUDDY_LINES[S.tab] || [];
   const pool = [...BUDDY_LINES.all, ...tab, ...tab];
   if (h >= 22 || h < 5) pool.push("Il est tard… un dernier jeu ?", "Je bâille, mais je reste avec toi.");
@@ -3053,6 +3101,12 @@ const Buddies = {
   act() {
     const A = this.b.a, B = this.b.b, W = this.W(), h = new Date().getHours(), r = Math.random();
     this.busy = true;
+    if (this.persoOf("fou") && this.persoOf("timide")) {
+      const q = Math.random();
+      if (q < 0.24) return this.banter();
+      if (q < 0.32) return this.zoomies();
+      if (q < 0.38) return this.shyMoment();
+    }
     if (r < 0.34) { const o = Math.random() < 0.5 ? A : B; this.walkTo(o, o.x + (Math.random() - 0.5) * W * 0.6, false, () => { if (Math.random() < 0.4) this.lookAround(o); this.done(); }); return; }
     if (r < 0.46) return this.hug();
     if (r < 0.58) return this.squabble();
@@ -3078,27 +3132,30 @@ const Buddies = {
       this.mood([L, R], "happy", true); L.tilt = R.tilt = 10;
       const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
       setTimeout(() => this.hearts(mid, 5), 1100);
-      this.say(pickOne(["a", "b"]), pickOne(HUG_LINES), 2400);
+      { const k = pickOne(["a", "b"]); this.say(k, pickOne(persoLines(k, "hug", HUG_LINES)), 2400); }
+      [L, R].forEach(o => { if (avOf(o.k).perso === "timide") o.el.classList.add("blush"); });
+      setTimeout(() => [L, R].forEach(o => o.el.classList.remove("blush")), 2700);
       setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 2700);
     });
   },
   kiss() {
     this.meet(29, (L, R) => {
       this.mood([L, R], "happy", true); L.tilt = R.tilt = 7;
-      this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); this.say(pickOne(["a", "b"]), pickOne(KISS_LINES), 1800);
+      this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); { const k = pickOne(["a", "b"]); this.say(k, pickOne(persoLines(k, "kiss", KISS_LINES)), 1800); }
       setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
     });
   },
   squabble() {
     this.meet(30, (L, R) => {
-      const pair = pickOne(SQUABBLES), first = Math.random() < 0.5 ? L : R, second = first === L ? R : L;
+      const F = this.persoOf("fou"), duo = F && this.persoOf("timide");
+      const pair = pickOne(duo ? CRAZY_SQUABBLES : SQUABBLES), first = duo ? F : Math.random() < 0.5 ? L : R, second = first === L ? R : L;
       this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
       this.say(first.k, pair[0], 1500);
       setTimeout(() => this.say(second.k, pair[1], 1500), 1100);
       setTimeout(() => this.cloud((L.x + R.x) / 2, 1500), 1900);
       setTimeout(() => {
         this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
-        if (Math.random() < 0.5) { this.mood([L, R], "happy", true); this.say(pickOne(["a", "b"]), pickOne(PEACE_LINES), 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 4);
+        if (Math.random() < 0.5) { this.mood([L, R], "happy", true); if (duo) this.say(first.k, pickOne(["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, c'est toi la plus belle."]), 2200); else this.say(pickOne(["a", "b"]), pickOne(PEACE_LINES), 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 4);
           setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 1800); }
         else this.chase(second, first);
       }, 3500);
@@ -3125,6 +3182,38 @@ const Buddies = {
       setTimeout(() => { L.face = 1; R.face = -1; this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2300);
     });
   },
+  persoOf(p) { return Object.values(this.b).find(o => avOf(o.k).perso === p) || null; },
+  banter() {
+    const F = this.persoOf("fou"), T = this.persoOf("timide"), A = this.b.a, B = this.b.b;
+    A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
+    const shyFirst = Math.random() < 0.6, [l1, l2] = pickOne(shyFirst ? SHY_TO_CRAZY : CRAZY_TO_SHY);
+    const first = shyFirst ? T : F, second = shyFirst ? F : T;
+    T.el.classList.add("blush", "shy");
+    this.say(first.k, l1, 2800); if (first === F) this.hop(F);
+    setTimeout(() => {
+      this.say(second.k, l2, 3000);
+      if (second === F) { this.spin(F); this.hearts(F.x, 3, 16); } else { T.face *= -1; setTimeout(() => { T.face *= -1; }, 900); this.hearts(T.x, 3, 16); }
+    }, 3000);
+    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 6400);
+  },
+  zoomies() {
+    const F = this.persoOf("fou"), T = this.persoOf("timide"), W = this.W();
+    this.say(F.k, pickOne(["ZOOMIES !", "J'aime troooow !", "Je suis trop heureux, je dois courir !"]), 2000);
+    this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => {
+      this.spin(F); T.el.classList.add("blush", "happy"); T.face = F.x > T.x ? 1 : -1;
+      this.say(T.k, pickOne(["Hihi… il est fou.", "*le regarde avec des cœurs dans les yeux*", "Reviens… j'ai le tournis."]), 2600);
+      this.hearts(T.x, 3, 16);
+      setTimeout(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 2700);
+    }));
+  },
+  shyMoment() {
+    const F = this.persoOf("fou"), T = this.persoOf("timide");
+    T.el.classList.add("blush", "shy"); T.face = F.x > T.x ? 1 : -1;
+    this.say(T.k, pickOne(PERSO.timide.solo), 2400);
+    setTimeout(() => { F.face = T.x > F.x ? 1 : -1; this.hop(F); this.say(F.k, pickOne(["Trop mignonne !!", "Ce rire… j'aime troooow.", "Arrête, je fonds."]), 2400); this.hearts(F.x, 3, 14); }, 2500);
+    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 5200);
+  },
+  spin(o) { o.el.classList.remove("spin"); void o.el.offsetWidth; o.el.classList.add("spin"); },
   faceTalk() {
     const A = this.b.a, B = this.b.b, k = Math.random() < 0.5 ? "a" : "b";
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
@@ -3169,7 +3258,7 @@ const Buddies = {
     if (this.el && !this.el.hidden && !document.hidden && !this.busy) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
     setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
   },
-  poke(k) { this.hop(this.b[k]); this.hearts(this.b[k].x, 1, 10); this.say(k, pickOne(POKE_LINES), 2600); }
+  poke(k) { this.hop(this.b[k]); this.hearts(this.b[k].x, 1, 10); this.say(k, pickOne(persoLines(k, "poke", POKE_LINES)), 2600); if (avOf(k).perso === "fou") this.spin(this.b[k]); }
 };
 
 /* ───────────────────────── Rendu ───────────────────────── */
