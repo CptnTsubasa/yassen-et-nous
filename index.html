@@ -271,6 +271,18 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 .pz.solved { gap: 0; padding: 0; overflow: hidden; border-radius: 22px; box-shadow: var(--shadow); }
 .pz.solved button { border-radius: 0; }
 .pz-img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 22px; box-shadow: var(--shadow); }
+.pz-photos { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+.pz-photos::-webkit-scrollbar { display: none; }
+.pz-ph-w { position: relative; flex: none; }
+.pz-ph { flex: none; width: 66px; height: 66px; border-radius: 16px; overflow: hidden; display: grid; place-items: center; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hair); transition: transform .15s ease, box-shadow .15s ease; }
+.pz-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pz-ph[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.pz-ph:active { transform: scale(.94); }
+.pz-add { cursor: pointer; color: var(--accent); font-weight: 700; font-size: .72rem; gap: 0; align-content: center; border: 1.5px dashed var(--line); background: transparent; box-shadow: none; }
+.pz-add span:first-child { font-size: 1.5rem; line-height: 1; }
+.pz-del { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line); font-size: .9rem; line-height: 1; color: var(--muted); }
+.pz-del.sure { width: auto; padding: 0 8px; border-radius: 999px; font-size: .7rem; font-weight: 700; color: var(--i1); right: -10px; }
+.pz { gap: clamp(1px, calc(12px / var(--n)), 3px); }
 .pz-img.peek { width: 42%; margin: 0 auto; border-radius: 14px; }
 .vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
 
@@ -554,6 +566,213 @@ body { background: var(--bg); }
 @keyframes eafloat { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-6px) rotate(3deg); } }
 @keyframes celshine { from { opacity: .25; } to { opacity: .7; } }
 @media (prefers-reduced-motion: reduce) { .card, .sp-in, .ea-prop, .cel-flame svg { animation: none !important; } }
+/* Histoires sur mesure et épopée. */
+.cx-hero { position: relative; border-radius: 28px; overflow: hidden; padding: 24px 20px 20px; color: #FFF6FA; background: radial-gradient(120% 90% at 85% 0%, #9B7BD6 0, transparent 55%), radial-gradient(100% 80% at 0% 100%, #E0457A 0, transparent 60%), linear-gradient(150deg, #3D3470, #2A2240); box-shadow: var(--shadow); }
+.cx-hero::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255, 255, 255, .8) 0 1px, transparent 1.5px); background-size: 34px 34px; opacity: .25; pointer-events: none; }
+.cx-hero-in { position: relative; z-index: 1; display: grid; gap: 8px; justify-items: start; }
+.cx-hero h1 { font-family: var(--f-display); font-weight: 400; font-size: 2rem; line-height: 1.05; }
+.cx-hero p { color: rgba(255, 246, 250, .86); }
+.cx-kicker { font-family: var(--f-hand); font-size: 1.3rem; color: #F7C9D8 !important; }
+.cx-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; background: rgba(255, 255, 255, .16); color: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); }
+.cx-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #F2C84B; box-shadow: 0 0 8px #F2C84B; }
+.cx-pill.ok .dot { background: #7CE0A6; box-shadow: 0 0 8px #7CE0A6; }
+.cx-pill.off .dot, .cx-pill.err .dot { background: #F2A0B4; box-shadow: none; }
+.cx-aifoot .cx-pill { background: var(--surface-2); color: var(--fg); box-shadow: none; }
+.cx-help { color: var(--fg); text-align: left; width: 100%; margin-top: 4px; }
+.cx-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cx-mode { display: grid; gap: 6px; align-content: start; text-align: left; padding: 16px; border-radius: 22px; background: var(--c); color: var(--on-c); box-shadow: var(--shadow); transition: transform .15s ease; }
+.cx-mode:active { transform: scale(.97); }
+.cx-mode b { font-family: var(--f-display); font-weight: 400; font-size: 1.3rem; }
+.cx-mode span:last-child { font-size: .84rem; opacity: .85; line-height: 1.35; }
+.cx-mode .icon-tile { background: var(--surface); color: var(--ic); }
+.cx-list { display: grid; gap: 12px; }
+.cx-card { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding: 10px; border-radius: 22px; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow); }
+.cx-thumb { border-radius: 16px; overflow: hidden; aspect-ratio: 1; }
+.cx-thumb svg { width: 100%; height: 100%; display: block; }
+.cx-cinfo { display: grid; gap: 4px; align-content: center; min-width: 0; }
+.cx-cinfo b { font-size: 1.05rem; line-height: 1.2; }
+.cx-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.cx-tags span { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--c); color: var(--on-c); }
+.cx-lens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cx-len { display: grid; gap: 2px; padding: 12px 8px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); text-align: center; transition: transform .15s ease; }
+.cx-len span { font-size: .74rem; color: var(--muted); }
+.cx-len[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.cx-ideas { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.cx-ideas::-webkit-scrollbar { display: none; }
+.cx-ideas .chip { flex: none; font-size: .8rem; min-height: 32px; padding: 6px 12px; font-weight: 500; }
+.cx-yjt { justify-self: start; }
+.cx-loader { display: grid; justify-items: center; gap: 10px; padding: 26px 18px; border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+.cx-loader .quill { width: 54px; animation: quill 1.6s ease-in-out infinite; transform-origin: 20% 90%; }
+.cx-loader .dots i { font-style: normal; animation: blink 1.2s infinite; }
+.cx-loader .dots i:nth-child(2) { animation-delay: .2s; } .cx-loader .dots i:nth-child(3) { animation-delay: .4s; }
+.cx-loader .sk { display: grid; gap: 8px; width: 100%; }
+.cx-loader .sk i { display: block; height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-2), color-mix(in srgb, var(--accent) 12%, var(--surface-2)), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+.cx-pitches { display: grid; gap: 14px; }
+.cx-pitch { display: grid; gap: 10px; padding: 18px; border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); border-top: 6px solid var(--c); animation: deal .5s ease both; }
+.cx-pitch:nth-child(2) { animation-delay: .1s; } .cx-pitch:nth-child(3) { animation-delay: .2s; }
+.cx-pitch h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.45rem; line-height: 1.1; }
+.cx-pitch .btn { justify-self: start; }
+.cx-stage .cast { gap: 6%; align-items: flex-end; }
+.cx-yj { margin: 0; width: 12% !important; align-self: flex-end; margin-bottom: 4% !important; }
+.cx-page .story-text { animation: textin .6s ease both; }
+.cx-page .story-text + .story-text::first-letter { float: none; font-family: inherit; font-size: inherit; line-height: inherit; margin: 0; color: inherit; }
+.cx-talk { background: color-mix(in srgb, var(--m8) 70%, var(--surface)); }
+.cx-choice { display: grid; gap: 6px; }
+.cx-req { display: inline-flex; align-items: center; gap: 6px; font-size: .74rem; font-weight: 700; color: var(--i7); }
+.cx-req svg { width: 15px; height: 15px; }
+.cx-out { display: block; font-weight: 500; color: var(--muted); margin-top: 4px; }
+.cx-nav { justify-content: space-between; }
+.cx-endstats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.cx-endstats span { padding: 6px 12px; border-radius: 999px; background: var(--surface-2); font-size: .84rem; font-weight: 600; }
+/* Le petit tableau de bord des héros. */
+.cx-hud { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: stretch; }
+.cx-hchip { display: flex; gap: 8px; align-items: center; padding: 8px 10px 8px 6px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hair); min-width: 0; }
+.cx-hchip.ko { opacity: .55; filter: grayscale(.6); }
+.cx-hav { width: 34px; flex: none; }
+.cx-hav svg { width: 100%; height: auto; display: block; }
+.cx-hav.big { width: 54px; }
+.cx-hinfo { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.cx-hinfo b { font-size: .8rem; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cx-hinfo b small { font-weight: 500; color: var(--muted); }
+.cx-hinfo > small { font-size: .66rem; color: var(--muted); }
+.cx-bar { display: block; height: 6px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.cx-bar i { display: block; height: 100%; border-radius: 4px; transition: width .5s cubic-bezier(.3, .8, .3, 1); }
+.cx-bar.pv i { background: linear-gradient(90deg, #4FBF7F, #8BDB9F); }
+.cx-bar.pm i { background: linear-gradient(90deg, #5E8BD9, #9FB4F0); }
+.cx-bar.foe { height: 8px; background: rgba(0, 0, 0, .35); }
+.cx-bar.foe i { background: linear-gradient(90deg, #E0457A, #F2A0B4); }
+.cx-bag { display: grid; place-items: center; gap: 0; width: 52px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hair); font-weight: 700; font-size: .8rem; }
+.cx-bag svg { width: 22px; height: 22px; }
+.cx-items { display: grid; gap: 8px; }
+.cx-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px; border-radius: 14px; background: var(--surface-2); }
+.cx-item span:nth-child(2) { display: grid; min-width: 0; }
+.cx-item small { color: var(--muted); font-size: .74rem; }
+.cx-it { width: 34px; height: 34px; border-radius: 10px; background: var(--surface); position: relative; }
+.cx-it::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; }
+.cx-it.potion::after { background: radial-gradient(circle at 35% 35%, #FFB3C4, #E0457A); border-radius: 40% 40% 50% 50%; }
+.cx-it.ether::after { background: radial-gradient(circle at 35% 35%, #BFD4FF, #3A6FC4); border-radius: 40% 40% 50% 50%; }
+.cx-it.bombe::after { background: radial-gradient(circle at 35% 35%, #8A8FA8, #2A2433); }
+.cx-it.plume::after { background: linear-gradient(135deg, #F2C84B, #E0566B); border-radius: 80% 0 80% 0; }
+.cx-it.arme::after { background: linear-gradient(135deg, #DCE3EC, #8691A0); border-radius: 2px; transform: rotate(45deg) scale(.5, 1.2); }
+.cx-it.armure::after { background: linear-gradient(#C9D2DE, #8691A0); border-radius: 30% 30% 50% 50%; }
+.cx-it.talisman::after { background: radial-gradient(circle, #FFF3C9 0 25%, #F2C84B 26% 60%, #C9A035 61%); }
+.cx-it.big { width: 56px; height: 56px; border-radius: 16px; }
+.cx-foecard, .cx-loot { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px; border-radius: 22px; background: linear-gradient(135deg, color-mix(in srgb, var(--m1) 60%, var(--surface)), var(--surface)); box-shadow: var(--shadow); }
+.cx-foecard.boss { background: linear-gradient(135deg, #3D3470, #6A2D4A); color: #FFF6FA; }
+.cx-foecard.boss .sec, .cx-foecard.boss .muted { color: rgba(255, 246, 250, .75); }
+.cx-foecard h2, .cx-loot h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.35rem; line-height: 1.1; }
+.cx-foeart svg { width: 100%; height: auto; display: block; animation: idle 2.4s ease-in-out infinite; }
+.cx-loot { grid-template-columns: 56px minmax(0, 1fr); }
+/* Jet de dé hors combat. */
+.cx-check { display: grid; gap: 8px; }
+.cx-roll { display: grid; justify-items: center; gap: 6px; padding: 18px; border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
+.cx-roll .die { position: relative; width: 88px; color: var(--i4); animation: dieroll .8s cubic-bezier(.2, .8, .3, 1.2) both; }
+.cx-roll .die svg { width: 100%; display: block; }
+.cx-roll .die b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-size: 1.8rem; color: var(--fg); animation: dienum .8s ease both; }
+.cx-roll.ok .die { color: #4FBF7F; } .cx-roll.ko .die { color: #E0566B; }
+.cx-rollt { font-family: var(--f-display); font-size: 1.5rem; animation: textin .4s .7s ease both; }
+/* Création des héros. */
+.cx-hsec { display: grid; gap: 12px; padding: 16px; border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
+.cx-hhead { display: flex; gap: 12px; align-items: center; }
+.cx-hhead h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.4rem; line-height: 1.1; }
+.cx-classes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.cx-class { display: grid; justify-items: center; gap: 4px; padding: 10px 2px 8px; border-radius: 16px; background: var(--surface-2); color: var(--muted); font-size: .7rem; transition: transform .15s ease, background .2s ease; }
+.cx-class svg { width: 26px; height: 26px; }
+.cx-class[aria-pressed="true"] { background: var(--c); color: var(--on-c); transform: translateY(-2px); box-shadow: 0 8px 18px -12px var(--ic); }
+.cx-class[aria-pressed="true"] svg { color: var(--ic); }
+.cx-cdesc { display: grid; gap: 4px; font-size: .84rem; color: var(--muted); }
+.cx-cdesc b { color: var(--fg); }
+.cx-stats { display: grid; gap: 8px; }
+.cx-stat { display: grid; grid-template-columns: 22px 70px minmax(0, 1fr) 34px 34px; gap: 8px; align-items: center; }
+.cx-sic svg { width: 20px; height: 20px; color: var(--i7); }
+.cx-sname { font-size: .86rem; font-weight: 600; }
+.cx-pips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.cx-pips i { height: 10px; border-radius: 3px; background: var(--surface-2); }
+.cx-pips i.b { background: color-mix(in srgb, var(--i7) 55%, var(--surface-2)); }
+.cx-pips i.p { background: var(--accent); animation: pip .3s ease; }
+.cx-pm { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); font-size: 1.1rem; font-weight: 700; }
+.cx-pm:disabled { opacity: .35; }
+/* L'arène de combat. */
+.cx-arena { position: relative; aspect-ratio: 16 / 12; border-radius: 26px; overflow: hidden; isolation: isolate; box-shadow: var(--shadow); background: #2A2230; }
+.cx-abg { position: absolute; inset: 0; filter: saturate(.85) brightness(.82); }
+.cx-abg svg { width: 100%; height: 100%; display: block; }
+.cx-arena::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 110%, rgba(20, 14, 30, .55), transparent 60%); z-index: 0; pointer-events: none; }
+.cx-arena.boss .cx-abg { filter: saturate(.7) brightness(.6) hue-rotate(-12deg); }
+.cx-arena.quake { animation: quake .45s ease; }
+.cx-foe { position: absolute; right: 4%; top: 5%; width: 41%; z-index: 1; display: grid; gap: 4px; }
+.cx-ftop { display: flex; gap: 6px; align-items: center; color: #fff; font-size: .82rem; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.cx-boss { font-size: .62rem; font-weight: 800; letter-spacing: .1em; padding: 2px 6px; border-radius: 6px; background: #E0457A; color: #fff; }
+.cx-status { font-size: .68rem; font-weight: 700; color: #FFE7A0; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
+.cx-fart { position: relative; width: 88%; justify-self: center; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .35)); }
+.cx-fart::after, .cx-heroes::before { content: ""; position: absolute; z-index: -1; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 244, 220, .32), rgba(255, 244, 220, .08) 55%, transparent 72%); }
+.cx-fart::after { left: -4%; right: -4%; bottom: -6%; height: 22%; }
+.cx-heroes::before { left: -6%; right: -6%; bottom: 4%; height: 26%; }
+.cx-arena.boss .cx-fart { width: 104%; filter: drop-shadow(0 0 14px rgba(224, 69, 122, .55)) drop-shadow(0 8px 10px rgba(0, 0, 0, .35)); }
+.cx-fart svg { width: 100%; height: auto; display: block; overflow: visible; animation: idle 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+.cx-foe.fx-dmg .cx-fart svg, .cx-foe.fx-crit .cx-fart svg { animation: hit .5s ease; }
+.cx-foe.fx-crit .cx-fart { filter: drop-shadow(0 0 16px #F2C84B); }
+.cx-foe.fx-love .cx-fart svg { animation: lovebob .9s ease; }
+.cx-foe.fx-sleep .cx-fart svg { animation: none; transform: rotate(-8deg) translateY(4%); opacity: .85; }
+.cx-foe.fx-rage .cx-fart svg, .cx-foe.fx-charge .cx-fart svg { animation: rage .5s ease 2; }
+.cx-foe.gone .cx-fart { animation: vanish .9s ease forwards; }
+.cx-heroes { position: absolute; left: 3%; bottom: 4%; width: 52%; display: flex; gap: 4%; align-items: flex-end; z-index: 1; }
+.cx-fh { position: relative; width: 48%; display: grid; gap: 4px; justify-items: center; transition: transform .3s ease; }
+.cx-fhb { width: 72%; transition: filter .3s ease; }
+.cx-fhb svg { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .35)); }
+.cx-fh.active .cx-fhb { filter: drop-shadow(0 0 10px rgba(255, 231, 160, .95)); animation: bob 1.4s ease-in-out infinite; }
+.cx-fh.active::before { content: "▼"; position: absolute; top: -16px; font-size: .7rem; color: #FFE7A0; animation: bob 1s ease-in-out infinite; }
+.cx-fh.ko .cx-fhb { filter: grayscale(1) brightness(.8); transform: rotate(-80deg) translate(-10%, 30%); }
+.cx-fh.shielded .cx-fhb::after { content: ""; }
+.cx-fh.shielded .cx-fhb svg { filter: drop-shadow(0 0 8px #9FD4FF) drop-shadow(0 6px 6px rgba(0, 0, 0, .35)); }
+.cx-fh.fx-lunge { animation: lunge .5s ease; }
+.cx-fh.fx-hurt .cx-fhb { animation: hit .45s ease; }
+.cx-fh.fx-heal .cx-fhb svg { filter: drop-shadow(0 0 10px #8BDB9F); }
+.cx-fbars { width: 100%; display: grid; gap: 2px; padding: 4px 6px; border-radius: 10px; background: rgba(20, 14, 30, .55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.cx-fbars b { color: #fff; font-size: .66rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cx-fbars .cx-bar { height: 5px; background: rgba(255, 255, 255, .18); }
+.fx-num { position: absolute; left: 50%; top: 20%; z-index: 3; font-family: var(--f-display); font-size: 1.5rem; color: #fff; text-shadow: 0 2px 0 #2A2240, 0 0 8px rgba(0, 0, 0, .5); pointer-events: none; animation: numup 1.1s ease-out both; white-space: nowrap; }
+.fx-num.crit { font-size: 2.1rem; color: #FFE07A; }
+.fx-num.heal { color: #8BF0B0; }
+.fx-num.hurt { color: #FFB3C4; }
+.fx-num.miss, .fx-num.dodge { font-family: var(--f-hand); font-size: 1.4rem; color: #E8E2F4; }
+.cx-d20 { position: absolute; left: 7%; top: 8%; width: 58px; z-index: 4; color: #9B7BD6; animation: d20in 1.2s ease both; }
+.cx-d20 svg { width: 100%; display: block; }
+.cx-d20 b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-size: 1.4rem; color: #2A2240; }
+.cx-d20.ok { color: #4FBF7F; } .cx-d20.ko { color: #E0566B; }
+.cx-log { display: grid; gap: 2px; min-height: 66px; padding: 10px 14px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); font-size: .86rem; }
+.cx-log p { color: var(--muted); line-height: 1.35; }
+.cx-log p.last { color: var(--fg); font-weight: 600; animation: textin .35s ease both; }
+.cx-turn { text-align: center; font-family: var(--f-hand); font-size: 1.45rem; line-height: 1; color: var(--ic, var(--accent)); }
+.cx-turn.foe { color: var(--muted); animation: blink 1.2s infinite; }
+.cx-acts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cx-act { display: grid; justify-items: center; gap: 2px; padding: 12px 6px 10px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow); transition: transform .12s ease; }
+.cx-act:active { transform: scale(.94); }
+.cx-act:disabled { opacity: .4; }
+.cx-act svg { width: 24px; height: 24px; color: var(--i7); }
+.cx-act b { font-size: .8rem; line-height: 1.15; text-align: center; }
+.cx-act small { font-size: .66rem; color: var(--muted); }
+.cx-over { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 16px; border-radius: 22px; animation: deal .5s ease both; }
+.cx-over.win { background: linear-gradient(135deg, color-mix(in srgb, #F2C84B 30%, var(--surface)), var(--surface)); }
+.cx-over.lose { background: linear-gradient(135deg, color-mix(in srgb, var(--m4) 60%, var(--surface)), var(--surface)); }
+.cx-overt { font-family: var(--f-display); font-size: 1.7rem; line-height: 1.1; }
+.cx-lvl { font-weight: 700; color: var(--i2); animation: pip .5s ease both; }
+@keyframes quill { 0%, 100% { transform: rotate(-6deg) translateX(-6px); } 50% { transform: rotate(6deg) translateX(6px); } }
+@keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes textin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes idle { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-3%) scale(1.02, .98); } }
+@keyframes hit { 0% { transform: translateX(0); filter: brightness(3) saturate(0); } 20% { transform: translateX(-6%); } 40% { transform: translateX(5%); filter: none; } 60% { transform: translateX(-3%); } 100% { transform: none; } }
+@keyframes lunge { 0%, 100% { transform: none; } 40% { transform: translate(18%, -6%) scale(1.05); } }
+@keyframes lovebob { 0%, 100% { transform: none; } 30% { transform: scale(1.08) rotate(-4deg); } 60% { transform: scale(.96) rotate(4deg); } }
+@keyframes rage { 0%, 100% { transform: none; } 50% { transform: scale(1.08); filter: drop-shadow(0 0 10px #E0457A); } }
+@keyframes vanish { to { opacity: 0; transform: translateY(-14%) scale(.8); filter: blur(4px); } }
+@keyframes quake { 0%, 100% { transform: none; } 20% { transform: translate(-4px, 2px); } 40% { transform: translate(4px, -2px); } 60% { transform: translate(-3px, 1px); } 80% { transform: translate(2px, 0); } }
+@keyframes numup { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.6); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -38px) scale(1); } }
+@keyframes d20in { 0% { opacity: 0; transform: rotate(-200deg) scale(.4); } 35% { opacity: 1; transform: rotate(20deg) scale(1.1); } 50% { transform: none; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes dieroll { 0% { transform: rotate(-360deg) scale(.4); opacity: 0; } 70% { transform: rotate(14deg) scale(1.08); opacity: 1; } 100% { transform: none; } }
+@keyframes dienum { 0%, 60% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes pip { from { transform: scale(.5); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cx-arena *, .cx-roll *, .cx-loader * { animation: none !important; } }
 /* Thèmes achetés : ils recolorent les halos du fond et y ajoutent des particules. */
 .cozy-fx { position: absolute; inset: 0; }
 .cozy-fx span { position: absolute; display: block; border-radius: 50%; }
@@ -975,6 +1194,8 @@ const MODES = {
   defis: { title: "Les défis complices", desc: "Des défis courts, filtrés selon votre envie.", c: 3, glyph: "⚑" },
   histoire: { title: "Notre histoire", desc: "Revisitez vos moments forts et gardez-les dans l'album.", c: 4, glyph: "♥︎" },
   etsi: { title: "Et si on… ?", desc: "Des scénarios à imaginer, des idées à vivre.", c: 5, glyph: "☁︎" },
+  conte: { title: "Notre histoire sur mesure", desc: "Votre contexte, vos détails : une histoire à choix écrite pour vous, par l'IA.", c: 8, glyph: "✎" },
+  epopee: { title: "L'épopée", desc: "Un jeu de rôle à deux : classes, statistiques, objets, combats et boss.", c: 7, glyph: "⚔" },
   arcade: { title: "Arcade", desc: "Quatre mini-jeux rapides, à jouer côte à côte.", c: 7, glyph: "◎" },
   recit: { title: "Il était une fois nous", desc: "Une histoire dont vous êtes les héros.", c: 8, glyph: "❦" },
   puzzle: { title: "Le puzzle de Yassen Jr.", desc: "Reconstituez, pièce par pièce, le portrait de votre compagnon de série.", c: 2, glyph: "◧" },
@@ -1044,7 +1265,7 @@ const isOwner = () => {
 };
 const Store = {
   backend: "local", db: null, q: {}, unsubs: [], ready: false,
-  cols: { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [] },
+  cols: { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [], contes: [] },
   meta: JSON.parse(JSON.stringify(DEFAULT_META)),
   loadLocal() {
     try {
@@ -1302,7 +1523,8 @@ let S = {
   tab: "home", capSeg: "album", layer: null,
   setup: null, game: null,
   df: { duree: "all", budget: "all", amb: "all", lieu: "all" }, dfCur: null, dfSeen: [],
-  drafts: {}, confirm: null, editAv: null, mot: "mot", openLetters: {}
+  drafts: {}, confirm: null, editAv: null, mot: "mot", openLetters: {},
+  cx: { view: "lib", mode: "conte", genre: "romance", length: "moyenne", yassen: true }, fight: null
 };
 
 const couple = () => Store.meta.couple || DEFAULT_META.couple;
@@ -1436,6 +1658,8 @@ const ICON = {
 };
 
 const PATHS = {
+  sword: '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>',
+  quill: '<path d="M20 4C12 5 7 10 5 18l-1 3 3-2c7-1 12-6 13-15z"/><path d="M5 19l9-10"/>',
   bubbles: '<path d="M4 5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M17 9h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-4-3h-3"/>',
   people: '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><path d="M14 14.6c.8-.4 1.6-.6 2.5-.6 2.2 0 4 1.5 4.7 4.5"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
@@ -1450,9 +1674,9 @@ const PATHS = {
   puzzle: '<path d="M5 9h3.2a2 2 0 1 1 3.6 0H15v3.2a2 2 0 1 1 0 3.6V19H5z"/><path d="M15 9h4v10h-4"/>'
 };
 const ARC_ICON = { tp: "fork", flags: "flag", onde: "gauge", synchro: "sync" };
-const MODE_ICON = { questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle" };
+const MODE_ICON = { conte: "quill", epopee: "sword", questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle" };
 const ico = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name] || ""}</svg>`;
-const MODE_GROUPS = [["Se découvrir", ["questions", "qui", "etsi"]], ["Se souvenir", ["histoire", "recit", "puzzle"]], ["S'amuser", ["arcade", "defis"]]];
+const MODE_GROUPS = [["Se découvrir", ["questions", "qui", "etsi"]], ["Vivre une histoire", ["conte", "epopee", "recit"]], ["Se souvenir", ["histoire", "puzzle"]], ["S'amuser", ["arcade", "defis"]]];
 const modeRow = k => { const m = MODES[k]; return `<button class="mode-row" style="${cvar(m.c)}" data-a="open-mode" data-mode="${k}"><span class="icon-tile">${ico(MODE_ICON[k])}</span><span class="mode-txt"><b>${esc(fr(m.title))}</b><span>${esc(fr(m.desc))}</span></span><span class="chev" aria-hidden="true">›</span></button>`; };
 const syncLine = () => Store.backend === "shared" ? "Votre progression est commune à vos deux téléphones."
   : Store.backend === "db" ? "Vos souvenirs, aventures et lettres sont partagés entre les personnes qui ont accès à cette page."
@@ -2911,6 +3135,7 @@ function storyStage(st, key) {
 function visibleStoryTheme() {
   if (!S.layer) return null;
   if (S.layer.type === "story" && S.story) return STORY_MUSIC[S.story.id] || null;
+  if (S.layer.type === "conte" && S.cx && ["read", "fight", "replay"].includes(S.cx.view) && cxStory()) return (CX_GENRES[cxStory().genre] || {}).music || null;
   if (S.layer.type === "live" && Live.state && Live.state.kind === "story") return STORY_MUSIC[Live.state.id] || null;
   return null;
 }
@@ -2985,7 +3210,24 @@ function storyView() {
 const PZ_IMG = "data:image/jpeg;base64,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ePELKrMQosO0OmViCC+w18EyxSon4IT8jc6eSGm3Ij+w14+Dvr+WLEdQn+BCxiRYWINDRNhCHXooFcLrQmJiE0a1RYx48YsQhYiQjhDDY0NDOhYSiBE6RC/BDZdikJGlyJCQsYYQ0sIeMY8eIXwioRRMmENDQ0QaqjyDPp+QQ9xeBUfLrEhISEMcgizbHOD+GPViELJUPWIOZJ40NEGiVCghBqiUIJCQljYNWPFL3jGPH/AiSjcsuhhEGGITJkIQQSEhjDAzg/eJLdD148WLFnJELxBYsool4Ig0TSEJhISy4JQtJwUoohiILwxYyx48eL4Q/Efga1tUJ6DCIQaIQhCEIMbgmUq2b2eO8f2vlo0xMND050XTyjH4FpUckIhCEIQg1jZD25LiLukTQJ2G67rxjFiY7h8i1ImjNRddoxOocuD0bO/qDnp75xKGy6xfAws5Ep871bQTVbFRXYTxM9mjuBl2iZco9gjhTAXtksYotdncil24vDsmsiOxCTbf+/vXi+bt2lxLQXAO0pD8ylG5HNy7S7dbywQXf/cZPDE8T25dpcpRX9ZZWhLUGNKNyEThjBSlylx5eP6k14ynGkPY2uUMSG2l2WjFie3Oe/lKhblsRF3GL1YgpRwDT4Y29DYvtMSp819ZcSQ4FEOMY2/InqeXU+eRyE/6ZBSrhSib8lfkpS7SlZ+4ouUu3b/AnlxkIVT1FxJIpSlKUpSlKUpSl2/Fy/KHFy/4g12jnLr6QmHryl2lKUpSlKUu832PH2XaXIIh/v5kzHHo2lylyi8jg9kFL/DSly5S5Siirsix+WNSvo/Hc//EACgRAQEBAAICAgEEAgMBAQAAAAEAERAhMUFRYSBxgZGhsdHB4fAwQP/aAAgBAgEBPxA03LI7kWEl42WW22222222222222222222G222GG3gYeWfUgMTvWBXCCOMsvGyy222222222222222222ww222w8jDwsvBanuwB7422W22XbbbbbbbbbbbIDW1j3/m222zW2/Pi6ZzTbYbbeB5GGWZl5WW222QtttttvZUYhDSJaaf3Ek0bbtjyQLDB39bwXqAzbA4d/W22Ng7/wC+uDDyMcDyszLLystttttsXvH9WhVmHD2bdNttt8GeY59xttth7tDXi/riUtfMMPBDETMszLPCy22228aj28ThONhwGHb56PHLFxts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";
 // Les données partagées ne sont jamais injectées telles quelles : seule une image encodée est acceptée.
 const pzStored = () => { const v = (Store.meta.puzzle || {}).img || ""; return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : ""; };
-const pzImage = () => pzStored() || PZ_IMG;
+// Vos photos de puzzle, à côté du portrait de Yassen Jr. (meta/puzzle/photos/<id>).
+const PZ_SIZES = [3, 4, 5, 6, 7, 8], PZ_MAX_PHOTOS = 8;
+const okImg = v => typeof v === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
+const pzPhotos = () => Object.entries((Store.meta.puzzle || {}).photos || {}).filter(([id, v]) => /^[a-z0-9]{1,24}$/.test(id) && okImg(v));
+const pzPhotoId = id => (id && id !== "yassen" && pzPhotos().some(([k]) => k === id) ? id : "yassen");
+const pzImage = id => { const k = pzPhotoId(id === undefined ? S.pzPhoto : id); return k === "yassen" ? pzStored() || PZ_IMG : ((Store.meta.puzzle || {}).photos || {})[k]; };
+const pzIsYassen = id => pzPhotoId(id === undefined ? S.pzPhoto : id) === "yassen";
+const pzSizeChips = n => `<div class="stack"><h2 class="sec">Nombre de pièces</h2><div class="chips">${PZ_SIZES.map(v => `<button class="chip" aria-pressed="${n === v}" data-a="pz-size" data-v="${v}">${v * v} pièces</button>`).join("")}</div>${n >= 7 ? `<p class="small muted">${esc(fr("Un vrai défi : prévoyez un bon moment, et n'hésitez pas à regarder le modèle."))}</p>` : ""}</div>`;
+// Choix de la photo : Yassen Jr., vos photos, et une case pour en ajouter.
+function pzPhotoStrip() {
+  const cur = pzPhotoId(S.pzPhoto), list = pzPhotos();
+  return `<div class="stack"><h2 class="sec">La photo du puzzle</h2><div class="pz-photos" role="group" aria-label="Photo du puzzle">
+    <button class="pz-ph" aria-pressed="${cur === "yassen"}" data-a="pz-photo" data-v="yassen"><img src="${pzStored() || PZ_IMG}" alt="Yassen Jr."></button>
+    ${list.map(([id, v]) => `<span class="pz-ph-w"><button class="pz-ph" aria-pressed="${cur === id}" data-a="pz-photo" data-v="${id}"><img src="${v}" alt="Votre photo"></button>${S.pzDel === id ? `<button class="pz-del sure" data-a="pz-del" data-v="${id}">Supprimer ?</button>` : `<button class="pz-del" data-a="pz-del-ask" data-v="${id}" aria-label="Retirer cette photo">×</button>`}</span>`).join("")}
+    ${list.length < PZ_MAX_PHOTOS ? `<label class="pz-ph pz-add" for="pz-file"><span aria-hidden="true">+</span><span>Ajouter</span></label>` : ""}
+  </div><input class="vh" type="file" id="pz-file" accept="image/*">
+  <p class="small muted">${esc(fr("Ajoutez vos photos à vous : elles rejoignent votre album de puzzles, sur vos deux téléphones, sans remplacer Yassen Jr."))}</p></div>`;
+}
 function pzUpload(file) {
   const url = URL.createObjectURL(file), im = new Image();
   im.onload = () => {
@@ -2995,7 +3237,9 @@ function pzUpload(file) {
     URL.revokeObjectURL(url);
     let data = cv.toDataURL("image/jpeg", 0.82);
     if (data.length > 200000) data = cv.toDataURL("image/jpeg", 0.6);
-    Store.setMeta("puzzle", { img: data }); render(true); toast("Le portrait de Yassen Jr. est en place");
+    if (pzPhotos().length >= PZ_MAX_PHOTOS) { toast(`L'album est plein (${PZ_MAX_PHOTOS} photos). Retirez-en une pour en ajouter.`); return; }
+    const id = uid().toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12) || String(Date.now());
+    Store.patchMeta("puzzle", { ["photos/" + id]: data }); S.pzPhoto = id; render(true); toast("Photo ajoutée à votre album de puzzles");
   };
   im.onerror = () => { URL.revokeObjectURL(url); toast("Cette image n'a pas pu être lue. Essaie avec une capture d'écran en JPEG ou PNG."); };
   im.src = url;
@@ -3004,17 +3248,17 @@ function startPuzzle() {
   const n = S.pzSize || 3, N = n * n;
   let order;
   do { order = shuffle([...Array(N).keys()]); } while (order.every((p, i) => p === i));
-  S.pz = { n, order, sel: null, moves: 0, startAt: Date.now(), done: false, turn: Math.random() < 0.5 ? "a" : "b", peek: false };
+  S.pz = { n, photo: pzPhotoId(S.pzPhoto), order, sel: null, moves: 0, startAt: Date.now(), done: false, turn: Math.random() < 0.5 ? "a" : "b", peek: false };
 }
 /* Puzzle à distance : la partie vit dans l'espace commun (live/puzzle) et chaque téléphone
    l'affiche en direct. Seule la personne dont c'est le tour peut échanger deux pièces. */
 const pzMe = () => { const v = lsGet("entre-nous:me"); return v === "a" || v === "b" ? v : ""; };
 // L'état vient de la base partagée : on ne garde qu'un puzzle bien formé.
 function pzValid(L) {
-  if (!L || typeof L !== "object" || ![3, 4, 5].includes(L.n) || !Array.isArray(L.order)) return null;
+  if (!L || typeof L !== "object" || !PZ_SIZES.includes(L.n) || !Array.isArray(L.order)) return null;
   const N = L.n * L.n, o = L.order;
   if (o.length !== N || new Set(o).size !== N || o.some(p => !Number.isInteger(p) || p < 0 || p >= N)) return null;
-  return { n: L.n, order: o.slice(), turn: L.turn === "b" ? "b" : "a", moves: +L.moves || 0, startAt: +L.startAt || Date.now(), done: !!L.done, time: +L.time || 0 };
+  return { n: L.n, photo: pzPhotoId(L.photo), order: o.slice(), turn: L.turn === "b" ? "b" : "a", moves: +L.moves || 0, startAt: +L.startAt || Date.now(), done: !!L.done, time: +L.time || 0 };
 }
 function pzGrid(n, order, sel, done, act, img) {
   const pos = p => `${((p % n) / (n - 1)) * 100}% ${(Math.floor(p / n) / (n - 1)) * 100}%`;
@@ -3029,7 +3273,7 @@ function pzRemoteClose() {
   S.pzUnsub = null; S.pzRemote = false; S.pzSel = null; S.pzrSetup = false;
 }
 function pzRemoteView() {
-  const img = pzImage(), col = cvar(2), me = pzMe(), L = S.pzLive;
+  const L = S.pzLive, img = pzImage(L && !S.pzrSetup ? L.photo : undefined), col = cvar(2), me = pzMe();
   const head = (right = "") => `<div class="g-head"><button class="icon-btn" data-a="pzr-close" aria-label="Retour">×</button><div class="g-prog"><span>Puzzle à distance${L && !S.pzrSetup ? ` · ${L.n * L.n} pièces` : ""}</span></div>${right}</div>`;
   if (!me) return head() + `<div class="panel" style="text-align:center;${col}"><p class="card-for">Sur ce téléphone…</p><p class="big-word" style="font-size:1.7rem">Qui es-tu ?</p></div>
     <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${col}" data-a="pzr-me" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
@@ -3037,7 +3281,7 @@ function pzRemoteView() {
   if (!L || S.pzrSetup) {
     const n = S.pzSize || 3;
     return head() + rulesHtml(["Le même puzzle s'affiche en direct sur vos deux téléphones, même à distance.", "Chacun son tour : seule la personne dont c'est le tour peut échanger deux pièces. Le tour passe ensuite à l'autre.", "Lancez la partie depuis un téléphone : elle apparaît aussitôt sur l'autre."], "Comment on joue")
-      + `<div class="stack"><h2 class="sec">Nombre de pièces</h2><div class="chips">${[[3, "9 pièces"], [4, "16 pièces"], [5, "25 pièces"]].map(([v, l]) => `<button class="chip" aria-pressed="${n === v}" data-a="pz-size" data-v="${v}">${l}</button>`).join("")}</div></div>
+      + pzPhotoStrip() + pzSizeChips(n) + `
       <button class="btn wide c" style="${col}" data-a="pzr-start">Lancer la partie</button>
       ${L && !L.done ? `<button class="btn line wide" data-a="pzr-resume">Reprendre la partie en cours</button>` : ""}
       <p class="small muted" style="text-align:center">Tu joues en tant que ${esc(nm(me))}. <button class="link" data-a="pzr-me" data-v="">Changer</button></p>`;
@@ -3046,7 +3290,7 @@ function pzRemoteView() {
   const right = `<span class="g-timer">${L.moves} échange${L.moves > 1 ? "s" : ""}</span>`;
   if (L.done) {
     const min = Math.max(1, Math.round(L.time / 60000));
-    return head(right) + pzGrid(L.n, L.order, null, true, "pzr-tap", img) + `<p class="verdict" style="${col}">Yassen Jr. est de retour !</p>
+    return head(right) + pzGrid(L.n, L.order, null, true, "pzr-tap", img) + `<p class="verdict" style="${col}">${pzIsYassen(L.photo) ? "Yassen Jr. est de retour !" : "Le puzzle est complet !"}</p>
       <p style="text-align:center">${esc(fr(`Reconstitué à distance en ${L.moves} échanges et environ ${min} minute${min > 1 ? "s" : ""}. Pièce par pièce, comme vous.`))}</p>
       <div class="actions"><button class="btn wide c" style="${col}" data-a="pzr-new">Nouvelle partie</button></div>`;
   }
@@ -3059,15 +3303,16 @@ function pzRemoteView() {
 }
 function puzzleView() {
   if (S.pzRemote) return pzRemoteView();
-  const z = S.pz, img = pzImage(), col = cvar(2);
+  const z = S.pz, img = pzImage(z ? z.photo : undefined), col = cvar(2);
   if (!z) {
     const n = S.pzSize || 3, custom = !!pzStored();
     return `${layerHead("")}
     <section class="setup-hero" style="${col}"><span class="g" aria-hidden="true">${ico("puzzle")}</span><h1>Le puzzle de Yassen Jr.</h1><p>${esc(fr("À la mémoire de Yassen Jr., notre compagnon de série. Reconstituez son portrait, pièce par pièce, ensemble."))}</p></section>
-    <img class="pz-img" src="${img}" alt="Portrait de Yassen Jr.">
-    <div class="row"><label class="btn ghost" for="pz-file">Changer la photo</label><input class="vh" type="file" id="pz-file" accept="image/*">${custom ? `<button class="link" data-a="pz-reset-img">Revenir au portrait d'origine</button>` : ""}</div>
-    ${rulesHtml(["Le portrait de Yassen Jr. est découpé en pièces mélangées.", "Touchez une pièce, puis une autre : elles échangent leur place.", "Jouez à deux en alternant : un échange chacun, à tour de rôle. Le prénom de la personne qui joue s'affiche au-dessus du puzzle.", "Besoin d'aide ? « Voir le modèle » affiche l'image complète.", "Aucun chrono ne presse : prenez votre temps."], "Comment on joue")}
-    <div class="stack"><h2 class="sec">Nombre de pièces</h2><div class="chips">${[[3, "9 pièces"], [4, "16 pièces"], [5, "25 pièces"]].map(([v, l]) => `<button class="chip" aria-pressed="${n === v}" data-a="pz-size" data-v="${v}">${l}</button>`).join("")}</div></div>
+    <img class="pz-img" src="${img}" alt="${pzIsYassen() ? "Portrait de Yassen Jr." : "La photo du puzzle"}">
+    ${pzPhotoStrip()}
+    ${custom && pzIsYassen() ? `<div class="row"><button class="link" data-a="pz-reset-img">Revenir au portrait d'origine de Yassen Jr.</button></div>` : ""}
+    ${rulesHtml(["La photo choisie (Yassen Jr. ou l'une des vôtres) est découpée en pièces mélangées.", "Touchez une pièce, puis une autre : elles échangent leur place.", "Jouez à deux en alternant : un échange chacun, à tour de rôle. Le prénom de la personne qui joue s'affiche au-dessus du puzzle.", "Besoin d'aide ? « Voir le modèle » affiche l'image complète.", "Aucun chrono ne presse : prenez votre temps."], "Comment on joue")}
+    ${pzSizeChips(n)}
     <button class="btn wide c" style="${col}" data-a="pz-start">Commencer le puzzle</button>
     ${Store.backend === "shared" ? `<section class="panel"><h2 class="sec">À distance, chacun sur son téléphone</h2>
       <p class="small">${esc(fr("Le même puzzle s'affiche en direct sur vos deux téléphones. Chacun son tour, même si vous n'êtes pas ensemble."))}</p>
@@ -3077,12 +3322,12 @@ function puzzleView() {
   const N = z.n * z.n, placed = z.order.filter((p, i) => p === i).length;
   const pos = p => { const c = p % z.n, r = Math.floor(p / z.n); return `${(c / (z.n - 1)) * 100}% ${(r / (z.n - 1)) * 100}%`; };
   const grid = `<div class="pz${z.done ? " solved" : ""}" style="--n:${z.n};--pz:url('${img}')">${z.order.map((p, i) => `<button style="background-position:${pos(p)}" data-a="pz-tap" data-i="${i}" aria-pressed="${z.sel === i}" aria-label="Pièce ${i + 1}"${z.done ? " disabled" : ""}></button>`).join("")}</div>`;
-  const head = `<div class="g-head"><button class="icon-btn" data-a="pz-menu" aria-label="Retour">×</button><div class="g-prog"><span>Le puzzle de Yassen Jr. · ${N} pièces</span></div><span class="g-timer">${z.moves} échange${z.moves > 1 ? "s" : ""}</span></div>`;
+  const head = `<div class="g-head"><button class="icon-btn" data-a="pz-menu" aria-label="Retour">×</button><div class="g-prog"><span>${pzIsYassen(z.photo) ? "Le puzzle de Yassen Jr." : "Notre puzzle"} · ${N} pièces</span></div><span class="g-timer">${z.moves} échange${z.moves > 1 ? "s" : ""}</span></div>`;
   if (z.done) {
     const min = Math.max(1, Math.round(z.time / 60000));
-    return head + grid + `<p class="verdict" style="${col}">Yassen Jr. est de retour !</p>
+    return head + grid + `<p class="verdict" style="${col}">${pzIsYassen(z.photo) ? "Yassen Jr. est de retour !" : "Le puzzle est complet !"}</p>
       <p style="text-align:center">${esc(fr(`Reconstitué en ${z.moves} échanges et environ ${min} minute${min > 1 ? "s" : ""}, à deux. Pièce par pièce, comme vous.`))}</p>
-      <div class="actions">${z.n < 5 ? `<button class="btn wide c" style="${col}" data-a="pz-harder">Rejouer avec ${(z.n + 1) * (z.n + 1)} pièces</button>` : `<button class="btn wide c" style="${col}" data-a="pz-start">Rejouer</button>`}<button class="btn line wide" data-a="pz-menu">Retour au puzzle</button></div>`;
+      <div class="actions">${z.n < 8 ? `<button class="btn wide c" style="${col}" data-a="pz-harder">Rejouer avec ${(z.n + 1) * (z.n + 1)} pièces</button>` : `<button class="btn wide c" style="${col}" data-a="pz-start">Rejouer</button>`}<button class="btn line wide" data-a="pz-menu">Retour au puzzle</button></div>`;
   }
   return head + `<p class="lbl" style="text-align:center">À ${esc(nm(z.turn))} de jouer</p>`
     + (z.peek ? `<img class="pz-img peek" src="${img}" alt="Modèle du puzzle">` : "") + grid
@@ -4465,6 +4710,8 @@ const ACH = [
   { id: "lettre", icon: "bubbles", title: "Patience récompensée", desc: "Ouvrir une carte scellée le jour venu", reward: 30, test: s => !!s.flags.lettre },
   { id: "distance", icon: "people", title: "Même à distance", desc: "Finir une partie chacun sur son téléphone", reward: 30, test: s => !!s.flags.distance },
   { id: "puzzle25", icon: "puzzle", title: "Yassen Jr. en 25 pièces", desc: "Finir le puzzle dans sa version la plus difficile", reward: 40, test: s => !!s.flags.puzzle25 },
+  { id: "conte", icon: "book", title: "Conteurs sur mesure", desc: "Finir une histoire écrite pour vous", reward: 30, test: s => !!s.flags.conte },
+  { id: "boss", icon: "flag", title: "Tombeurs de boss", desc: "Vaincre un boss dans l'épopée", reward: 40, test: s => !!s.flags.boss },
   { id: "cartes3", icon: "sparkles", title: "Créateurs", desc: "Créer 3 cartes à vous", reward: 20, test: s => s.cartes >= 3 },
   { id: "parties20", icon: "gamepad", title: "Accros au jeu", desc: "Finir 20 parties", reward: 40, test: s => s.parties >= 20 },
   { id: "shop5", icon: "sparkles", title: "Fashion week", desc: "Acheter 5 articles à la boutique", reward: 30, test: s => s.owned >= 5 },
@@ -4825,6 +5072,765 @@ function tresorsView() {
 const yassenLetter = () => `<article class="letter"><p class="when">Une lettre de Yassen Jr.</p>
   <p class="hand" style="font-family:var(--f-hand);font-size:1.5rem;line-height:1.15;white-space:pre-wrap">${esc(fr(`Coucou ${nm("a")} et ${nm("b")} !\n\nÇa fait trente jours qu'on se retrouve ici. Grâce à vous, je ne suis plus une flamme qui s'éteint : je suis une flamme qui grandit.\n\nContinuez à vous faire rire, à vous écrire, à vous chamailler pour de faux et à vous réconcilier pour de vrai. Je veille sur vous.\n\nYassen Jr.`))}</p></article>`;
 
+/* ───────────────────────── Histoires sur mesure et épopée ─────────────────────────
+   Vous donnez un contexte et des détails ; l'IA (Gemini, via votre projet Firebase) propose trois
+   histoires, puis écrit la suite pas à pas selon vos choix. En mode épopée, l'histoire devient un
+   jeu de rôle : classes, statistiques, objets, combats et boss.
+   Si l'IA n'est pas activée dans Firebase, un générateur intégré prend le relais. */
+const CX_GENRES = {
+  romance: { label: "Romance tendre", music: "douceur", decor: ["souvenir", "parc", "pont", "resto", "toit", "plage", "tournesols"] },
+  aventure: { label: "Aventure", music: "medieval", decor: ["foret", "grotte", "crique", "colline", "pont", "camping", "marche"] },
+  fantasy: { label: "Fantasy médiévale", music: "medieval", decor: ["chateau", "taverne", "foret", "magie", "dragonnuit", "chaumiere", "village"] },
+  mystere: { label: "Mystère", music: "mystere", decor: ["manoir", "biblio", "passage", "grenier", "noir", "rue", "quai"] },
+  comedie: { label: "Comédie", music: "pop", decor: ["karaoke", "cuisine", "plateau", "villa", "festival", "foodtruck", "salon"] },
+  sf: { label: "Science-fiction", music: "nuit", decor: ["metro", "toit", "phone", "rue", "train", "noir", "villanuit"] },
+  frissons: { label: "Frissons doux", music: "mystere", decor: ["manoir", "chateaunuit", "foret", "grenier", "passage", "dragonnuit", "noir"] }
+};
+const CX_LENGTHS = { courte: { label: "Courte", steps: 5, hint: "5 étapes · 10 min" }, moyenne: { label: "Moyenne", steps: 9, hint: "9 étapes · 20 min" }, longue: { label: "Longue", steps: 14, hint: "14 étapes · 35 min" } };
+const CX_STATS = { force: "Force", agilite: "Agilité", esprit: "Esprit", charme: "Charme" };
+const SCENE_KEYS = Object.keys(SCENES);
+const CX_IDEAS = ["On se rencontre pour la première fois dans un train de nuit", "On doit sauver Yassen Jr., enlevé par un sorcier jaloux", "On ouvre un petit café à la montagne et tout part de travers", "Un week-end à la mer, et une bouteille avec un message", "On se réveille dans un royaume où les câlins sont interdits", "Une enquête dans un manoir, pendant notre anniversaire"];
+
+// L'IA : Gemini par Firebase AI Logic. Son SDK est chargé à part, à la demande.
+const AI = {
+  ver: "12.0.0", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"], mi: 0, state: "",
+  async init() {
+    if (this.ai) return this.ai;
+    const [A, M] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-ai.js`)]);
+    const app = A.getApps().find(x => x.name === "ys-ai") || A.initializeApp(FIREBASE, "ys-ai");
+    this.M = M; this.ai = M.getAI(app, { backend: new M.GoogleAIBackend() });
+    return this.ai;
+  },
+  // Après un échec, on laisse l'IA tranquille un moment au lieu de la réessayer à chaque étape.
+  ready() { return this.state !== "off" && !(this.cool > Date.now()); },
+  async json(prompt) {
+    let ai;
+    try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
+    let last;
+    while (this.mi < this.models.length) {
+      try {
+        const m = this.M.getGenerativeModel(ai, { model: this.models[this.mi], systemInstruction: CX_SYSTEM, generationConfig: { responseMimeType: "application/json", temperature: 1, maxOutputTokens: 4096 } });
+        const r = await Promise.race([m.generateContent(prompt), new Promise((_, no) => setTimeout(() => no(new Error("délai dépassé")), 60000))]);
+        const out = parseJsonLoose(r.response.text());
+        if (!out) throw new Error("réponse illisible");
+        this.state = "ok";
+        return out;
+      } catch (e) {
+        last = e;
+        // Modèle retiré ou inconnu : on essaie le suivant. Toute autre erreur remonte.
+        if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(String(e && e.message))) { this.mi++; continue; }
+        break;
+      }
+    }
+    this.state = /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(String(last && (last.code || "") + " " + (last && last.message))) ? "off" : "err";
+    if (this.state === "err") this.cool = Date.now() + 60000;
+    throw last || new Error("IA indisponible");
+  }
+};
+function parseJsonLoose(txt) {
+  if (typeof txt !== "string") return null;
+  const t = txt.replace(/```(?:json)?/gi, "").trim(), i = t.indexOf("{"), j = t.lastIndexOf("}");
+  if (i < 0 || j <= i) return null;
+  try { return JSON.parse(t.slice(i, j + 1)); } catch (e) { return null; }
+}
+const CX_SYSTEM = `Tu es le conteur de Y&S, une appli tendre où un couple vit des histoires ensemble.
+Tu écris en français, au présent, de façon vivante, drôle et chaleureuse, avec de vrais rebondissements.
+Les deux héros sont le couple lui-même : appelle-les par leurs prénoms. Évite autant que possible d'accorder les adjectifs au masculin ou au féminin pour eux.
+Romance tendre possible, jamais explicite. Pas de violence crue : les combats restent épiques mais doux, façon conte. Jamais de culpabilisation.
+Respecte les détails personnels fournis et glisse-les avec naturel. Réponds uniquement avec un objet JSON valide, sans texte autour.`;
+const MONSTER_KINDS = ["slime", "loup", "spectre", "golem", "dragon", "champignon", "chauvesouris", "chevalier", "robot", "kraken"];
+const ITEM_KINDS = { potion: "Potion de soin", ether: "Éther", bombe: "Bombe", plume: "Plume de phénix", arme: "Arme", armure: "Armure", talisman: "Talisman" };
+
+// Ce que l'IA sait de vous : prénoms, personnalités, phrases fétiches.
+function cxHeroesText(st) {
+  return ["a", "b"].map(k => {
+    const a = avOf(k), h = st && st.rpg && st.rpg.heroes && st.rpg.heroes[k];
+    return `- ${nm(k)} : ${traitSummary(a.traits)}${a.tics.length ? ` Phrases fétiches : ${a.tics.map(t => `« ${t} »`).join(", ")}.` : ""}${h ? ` Classe : ${RPG_CLASSES[h.cls].name}, niveau ${h.lvl}, PV ${h.pv}/${h.pvMax}.` : ""}`;
+  }).join("\n");
+}
+function cxPitchPrompt(o) {
+  return `Propose trois histoires différentes à vivre pour ${nm("a")} et ${nm("b")}.
+Genre : ${CX_GENRES[o.genre].label}. Format : ${o.mode === "rpg" ? "jeu de rôle avec combats, objets et un boss final" : "histoire à choix, sans combat"}. Longueur : ${CX_LENGTHS[o.length].steps} étapes.
+Contexte voulu : ${o.context || "libre"}.
+${o.details ? `Détails personnels à intégrer : ${o.details}.` : ""}
+${o.yassen ? "Yassen Jr., leur petit compagnon (une flamme jaune adorable et gourmande), peut apparaître." : ""}
+Les héros :
+${cxHeroesText()}
+Format : {"propositions":[{"titre":"5 mots maximum","resume":"2 phrases qui donnent envie","ambiance":"3 à 4 mots"}]} avec exactement 3 propositions, chacune avec un angle différent.`;
+}
+function cxStepPrompt(st, outcome) {
+  const N = st.max, i = (st.steps || []).length + 1, rpg = st.mode === "rpg";
+  const past = (st.steps || []).map((s, k) => `${k + 1}. ${s.text.slice(0, 380)}${s.picked != null && s.choices[s.picked] ? ` → Choix : « ${s.choices[s.picked].t} »` : ""}${s.outcome ? ` (${s.outcome})` : ""}`).join("\n");
+  return `Histoire : « ${st.title} » — ${st.pitch}
+Genre : ${CX_GENRES[st.genre].label}. Contexte : ${st.context || "libre"}.${st.details ? ` Détails personnels : ${st.details}.` : ""}${st.yassen ? " Yassen Jr. (petite flamme jaune adorable) peut apparaître." : ""}
+Les héros :
+${cxHeroesText(st)}
+${rpg ? `Sac : ${(st.rpg.items || []).map(x => x.nom).join(", ") || "vide"}.` : ""}
+L'histoire fait ${N} étapes. Voici ce qui s'est passé :
+${past || "(rien encore : c'est le début)"}
+${outcome ? `Résultat du dernier choix : ${outcome}.` : ""}
+Écris l'étape ${i} sur ${N}, en 90 à 150 mots, qui découle du dernier choix.
+${i >= N ? `C'est la FIN : conclus l'histoire avec émotion. Mets "fin": true, un "titreFin" (4 mots maximum) et aucun choix.` : `Termine sur une situation qui appelle une décision. Propose 2 ou 3 choix courts (12 mots maximum), vraiment différents.`}
+Pour "decor", choisis le décor le plus proche parmi : ${SCENE_KEYS.join(", ")}.
+${rpg ? `Jeu de rôle : un choix risqué peut avoir "stat" (force, agilite, esprit ou charme) et "difficulte" (8 à 17).
+${i === N - 1 ? `Cette étape contient le BOSS FINAL : "evenement": {"type":"combat","ennemi":{"nom":"…","espece":"…","pv":80 à 120,"attaque":6 à 9,"defense":3 à 6,"faiblesse":"force|esprit|charme","boss":true}}.` : i > 1 && i < N - 1 ? `Environ une étape sur trois, ajoute "evenement": {"type":"combat","ennemi":{"nom":"…","espece":"…","pv":22 à 55,"attaque":3 à 7,"defense":1 à 4,"faiblesse":"force|esprit|charme"}}, ou parfois "evenement": {"type":"tresor","objet":{"nom":"…","type":"potion|ether|bombe|plume|arme|armure|talisman","valeur":1 à 3}}.` : ""}
+"espece" est parmi : ${MONSTER_KINDS.join(", ")}.` : `Ajoute une fois sur deux "pause" : une question tendre et sincère pour le couple, inspirée de la scène.`}
+Format : {"texte":"…","decor":"…",${rpg ? "" : `"pause":"…",`}"choix":[{"texte":"…"${rpg ? `,"stat":"…","difficulte":12` : ""}}]${rpg ? `,"evenement":{…}` : ""},"fin":false,"titreFin":""}`;
+}
+// Tout ce qui vient de l'IA est vérifié et borné avant d'être gardé.
+const clampN = (v, a, b, d) => { v = Math.round(+v); return Number.isFinite(v) ? Math.max(a, Math.min(b, v)) : d; };
+const cleanTxt = (v, n) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, n) : "");
+function cxCleanStep(o, st, last) {
+  if (!o || typeof o !== "object") return null;
+  const text = cleanTxt(o.texte || o.text, 1400);
+  if (!text) return null;
+  const rpg = st.mode === "rpg", decor = SCENE_KEYS.includes(o.decor) ? o.decor : pickOne(CX_GENRES[st.genre].decor);
+  const step = { text, sc: decor };
+  const pause = cleanTxt(o.pause, 220); if (pause && !rpg) step.talk = pause;
+  if (last || o.fin === true) { step.end = cleanTxt(o.titreFin, 60) || "Et ils vécurent… ensemble"; step.choices = []; return step; }
+  step.choices = (Array.isArray(o.choix) ? o.choix : []).slice(0, 3).map(c => {
+    const t = cleanTxt(c && (c.texte || c.text), 110);
+    if (!t) return null;
+    const ch = { t };
+    if (rpg && CX_STATS[c.stat]) { ch.stat = c.stat; ch.dc = clampN(c.difficulte, 6, 18, 12); }
+    return ch;
+  }).filter(Boolean);
+  if (!step.choices.length) step.choices = [{ t: "Continuer l'aventure" }];
+  const ev = o.evenement;
+  if (rpg && ev && ev.type === "combat" && ev.ennemi) {
+    const e = ev.ennemi, boss = !!e.boss || (st.steps || []).length + 1 === st.max - 1;
+    step.event = { type: "combat", enemy: { nom: cleanTxt(e.nom, 40) || "Créature", espece: MONSTER_KINDS.includes(e.espece) ? e.espece : "slime", pv: clampN(e.pv, 15, boss ? 140 : 60, boss ? 100 : 35), atk: clampN(e.attaque, 2, boss ? 10 : 7, boss ? 7 : 4), def: clampN(e.defense, 0, boss ? 6 : 4, 2), faiblesse: ["force", "esprit", "charme"].includes(e.faiblesse) ? e.faiblesse : "force", boss } };
+  } else if (rpg && ev && ev.type === "tresor" && ev.objet && ITEM_KINDS[ev.objet.type]) {
+    step.event = { type: "tresor", item: { nom: cleanTxt(ev.objet.nom, 40) || ITEM_KINDS[ev.objet.type], type: ev.objet.type, valeur: clampN(ev.objet.valeur, 1, 3, 1) } };
+  }
+  // Le boss final ne doit jamais manquer.
+  if (rpg && (st.steps || []).length + 1 === st.max - 1 && !(step.event && step.event.type === "combat")) step.event = { type: "combat", enemy: cxGenBoss(st) };
+  return step;
+}
+
+/* Le générateur intégré : il prend le relais quand l'IA n'est pas disponible.
+   Chaque genre fournit ses lieux, objets, alliés, menaces et créatures ; des trames communes les assemblent. */
+const CX_WORLD = {
+  romance: { lieux: [["parc", "un parc en automne"], ["pont", "un vieux pont illuminé"], ["resto", "un petit restaurant italien"], ["toit", "un toit sous les étoiles"], ["plage", "une plage déserte au coucher du soleil"], ["tournesols", "un champ de tournesols"]],
+    objets: ["une lettre jamais envoyée", "un cadenas d'amour", "une boîte à musique", "une vieille photo de vous deux", "un bouquet de pivoines"], allies: ["un fleuriste bavard", "une grand-mère qui a tout vu", "un chat qui vous suit partout", "un violoniste de rue"],
+    menaces: ["une pluie torrentielle", "un terrible malentendu", "un train qui part sans vous", "une panne de réveil le jour J"], monstres: [["spectre", "Fantôme du doute"], ["slime", "Flaque de mauvaise humeur"], ["chauvesouris", "Nuée de soucis"]], boss: [["dragon", "Dragon de la Routine"]] },
+  aventure: { lieux: [["foret", "une forêt immense"], ["grotte", "une grotte qui résonne"], ["crique", "une crique secrète"], ["colline", "une colline balayée par le vent"], ["pont", "un pont suspendu"], ["camping", "un campement de fortune"]],
+    objets: ["une carte au trésor déchirée", "une boussole qui n'indique pas le nord", "une clé rouillée", "une gourde magique"], allies: ["une exploratrice à la retraite", "un perroquet qui parle trop", "un guide qui se perd tout le temps"],
+    menaces: ["un éboulement", "une tempête", "des pirates de rivière", "un pont qui craque"], monstres: [["loup", "Loup des crêtes"], ["golem", "Golem de pierre"], ["chauvesouris", "Chauves-souris géantes"], ["kraken", "Pieuvre de la crique"]], boss: [["golem", "Colosse de la Montagne"], ["kraken", "Kraken Ancestral"]] },
+  fantasy: { lieux: [["chateau", "un château aux tours dorées"], ["taverne", "la taverne du Sanglier Rieur"], ["foret", "la forêt d'Ombrevert"], ["magie", "une tour de magie"], ["chaumiere", "une chaumière de sorcière"], ["village", "un village en fête"]],
+    objets: ["un grimoire qui chuchote", "une épée en bois très fière", "une couronne trop grande", "une potion qui pétille", "un œuf de dragon tout tiède"], allies: ["une fée minuscule", "un chevalier qui a peur du noir", "une sorcière qui fait des crêpes", "un nain poète"],
+    menaces: ["une malédiction de sommeil", "un sorcier jaloux", "un pont-levis coincé", "une prophétie farfelue"], monstres: [["slime", "Gelée enchantée"], ["champignon", "Champignon grincheux"], ["chevalier", "Chevalier sans nom"], ["loup", "Loup-garou timide"]], boss: [["dragon", "Dragon d'Ombrevert"], ["chevalier", "Roi des Ombres"]] },
+  mystere: { lieux: [["manoir", "un manoir aux volets clos"], ["biblio", "une bibliothèque secrète"], ["passage", "un passage dérobé"], ["grenier", "un grenier poussiéreux"], ["noir", "une ruelle dans le brouillard"], ["quai", "un quai de gare désert"]],
+    objets: ["une clé gravée de vos initiales", "un journal codé", "une montre arrêtée à minuit", "un portrait qui vous ressemble étrangement"], allies: ["un majordome très discret", "une détective à la retraite", "un chat noir qui sait des choses"],
+    menaces: ["une porte qui se referme toute seule", "une silhouette dans le couloir", "une coupure de courant", "un indice qui disparaît"], monstres: [["spectre", "Spectre du grenier"], ["chauvesouris", "Ombres volantes"], ["golem", "Armure animée"]], boss: [["spectre", "Le Maître du Manoir"]] },
+  comedie: { lieux: [["karaoke", "un karaoké en plein délire"], ["cuisine", "une cuisine en chaos total"], ["plateau", "un plateau de jeu télévisé"], ["villa", "une villa de télé-réalité"], ["festival", "un festival survolté"], ["foodtruck", "un food truck en panne"]],
+    objets: ["un micro doré", "une recette de grand-mère illisible", "un costume de poulet", "un trophée en plastique"], allies: ["un animateur beaucoup trop enthousiaste", "une mamie championne de karaoké", "un chien qui vole les frites"],
+    menaces: ["un concours de danse imprévu", "un gâteau qui s'effondre", "une caméra cachée", "une coupure de micro"], monstres: [["slime", "Gelée à la fraise"], ["champignon", "Champignon vexé"], ["robot", "Robot ménager rebelle"]], boss: [["robot", "Méga Robot-Cuiseur 3000"]] },
+  sf: { lieux: [["metro", "une station de métro du futur"], ["toit", "un toit de gratte-ciel néon"], ["phone", "un monde à l'intérieur d'un téléphone"], ["rue", "une avenue pleine d'hologrammes"], ["train", "un train magnétique"], ["villanuit", "une base lunaire"]],
+    objets: ["une puce mémoire", "un hologramme de vous deux", "une batterie quantique", "une carte d'accès violette"], allies: ["un robot qui collectionne les câlins", "une pilote d'hoverboard", "une IA qui fait des blagues"],
+    menaces: ["une panne de gravité", "un virus informatique", "une alarme générale", "un portail instable"], monstres: [["robot", "Drone de sécurité"], ["slime", "Nano-gelée"], ["golem", "Mécha de chantier"]], boss: [["robot", "Intelligence Centrale"]] },
+  frissons: { lieux: [["manoir", "une maison hantée (mais polie)"], ["chateaunuit", "un château sous la lune"], ["foret", "une forêt pleine de murmures"], ["grenier", "un grenier qui craque"], ["passage", "un couloir aux bougies"], ["dragonnuit", "un cimetière de dragons"]],
+    objets: ["une lanterne qui ne s'éteint jamais", "une poupée qui cligne de l'œil", "un médaillon glacé", "un livre de sorts pour débutants"], allies: ["un fantôme qui veut juste un ami", "une chauve-souris végétarienne", "un squelette pianiste"],
+    menaces: ["des rires dans les murs", "une brume qui monte", "une porte qui grince", "des pas au-dessus de vos têtes"], monstres: [["spectre", "Fantôme farceur"], ["chauvesouris", "Chauves-souris du clocher"], ["loup", "Loup de minuit"]], boss: [["spectre", "Dame Blanche"], ["dragon", "Dragon-squelette"]] }
+};
+const capF = s => s.charAt(0).toUpperCase() + s.slice(1);
+// Majuscule en début de texte et après chaque fin de phrase.
+const cxCaps = s => capF(s).replace(/([.!?…]\s+)([a-zà-ÿ])/g, (m, p, c) => p + c.toUpperCase());
+// Les trames : t = texte, c = choix [texte, stat, difficulté], k = question pour le couple, y = seulement avec Yassen Jr.
+const CX_INTROS = [
+  { t: "{ctx}Tout commence dans {lieu}. {a} remarque {objet}, posé là comme s'il vous attendait, pendant que {b} sent que la journée ne sera pas comme les autres.", c: [["Examiner {objet} ensemble", "esprit", 10], ["Demander à {allie} ce que ça signifie", "charme", 9], ["Faire comme si de rien n'était… pour l'instant"]] },
+  { t: "{ctx}Vous arrivez dans {lieu}, main dans la main. À peine le temps de souffler que {allie} vous interpelle : on a besoin de vous, et seulement de vous deux.", c: [["Accepter sans hésiter", "force", 9], ["Poser mille questions d'abord", "esprit", 9]] }
+];
+const CX_BEATS = [
+  { t: "Le chemin vous mène vers {lieu}. Soudain, {menace} vous barre la route. {a} serre la main de {b} : il va falloir être malins.", c: [["Foncer tête baissée", "force", 12], ["Trouver un détour astucieux", "agilite", 11], ["Négocier avec un grand sourire", "charme", 11]] },
+  { t: "{allie} vous rejoint dans {lieu} avec une drôle de nouvelle : {objet} cacherait un secret que vous seuls pouvez percer.", c: [["Écouter toute l'histoire"], ["Chercher l'indice par vous-mêmes", "esprit", 12]] },
+  { t: "Pause bien méritée dans {lieu}. {b} raconte un souvenir qui fait rire {a} aux larmes, et pendant un instant, le monde entier peut attendre.", c: [["Rester encore un peu"], ["Repartir, le cœur léger"]], k: "Pour de vrai : quel souvenir de vous deux vous fait toujours rire ?" },
+  { t: "Dans {lieu}, {objet} se met à briller et projette une image de vous deux… dans très longtemps, toujours main dans la main.", c: [["Suivre la lumière", "esprit", 10], ["Garder ce moment pour vous"]], k: "Pour de vrai : comment vous imaginez-vous dans vingt ans ?" },
+  { t: "Une énigme est gravée dans {lieu} : « Je grandis quand on me partage. » {a} et {b} se regardent, déjà sûrs de la réponse.", c: [["Répondre « l'amour »", "esprit", 9], ["Répondre « une pizza »", "charme", 13]] },
+  { t: "{menace} ! Tout tremble dans {lieu}. Sans réfléchir, {a} protège {b}, qui lui rend aussitôt la pareille. Une équipe, une vraie.", c: [["Tenir bon ensemble", "force", 11], ["S'éclipser discrètement", "agilite", 12]] },
+  { y: 1, t: "Yassen Jr. surgit dans {lieu}, les joues pleines de quelque chose de suspect. Il a trouvé un passage secret… en suivant une odeur de crêpes.", c: [["Le suivre", "agilite", 9], ["Lui demander de partager d'abord", "charme", 8]] },
+  { t: "{allie} vous lance un défi dans {lieu} : prouver que vous vous connaissez par cœur. Le prix ? {objet}.", c: [["Relever le défi", "charme", 10], ["Proposer un défi encore plus fou", "esprit", 12]], k: "Pour de vrai : quel petit détail de l'autre connaissez-vous par cœur ?" },
+  { t: "Perdus dans {lieu}, vous dénichez une vieille carte. Deux routes : l'une longue et sûre, l'autre courte et pleine de surprises.", c: [["La route sûre"], ["La route aux surprises", "agilite", 11]] },
+  { t: "Le soir tombe sur {lieu}. Autour d'un petit feu, {b} confie à {a} ce qui lui a donné envie de rester, au tout début. {a} rougit jusqu'aux oreilles.", c: [["Répondre par un câlin"], ["Répondre par une confidence"]], k: "Pour de vrai : qu'est-ce qui vous a donné envie de rester, au tout début ?" },
+  { t: "Dans {lieu}, une vieille boîte à musique joue votre chanson. {a} tend la main : « Une danse ? » {b} ne se fait pas prier.", c: [["Danser jusqu'au bout"], ["Chercher qui l'a déposée là", "esprit", 11]], k: "Pour de vrai : quelle chanson est un peu la vôtre ?" },
+  { t: "{allie} a besoin d'aide dans {lieu} : {menace} a tout mis sens dessus dessous. {a} retrousse ses manches, {b} prend les choses en main.", c: [["Tout réparer à la force des bras", "force", 11], ["Trouver une idée de génie", "esprit", 11], ["Remonter le moral de tout le monde", "charme", 10]] }
+];
+const CX_CLIMAX = { t: "Tout se joue maintenant, dans {lieu}. {menace} n'a jamais été aussi proche, mais {objet} brille entre vos mains. {a} regarde {b} : « Ensemble ? » « Toujours. »", c: [["Tout donner", "force", 13], ["Ruser jusqu'au bout", "esprit", 13], ["Tendre la main", "charme", 14]] };
+const CX_ENDINGS = [
+  ["{lieu} retrouve son calme. {allie} vous serre fort, {objet} trouve enfin sa place, et vous repartez le cœur plein. Ce n'était qu'une aventure de plus… mais c'était la vôtre.", "Le cœur plein"],
+  ["Le soleil se lève sur {lieu}. Les cheveux en bataille et le sourire jusqu'aux oreilles, vous rentrez ensemble, en vous promettant déjà la prochaine aventure.", "Rentrer ensemble"],
+  ["Des années plus tard, on raconte encore l'histoire de {a} et {b} dans {lieu}. Les détails changent à chaque fois, mais la fin reste la même : vous étiez deux, et c'était parfait.", "La légende de vous deux"]
+];
+const OUTCOME_OK = ["Votre plan fonctionne à merveille. ", "Réussi, et avec style. ", "Parfait : vous formez une sacrée équipe. "];
+const OUTCOME_KO = ["Ça ne se passe pas tout à fait comme prévu, mais vous en riez ensemble. ", "Raté… mais ce petit détour vous réserve une surprise. ", "Pas tout à fait ça, mais vous ne lâchez rien. "];
+function cxSeed() { return { l: Math.floor(Math.random() * 6), o: Math.floor(Math.random() * 5), al: Math.floor(Math.random() * 4), m: Math.floor(Math.random() * 4), r: Math.floor(Math.random() * 1e6) }; }
+function cxWords(st) {
+  const w = CX_WORLD[st.genre], sd = st.seed || cxSeed(), i = (st.steps || []).length;
+  const lieu = w.lieux[(sd.l + i * 2) % w.lieux.length];
+  return { lieu, objet: w.objets[sd.o % w.objets.length], allie: w.allies[sd.al % w.allies.length], menace: w.menaces[(sd.m + Math.floor(i / 3)) % w.menaces.length] };
+}
+const cxFill = (s, w, st) => s.replace(/\{a\}/g, nm("a")).replace(/\{b\}/g, nm("b")).replace(/\{lieu\}/g, w.lieu[1]).replace(/\{objet\}/g, w.objet).replace(/\{allie\}/g, w.allie).replace(/\{menace\}/g, w.menace)
+  .replace(/\{ctx\}/g, st.context ? `Il était une fois ${nm("a")} et ${nm("b")}. ${capF(st.context.replace(/\s*[.!]+$/, ""))}. ` : "");
+function cxGenPitches(o) {
+  const w = CX_WORLD[o.genre], tmp = { ...o, steps: [] };
+  return [0, 1, 2].map(k => {
+    const seed = cxSeed(); seed.l = (seed.l + k * 2) % 6;
+    const ww = cxWords({ ...tmp, seed }), lieu = ww.lieu[1];
+    const titles = [`${capF(ww.objet.replace(/^(une?|la|le|l')\s*/i, ""))}`, `${nm("a")} & ${nm("b")} contre ${ww.menace.replace(/^(une?|des|la|le)\s+/i, "")}`, `Deux cœurs, ${lieu.replace(/^(une?|la|le|l')\s*/i, "")}`];
+    const res = [`Dans ${lieu}, ${ww.objet} va tout changer pour vous deux. ${o.context ? capF(o.context.replace(/\s*[.!]+$/, "")) + ", " : ""}et rien ne se passera comme prévu.`,
+      `${capF(ww.menace)} menace ${lieu}, et ${ww.allie} ne compte que sur vous. Une aventure où chaque choix compte.`,
+      `${capF(lieu)}, ${ww.allie} et un secret bien gardé. Une histoire tendre et pleine de surprises, rien que pour vous deux.`][k];
+    return { titre: titles[k].slice(0, 48), resume: res, ambiance: [CX_GENRES[o.genre].label, "rebondissements", "complicité"][k], seed };
+  });
+}
+function cxGenBoss(st) {
+  const w = CX_WORLD[st.genre], [esp, nom] = w.boss[(st.seed || {}).r % w.boss.length || 0];
+  return { nom, espece: esp, pv: 70 + st.max * 3, atk: 6 + (st.max > 9 ? 1 : 0), def: 4, faiblesse: pickOne(["force", "esprit", "charme"]), boss: true };
+}
+function cxGenStep(st, outcome) {
+  const steps = st.steps || [], i = steps.length + 1, N = st.max, w = cxWords(st), rpg = st.mode === "rpg";
+  const pre = outcome ? (/réussi|gagn|victoire|apais/i.test(outcome) ? pickOne(OUTCOME_OK) : /raté|échou|défaite/i.test(outcome) ? pickOne(OUTCOME_KO) : "") : "";
+  let beat;
+  if (i === 1) beat = CX_INTROS[(st.seed || {}).r % 2 || 0];
+  else if (i === N) { const [t, end] = CX_ENDINGS[((st.seed || {}).r || 0) % 3]; return { text: cxCaps(pre + cxFill(t, w, st)), sc: w.lieu[0], end, choices: [] }; }
+  else if (i === N - 1) beat = CX_CLIMAX;
+  else {
+    const pool = CX_BEATS.filter(b => !b.y || st.yassen), used = new Set(steps.map(s => s.beat));
+    const order = shuffle(pool.map((_, k) => k)).filter(k => !used.has(k));
+    const k = order.length ? order[0] : Math.floor(Math.random() * pool.length);
+    beat = { ...pool[k], id: k };
+  }
+  let text = cxCaps(pre + cxFill(beat.t, w, st));
+  if (st.details && i === 2) text += ` Et comme un clin d'œil du destin : ${st.details.replace(/\s*[.!]+$/, "").slice(0, 160)}.`;
+  const step = { text, sc: w.lieu[0], beat: beat.id, choices: beat.c.map(([t, stat, dc]) => (rpg && stat ? { t: cxFill(t, w, st), stat, dc } : { t: cxFill(t, w, st) })) };
+  if (!rpg && beat.k) step.talk = beat.k;
+  if (rpg && i === N - 1) step.event = { type: "combat", enemy: cxGenBoss(st) };
+  else if (rpg && i > 1 && i % 3 === 0) { const [esp, nom] = pickOne(CX_WORLD[st.genre].monstres); step.event = { type: "combat", enemy: { nom, espece: esp, pv: 24 + i * 3, atk: 3 + Math.floor(i / 3), def: 1 + Math.floor(i / 5), faiblesse: pickOne(["force", "esprit", "charme"]), boss: false } }; }
+  else if (rpg && i > 1 && i % 4 === 2) { const type = pickOne(["potion", "ether", "bombe", "talisman", "arme", "armure"]); step.event = { type: "tresor", item: { nom: ITEM_KINDS[type], type, valeur: 1 + Math.floor(Math.random() * 2) } }; }
+  return step;
+}
+// Une étape : d'abord l'IA, sinon le générateur intégré.
+async function cxNextStep(st, outcome) {
+  const last = (st.steps || []).length + 1 >= st.max;
+  if (AI.ready()) {
+    try { const s = cxCleanStep(await AI.json(cxStepPrompt(st, outcome)), st, last); if (s) return { step: s, ai: true }; } catch (e) { /* repli ci-dessous */ }
+  }
+  return { step: cxGenStep(st, outcome), ai: false };
+}
+async function cxPitches(o) {
+  if (AI.ready()) {
+    try {
+      const r = await AI.json(cxPitchPrompt(o)), list = (r && Array.isArray(r.propositions) ? r.propositions : []).slice(0, 3)
+        .map(p => ({ titre: cleanTxt(p.titre, 60), resume: cleanTxt(p.resume, 320), ambiance: cleanTxt(p.ambiance, 60), seed: cxSeed() })).filter(p => p.titre && p.resume);
+      if (list.length) return { list, ai: true };
+    } catch (e) { /* repli ci-dessous */ }
+  }
+  return { list: cxGenPitches(o), ai: false };
+}
+
+/* ───────────────────────── L'épopée : le jeu de rôle ─────────────────────────
+   Cinq classes, quatre statistiques, des objets, des combats au tour par tour et des boss.
+   Pas de punition : à terre, on se relève ensemble. */
+const RPG_CLASSES = {
+  sentinelle: { name: "Sentinelle", role: "Protège et encaisse", base: { force: 4, agilite: 2, esprit: 1, charme: 1 }, pv: 34, pm: 4, c: 5,
+    spell: { name: "Provocation", cost: 2, kind: "taunt", desc: "Attire les coups sur soi et se blinde 2 tours." }, special: { name: "Rempart", kind: "shield", desc: "Réduit de 60 % les dégâts reçus par vous deux pendant 2 tours." },
+    icon: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M12 8v8M8.5 11.5h7"/>' },
+  lame: { name: "Lame", role: "Vive et précise", base: { force: 3, agilite: 4, esprit: 1, charme: 2 }, pv: 26, pm: 6, c: 1,
+    spell: { name: "Lame empoisonnée", cost: 3, kind: "poison", desc: "Frappe et empoisonne l'ennemi 3 tours." }, special: { name: "Coup de grâce", kind: "crit", desc: "Un coup critique garanti, très puissant." },
+    icon: '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>' },
+  mage: { name: "Mage", role: "Puissance des sorts", base: { force: 1, agilite: 2, esprit: 5, charme: 2 }, pv: 22, pm: 14, c: 4,
+    spell: { name: "Éclair", cost: 3, kind: "bolt", desc: "Un éclair basé sur l'Esprit." }, special: { name: "Météore", kind: "meteor", desc: "Énormes dégâts qui ignorent la défense." },
+    icon: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M5 21l5-5"/>' },
+  druide: { name: "Druide", role: "Soigne et relève", base: { force: 2, agilite: 2, esprit: 4, charme: 2 }, pv: 26, pm: 12, c: 3,
+    spell: { name: "Soin", cost: 3, kind: "heal", desc: "Soigne la personne la plus blessée, et la relève si besoin." }, special: { name: "Floraison", kind: "bloom", desc: "Soigne et relève vous deux." },
+    icon: '<path d="M12 21V11"/><path d="M12 11C12 6 16 4 20 4c0 4-3 7-8 7z"/><path d="M12 14c0-3.5-3-5.5-7-5.5 0 3.5 2.5 5.5 7 5.5z"/>' },
+  barde: { name: "Barde", role: "Charme et soutien", base: { force: 1, agilite: 3, esprit: 2, charme: 5 }, pv: 24, pm: 10, c: 2,
+    spell: { name: "Chant vif", cost: 2, kind: "song", desc: "Soigne un peu vous deux et renforce le prochain coup de l'autre." }, special: { name: "Ballade", kind: "lull", desc: "L'ennemi s'endort et passe son tour." },
+    icon: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>' }
+};
+const RPG_POINTS = 4, RPG_CAP = 7;
+const rpgIcon = (path, cls = "") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+const STAT_ICON = { force: '<path d="M6 12h12M4 9v6M20 9v6M7 8v8M17 8v8"/>', agilite: '<path d="M4 17c4 0 5-10 9-10s5 6 7 6"/><path d="M17 4l3 3-3 3"/>', esprit: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/>', charme: '<path d="M12 20l-7-7a4.2 4.2 0 0 1 7-4.6A4.2 4.2 0 0 1 19 13z"/>' };
+const d20 = () => 1 + Math.floor(Math.random() * 20), dN = n => 1 + Math.floor(Math.random() * n);
+function rpgHero(cls, stats) {
+  const C = RPG_CLASSES[cls], pvMax = C.pv + stats.force, pmMax = C.pm + stats.esprit;
+  return { cls, stats: { ...stats }, lvl: 1, xp: 0, pv: pvMax, pvMax, pm: pmMax, pmMax };
+}
+const rpgMain = h => Object.entries(RPG_CLASSES[h.cls].base).sort((x, y) => y[1] - x[1])[0][0];
+const rpgBonus = (st, type) => (st.rpg.items || []).filter(x => x.type === type).reduce((n, x) => n + (+x.valeur || 0), 0);
+const rpgAlive = (st, k) => st.rpg.heroes[k].pv > 0;
+// Utiliser un objet du sac (en combat ou entre deux étapes). Renvoie un message, ou "" si rien ne se passe.
+function rpgUseItem(st, idx, target, F) {
+  const it = (st.rpg.items || [])[idx]; if (!it) return "";
+  const H = st.rpg.heroes, t = H[target], v = +it.valeur || 1;
+  let msg = "";
+  if (it.type === "potion") { if (t.pv <= 0 && !F) return ""; const g = 12 + 4 * v; t.pv = Math.min(t.pvMax, Math.max(t.pv, 0) + g); msg = `${nm(target)} boit ${it.nom} : +${g} PV.`; }
+  else if (it.type === "ether") { const g = 6 + 2 * v; t.pm = Math.min(t.pmMax, t.pm + g); msg = `${nm(target)} retrouve ${g} PM.`; }
+  else if (it.type === "plume") { if (t.pv > 0) return ""; t.pv = Math.ceil(t.pvMax / 2); msg = `${it.nom} : ${nm(target)} se relève !`; }
+  else if (it.type === "bombe" && F) { const dmg = 10 + 4 * v; F.enemy.pv = Math.max(0, F.enemy.pv - dmg); F.fx.push({ on: "foe", kind: "dmg", v: dmg }); msg = `${it.nom} explose : ${dmg} dégâts !`; }
+  else return "";
+  st.rpg.items.splice(idx, 1);
+  return msg;
+}
+// Le combat vit sur ce téléphone le temps de la bataille, puis son résultat est enregistré dans l'histoire.
+function rpgStartFight(st, enemy) {
+  const e = { ...enemy, pvMax: enemy.pv };
+  S.fight = { id: uid(), enemy: e, order: ["a", "b"], turn: "a", round: 1, log: [`${e.boss ? "Le boss " : ""}${e.nom} apparaît !`], fx: [], specials: {}, shield: 0, taunt: null, tauntN: 0, buff: {}, guard: {}, poison: 0, lulled: false, charge: false, phase: 1, over: null, roll: null, menu: null };
+  if (!rpgAlive(st, "a")) S.fight.turn = "b";
+}
+function rpgLog(F, msg) { F.log.push(msg); if (F.log.length > 6) F.log.shift(); }
+function rpgHeroAct(st, k, act, arg) {
+  const F = S.fight, H = st.rpg.heroes, h = H[k], C = RPG_CLASSES[h.cls], e = F.enemy, tal = rpgBonus(st, "talisman"), buff = F.buff[k] || 0;
+  F.fx = []; F.roll = null; F.buff[k] = 0; F.guard[k] = false;
+  const weak = s => (e.faiblesse === s ? 1.5 : 1);
+  const hurt = (dmg, crit) => { dmg = Math.max(1, Math.round(dmg)); e.pv = Math.max(0, e.pv - dmg); F.fx.push({ on: "foe", kind: crit ? "crit" : "dmg", v: dmg }); F.fx.push({ on: k, kind: "lunge" }); return dmg; };
+  if (act === "attack") {
+    const stat = h.cls === "lame" ? Math.max(h.stats.force, h.stats.agilite) : h.stats.force, r = d20(), tot = r + stat + tal + buff;
+    const crit = r === 20 || (h.stats.agilite >= 5 && r >= 19) || (h.cls === "lame" && r >= 18);
+    F.roll = { v: r, tot, ok: r !== 1 && (crit || tot >= 10 + e.def) };
+    if (!F.roll.ok) { rpgLog(F, `${nm(k)} attaque… et manque !`); F.fx.push({ on: "foe", kind: "miss" }); }
+    else { const d = hurt((4 + stat + dN(6) + rpgBonus(st, "arme") * 2) * (crit ? 2 : 1) * weak("force"), crit); rpgLog(F, `${nm(k)} frappe${crit ? " un coup critique" : ""} : ${d} dégâts${e.faiblesse === "force" ? " (point faible !)" : ""}.`); }
+  } else if (act === "spell") {
+    const sp = C.spell; if (h.pm < sp.cost) return false;
+    h.pm -= sp.cost;
+    if (sp.kind === "bolt") { const r = d20(), tot = r + h.stats.esprit + tal + buff; F.roll = { v: r, tot, ok: r !== 1 && tot >= 9 + e.def };
+      if (F.roll.ok) { const d = hurt((5 + 2 * h.stats.esprit + dN(6)) * weak("esprit")); rpgLog(F, `${nm(k)} lance ${sp.name} : ${d} dégâts !`); } else { rpgLog(F, `${sp.name} rate sa cible.`); F.fx.push({ on: "foe", kind: "miss" }); } }
+    else if (sp.kind === "heal") { const t = ["a", "b"].sort((x, y) => H[x].pv / H[x].pvMax - H[y].pv / H[y].pvMax)[0], g = 8 + 2 * h.stats.esprit; H[t].pv = Math.min(H[t].pvMax, Math.max(0, H[t].pv) + g); F.fx.push({ on: t, kind: "heal", v: g }); rpgLog(F, `${nm(k)} soigne ${t === k ? "ses blessures" : nm(t)} : +${g} PV.`); }
+    else if (sp.kind === "poison") { F.poison = 3; const d = hurt(2 + h.stats.agilite); rpgLog(F, `${nm(k)} empoisonne ${e.nom} (${d} dégâts, puis chaque tour).`); }
+    else if (sp.kind === "taunt") { F.taunt = k; F.tauntN = 2; F.fx.push({ on: k, kind: "shield" }); rpgLog(F, `${nm(k)} attire toute l'attention de ${e.nom} !`); }
+    else if (sp.kind === "song") { ["a", "b"].forEach(x => { if (H[x].pv > 0) { H[x].pv = Math.min(H[x].pvMax, H[x].pv + 5); F.fx.push({ on: x, kind: "heal", v: 5 }); } }); F.buff[other(k)] = 4; rpgLog(F, `${nm(k)} chante : +5 PV, et ${nm(other(k))} se sent pousser des ailes.`); }
+  } else if (act === "special") {
+    if (F.specials[k]) return false;
+    F.specials[k] = true;
+    const sp = C.special;
+    if (sp.kind === "shield") { F.shield = 2; ["a", "b"].forEach(x => F.fx.push({ on: x, kind: "shield" })); rpgLog(F, `${nm(k)} dresse un Rempart : vous êtes protégés.`); }
+    else if (sp.kind === "crit") { const d = hurt((4 + h.stats.force + h.stats.agilite + dN(6)) * 2.5 * weak("force"), true); rpgLog(F, `Coup de grâce : ${d} dégâts !`); }
+    else if (sp.kind === "meteor") { const d = hurt((10 + 4 * h.stats.esprit + dN(10)) * weak("esprit"), true); rpgLog(F, `Un météore s'abat : ${d} dégâts !`); }
+    else if (sp.kind === "bloom") { ["a", "b"].forEach(x => { const g = Math.ceil(H[x].pvMax * 0.45); H[x].pv = Math.min(H[x].pvMax, Math.max(0, H[x].pv) + g); F.fx.push({ on: x, kind: "heal", v: g }); }); rpgLog(F, "Floraison : des fleurs partout, et vous voilà requinqués !"); }
+    else if (sp.kind === "lull") { F.lulled = true; F.buff[other(k)] = 4; rpgLog(F, `${nm(k)} joue une Ballade : ${e.nom} s'endort…`); F.fx.push({ on: "foe", kind: "sleep" }); }
+  } else if (act === "charm") {
+    const r = d20(), tot = r + h.stats.charme + tal + buff + (e.faiblesse === "charme" ? 4 : 0), dc = 12 + e.def + (e.boss ? 6 : 0);
+    F.roll = { v: r, tot, ok: r !== 1 && tot >= dc };
+    if (!F.roll.ok) rpgLog(F, `${nm(k)} tente de charmer ${e.nom}… qui reste de marbre.`);
+    else if (!e.boss) { F.over = "calm"; F.fx.push({ on: "foe", kind: "love" }); rpgLog(F, `${e.nom} est touché par tant de gentillesse et s'en va, apaisé.`); }
+    else { e.atk = Math.max(2, e.atk - 2); F.fx.push({ on: "foe", kind: "love" }); rpgLog(F, `${e.nom} est troublé : son attaque baisse !`); }
+  } else if (act === "item") {
+    const msg = rpgUseItem(st, arg.i, arg.t || k, F); if (!msg) return false;
+    if (/PV|relève/.test(msg)) F.fx.push({ on: arg.t || k, kind: "heal", v: "" });
+    rpgLog(F, msg);
+  } else if (act === "guard") { F.guard[k] = true; h.pm = Math.min(h.pmMax, h.pm + 3); F.fx.push({ on: k, kind: "shield" }); rpgLog(F, `${nm(k)} se met en garde (+3 PM).`); }
+  if (e.pv <= 0 && !F.over) F.over = "win";
+  return true;
+}
+function rpgEnemyAct(st) {
+  const F = S.fight, e = F.enemy, H = st.rpg.heroes;
+  F.fx = []; F.roll = null;
+  if (F.poison > 0) { const d = 3 + Math.floor(e.pvMax / 25); e.pv = Math.max(0, e.pv - d); F.poison--; F.fx.push({ on: "foe", kind: "dmg", v: d }); rpgLog(F, `Le poison ronge ${e.nom} : ${d} dégâts.`); if (e.pv <= 0) { F.over = "win"; return; } }
+  if (e.boss && F.phase === 1 && e.pv <= e.pvMax / 2) { F.phase = 2; e.atk += 2; rpgLog(F, `${e.nom} entre dans une colère noire !`); F.fx.push({ on: "foe", kind: "rage" }); }
+  if (F.lulled) { F.lulled = false; rpgLog(F, `${e.nom} dort encore… et passe son tour.`); return; }
+  const armor = rpgBonus(st, "armure"), alive = ["a", "b"].filter(k => H[k].pv > 0);
+  const hit = (k, base) => {
+    let dmg = Math.max(1, base - armor);
+    if (F.shield > 0) dmg = Math.ceil(dmg * 0.4);
+    if (F.guard[k]) dmg = Math.ceil(dmg * 0.5);
+    if (F.taunt === k) dmg = Math.ceil(dmg * 0.6);
+    H[k].pv = Math.max(0, H[k].pv - dmg); F.fx.push({ on: k, kind: "hurt", v: dmg });
+    return dmg;
+  };
+  // Le boss prévient avant sa grosse attaque : c'est le moment de se protéger.
+  if (e.boss && F.charge) {
+    F.charge = false;
+    const ds = alive.map(k => `${nm(k)} −${hit(k, Math.round(e.atk * 1.6) + dN(6))}`);
+    rpgLog(F, `${e.nom} déchaîne son attaque ultime ! ${ds.join(", ")}.`);
+    F.fx.push({ on: "foe", kind: "rage" });
+  } else if (e.boss && F.round % 3 === 2) { F.charge = true; rpgLog(F, `${e.nom} prend son élan… (au prochain tour, ça va faire mal : protégez-vous !)`); F.fx.push({ on: "foe", kind: "charge" }); }
+  else {
+    const k = F.taunt && H[F.taunt].pv > 0 ? F.taunt : pickOne(alive), h = H[k], r = d20();
+    if (r + e.atk < 8 + h.stats.agilite && r !== 20) { rpgLog(F, `${e.nom} attaque ${nm(k)}, qui esquive !`); F.fx.push({ on: k, kind: "dodge" }); }
+    else { const d = hit(k, e.atk + dN(6) + (r === 20 ? e.atk : 0)); rpgLog(F, `${e.nom} attaque ${nm(k)} : −${d} PV${H[k].pv <= 0 ? `. ${nm(k)} est à terre !` : "."}`); }
+  }
+  if (F.shield > 0) F.shield--;
+  if (F.tauntN > 0 && --F.tauntN === 0) F.taunt = null;
+  if (!["a", "b"].some(k => H[k].pv > 0)) F.over = "lose";
+}
+// Après chaque action : à qui le tour ?
+function rpgNextTurn(st) {
+  const F = S.fight, H = st.rpg.heroes;
+  if (F.turn === "a" && H.b.pv > 0) F.turn = "b";
+  else if (F.turn === "enemy") { F.round++; F.turn = H.a.pv > 0 ? "a" : "b"; }
+  else F.turn = "enemy";
+}
+// Victoire : expérience, niveau, butin. Les PV reviennent un peu.
+function rpgWin(st) {
+  const F = S.fight, e = F.enemy, R = st.rpg, gain = Math.round(e.pvMax * (e.boss ? 2 : 1)), loot = [], ups = [];
+  ["a", "b"].forEach(k => {
+    const h = R.heroes[k];
+    if (h.pv <= 0) h.pv = 1;
+    h.xp += gain;
+    while (h.xp >= 40 * h.lvl) { h.xp -= 40 * h.lvl; h.lvl++; h.stats[rpgMain(h)]++; h.pvMax += 4; h.pmMax += 2; h.pv = h.pvMax; h.pm = h.pmMax; ups.push(k); }
+    h.pv = Math.min(h.pvMax, h.pv + Math.ceil(h.pvMax * 0.3)); h.pm = Math.min(h.pmMax, h.pm + 3);
+  });
+  if (e.boss) loot.push({ nom: "Talisman du héros", type: "talisman", valeur: 1 });
+  if (Math.random() < 0.6) { const t = pickOne(["potion", "potion", "ether", "bombe", "plume"]); loot.push({ nom: ITEM_KINDS[t], type: t, valeur: 1 }); }
+  R.items = [...(R.items || []), ...loot].slice(0, 12); R.gold = (R.gold || 0) + 5 + Math.round(e.pvMax / 5); R.wins = (R.wins || 0) + 1;
+  if (e.boss) R.bosses = (R.bosses || 0) + 1;
+  return { gain, loot, ups };
+}
+// Défaite : personne n'est puni. On se relève, et l'histoire continue autrement.
+function rpgRise(st) { ["a", "b"].forEach(k => { const h = st.rpg.heroes[k]; h.pv = h.pvMax; h.pm = h.pmMax; }); }
+
+/* Les créatures, dessinées en SVG : couleur, taille et allure de boss selon l'ennemi. */
+function monsterSvg(kind, boss, hue) {
+  const c = hue || { slime: "#7CC4A0", loup: "#8A8FA8", spectre: "#C9C3EE", golem: "#A89A8A", dragon: "#D9575E", champignon: "#E07A6A", chauvesouris: "#7A6A9A", chevalier: "#4A4458", robot: "#8FB0D0", kraken: "#B07AC0" }[kind] || "#7CC4A0";
+  const eyes = (x1, x2, y, r = 4) => `<g class="m-eyes"><circle cx="${x1}" cy="${y}" r="${r}" fill="#fff"/><circle cx="${x2}" cy="${y}" r="${r}" fill="#fff"/><circle cx="${x1 + 1}" cy="${y + 1}" r="${r * 0.55}" fill="#2B1E2F"/><circle cx="${x2 + 1}" cy="${y + 1}" r="${r * 0.55}" fill="#2B1E2F"/>${boss ? `<path d="M${x1 - r - 1} ${y - r - 2}l${2 * r} ${r * 0.8}M${x2 + r + 1} ${y - r - 2}l${-2 * r} ${r * 0.8}" stroke="#2B1E2F" stroke-width="2.4" stroke-linecap="round"/>` : ""}</g>`;
+  const body = {
+    slime: `<path d="M20 98C14 70 34 40 60 40s46 30 40 58Z" fill="${c}"/><path d="M34 62q8-10 18-8" stroke="#fff" stroke-opacity=".5" stroke-width="4" fill="none" stroke-linecap="round"/>${eyes(48, 72, 72)}<path d="M54 86q6 4 12 0" stroke="#2B1E2F" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+    loup: `<path d="M84 98q24-6 18-32-8 14-20 17z" fill="${c}"/><ellipse cx="58" cy="86" rx="28" ry="19" fill="${c}"/><path d="M38 46l-5-22 17 13zM78 46l5-22-17 13z" fill="${c}"/><path d="M40 42l-2-10 8 6zM76 42l2-10-8 6z" fill="#F4B6C8"/><circle cx="58" cy="58" r="22" fill="${c}"/><ellipse cx="58" cy="69" rx="11" ry="8" fill="#E8E2EC"/><ellipse cx="58" cy="65" rx="3.6" ry="2.6" fill="#2B1E2F"/>${eyes(49, 67, 54, 3.8)}<path d="M54 72q4 3 8 0" stroke="#2B1E2F" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="46" cy="104" rx="7" ry="4" fill="${c}"/><ellipse cx="70" cy="104" rx="7" ry="4" fill="${c}"/>`,
+    spectre: `<path d="M28 102V58a32 32 0 0 1 64 0v44l-10-8-11 8-11-8-11 8-11-8z" fill="${c}" opacity=".92"/>${eyes(48, 72, 62, 5)}<ellipse cx="60" cy="80" rx="6" ry="8" fill="#2B1E2F" opacity=".75"/>`,
+    golem: `<rect x="28" y="40" width="64" height="58" rx="10" fill="${c}"/><rect x="14" y="54" width="16" height="34" rx="7" fill="${c}"/><rect x="90" y="54" width="16" height="34" rx="7" fill="${c}"/><path d="M40 48l10 8M74 92l8-10M66 44l-4 10" stroke="#000" stroke-opacity=".2" stroke-width="2.4"/>${eyes(48, 72, 64)}<rect x="50" y="78" width="20" height="5" rx="2.5" fill="#2B1E2F"/>`,
+    dragon: `<path d="M18 50l20 12-8-24 22 16z" fill="${c}" opacity=".8"/><path d="M102 50L82 62l8-24-22 16z" fill="${c}" opacity=".8"/><ellipse cx="60" cy="72" rx="34" ry="28" fill="${c}"/><path d="M42 50l-4-16 12 10M78 50l4-16-12 10" fill="#F2C84B"/><ellipse cx="60" cy="84" rx="16" ry="10" fill="#F7C9A0"/>${eyes(47, 73, 64)}<circle cx="54" cy="84" r="2" fill="#2B1E2F"/><circle cx="66" cy="84" r="2" fill="#2B1E2F"/>`,
+    champignon: `<path d="M22 64C22 38 98 38 98 64Z" fill="${c}"/><g fill="#fff" opacity=".85"><circle cx="42" cy="52" r="6"/><circle cx="66" cy="46" r="5"/><circle cx="82" cy="58" r="4"/></g><rect x="38" y="62" width="44" height="36" rx="14" fill="#F4E6D4"/>${eyes(50, 70, 78)}<path d="M54 90q6-4 12 0" stroke="#2B1E2F" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+    chauvesouris: `<path d="M60 60C40 36 18 44 8 58c10-2 16 4 16 12 6-6 14-6 18 2 4-6 12-8 18-12zM60 60c20-24 42-16 52-2-10-2-16 4-16 12-6-6-14-6-18 2-4-6-12-8-18-12z" fill="${c}"/><circle cx="60" cy="66" r="18" fill="${c}"/><path d="M46 52l4-12 6 10M74 52l-4-12-6 10" fill="${c}"/>${eyes(53, 67, 64, 3.5)}<path d="M56 74l2 4 2-4M62 74l2 4 2-4" fill="#fff"/>`,
+    chevalier: `<rect x="34" y="62" width="52" height="40" rx="10" fill="${c}"/><path d="M36 60C36 30 84 30 84 60Z" fill="${c}"/><rect x="42" y="50" width="36" height="8" rx="3" fill="#1C1820"/>${boss ? "" : ""}<g class="m-eyes"><circle cx="52" cy="54" r="2.6" fill="#F2C84B"/><circle cx="68" cy="54" r="2.6" fill="#F2C84B"/></g><path d="M60 30v-10" stroke="#C23B4E" stroke-width="5" stroke-linecap="round"/><path d="M92 40v56" stroke="#C9C3D6" stroke-width="5" stroke-linecap="round"/><path d="M86 86h12" stroke="#8A7A5A" stroke-width="4"/>`,
+    robot: `<rect x="34" y="40" width="52" height="40" rx="10" fill="${c}"/><rect x="40" y="82" width="40" height="18" rx="6" fill="${c}"/><path d="M60 40V28" stroke="${c}" stroke-width="3"/><circle cx="60" cy="25" r="4" fill="#F2C84B"/><rect x="40" y="50" width="40" height="16" rx="8" fill="#1C2A3A"/><g class="m-eyes"><circle cx="50" cy="58" r="4" fill="#7FE0FF"/><circle cx="70" cy="58" r="4" fill="#7FE0FF"/></g><path d="M52 72h16" stroke="#1C2A3A" stroke-width="2.4" stroke-linecap="round"/>`,
+    kraken: `<path d="M30 92q-8 10 2 14M44 96q-4 10 6 12M60 98q0 10 8 10M76 96q4 10-4 12M90 92q8 10-2 14" stroke="${c}" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M26 92C22 50 40 30 60 30s38 20 34 62Z" fill="${c}"/>${eyes(48, 72, 66, 5)}<path d="M54 82q6 4 12 0" stroke="#2B1E2F" stroke-width="2.4" fill="none" stroke-linecap="round"/>`
+  }[kind] || "";
+  const crown = boss ? `<path d="M44 ${kind === "chevalier" ? 30 : 36}l4-12 6 8 6-12 6 12 6-8 4 12z" fill="#F2C84B" stroke="#C9A035" stroke-width="1"/>` : "";
+  return `<svg class="monster" viewBox="0 0 120 120" aria-hidden="true"><ellipse cx="60" cy="108" rx="34" ry="5" fill="#000" opacity=".2"/>${body}${crown}</svg>`;
+}
+
+/* Les écrans des histoires sur mesure et de l'épopée. */
+// Découpe un texte en phrases : on coupe après . ! ? … seulement si une majuscule suit (« Jr., enlevé » reste entier).
+function cxSentences(t) {
+  const out = []; let cur = "";
+  for (let i = 0; i < t.length; i++) {
+    cur += t[i];
+    if (/[.!?…»]/.test(t[i]) && /\s/.test(t[i + 1] || "") && /^\s+[A-ZÀ-ÖØ-Ý«"]/.test(t.slice(i + 1, i + 4))) { out.push(cur.trim()); cur = ""; }
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out.length ? out : [t];
+}
+// L'histoire ouverte : la version de l'espace commun, ou celle qu'on vient d'enregistrer si elle est plus récente.
+const cxStory = () => {
+  if (!S.cx || !S.cx.id) return null;
+  const a = Store.cols.contes.find(x => x.id === S.cx.id), b = S.cx.cache && S.cx.cache.id === S.cx.id ? S.cx.cache : null;
+  return !a ? b : !b ? a : (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a;
+};
+const cxSteps = st => (st && Array.isArray(st.steps) ? st.steps : []);
+const cxCopy = o => JSON.parse(JSON.stringify(o));
+const SWORD = '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>';
+function cxAiPill() {
+  const st = AI.state;
+  const label = st === "ok" ? "Écrit par l'IA" : st === "off" ? "Générateur intégré" : st === "err" ? "IA momentanément indisponible" : "IA Gemini";
+  return `<button class="cx-pill ${st || "idle"}" data-a="cx-aihelp" aria-expanded="${!!S.cx.help}"><span class="dot" aria-hidden="true"></span>${label}</button>
+  ${S.cx.help ? `<div class="panel cx-help"><p><b>${st === "ok" ? "L'IA est activée." : "Pour des histoires vraiment uniques, activez l'IA (gratuit) :"}</b></p>
+    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
+    <p class="small muted">${esc(fr("En attendant, le générateur intégré écrit vos histoires avec vos prénoms, votre contexte et vos détails. Les textes envoyés à l'IA passent par Google."))}</p>`}</div>` : ""}`;
+}
+function cxLoader(msg) {
+  return `<div class="cx-loader" role="status"><div class="quill" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M40 6C24 8 14 18 10 34l-2 8 6-5c14-2 24-12 26-31z" fill="var(--m4)" stroke="var(--i4)" stroke-width="2" stroke-linejoin="round"/><path d="M10 40L28 18" stroke="var(--i4)" stroke-width="2" stroke-linecap="round"/></svg></div>
+    <p>${esc(fr(msg))}<span class="dots"><i>.</i><i>.</i><i>.</i></span></p><div class="sk"><i></i><i></i><i style="width:70%"></i></div></div>`;
+}
+function cxStage(sc, st) {
+  const on = Music.on();
+  return `<div class="stage cx-stage">${sceneSvg(SCENE_KEYS.includes(sc) ? sc : "souvenir")}<div class="cast">${castFig("a")}${st && st.yassen ? `<figure class="cx-yj">${yassenSvg(Math.max(2, Jeu.stage()), false)}</figure>` : ""}${castFig("b")}</div>
+    <button class="music-btn" data-a="music" aria-pressed="${on}" aria-label="${on ? "Couper la musique" : "Activer la musique d'ambiance"}">${on ? SOUND_ON : SOUND_OFF}</button></div>`;
+}
+const cxBar = (v, max, cls) => `<span class="cx-bar ${cls}"><i style="width:${Math.max(0, Math.min(100, (v / max) * 100)).toFixed(0)}%"></i></span>`;
+function cxHud(st) {
+  const R = st.rpg; if (!R) return "";
+  return `<div class="cx-hud">${["a", "b"].map(k => { const h = R.heroes[k], C = RPG_CLASSES[h.cls];
+    return `<div class="cx-hchip${h.pv <= 0 ? " ko" : ""}" style="${cvar(C.c)}"><span class="cx-hav">${avatarSvg(k)}</span><span class="cx-hinfo"><b>${esc(nm(k))} <small>${esc(C.name)} · niv. ${h.lvl}</small></b>${cxBar(h.pv, h.pvMax, "pv")}${cxBar(h.pm, h.pmMax, "pm")}<small>${h.pv}/${h.pvMax} PV · ${h.pm}/${h.pmMax} PM</small></span></div>`; }).join("")}
+    <button class="cx-bag" data-a="cx-bag" aria-expanded="${!!S.cx.bag}">${rpgIcon('<path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/>')}<span>${(R.items || []).length}</span></button></div>
+  ${S.cx.bag ? `<div class="panel cx-bagp"><h2 class="sec">Votre sac · ${R.gold || 0} pièces d'or</h2>${(R.items || []).length ? `<div class="cx-items">${R.items.map((it, i) => `<div class="cx-item"><span class="cx-it ${it.type}" aria-hidden="true"></span><span><b>${esc(it.nom)}</b><small>${esc(ITEM_KINDS[it.type])}${["arme", "armure", "talisman"].includes(it.type) ? ` · +${it.valeur} ${it.type === "arme" ? "dégâts" : it.type === "armure" ? "protection" : "à tous les jets"}` : ""}</small></span>
+    ${["potion", "ether", "plume"].includes(it.type) ? `<span class="row">${["a", "b"].map(k => `<button class="chip" data-a="cx-use" data-i="${i}" data-t="${k}">${esc(nm(k))}</button>`).join("")}</span>` : ""}</div>`).join("")}</div>` : `<p class="small muted">Le sac est vide.</p>`}</div>` : ""}`;
+}
+function conteView() {
+  const cx = S.cx, v = cx.view;
+  if (v === "new") return cxNewView();
+  if (v === "pitch") return cxPitchView();
+  if (v === "heroes") return cxHeroesView();
+  if (v === "fight" && S.fight) return cxFightView();
+  if ((v === "read" || v === "replay") && cxStory()) return cxReadView();
+  return cxLibView();
+}
+function cxLibView() {
+  const list = byDate(Store.cols.contes || []);
+  return `${layerHead("")}
+  <section class="cx-hero"><div class="cx-hero-in"><p class="cx-kicker">Rien que pour vous deux</p><h1>Nos histoires sur mesure</h1><p>${esc(fr("Racontez un contexte, glissez vos détails : trois histoires vous sont proposées, puis elles s'écrivent au fil de vos choix."))}</p>${cxAiPill()}</div></section>
+  <div class="cx-modes">
+    <button class="cx-mode" style="${cvar(8)}" data-a="cx-new" data-v="conte"><span class="icon-tile">${ico("book")}</span><b>Le conte</b><span>${esc(fr("Une histoire à choix, tendre ou drôle, avec des petites pauses pour vous deux."))}</span></button>
+    <button class="cx-mode" style="${cvar(7)}" data-a="cx-new" data-v="rpg"><span class="icon-tile">${rpgIcon(SWORD)}</span><b>L'épopée</b><span>${esc(fr("Un jeu de rôle : classes, statistiques, objets, combats et boss."))}</span></button>
+  </div>
+  <section class="stack"><h2 class="sec">Vos histoires</h2>${list.length ? `<div class="cx-list">${list.map(st => { const n = cxSteps(st).length, done = st.status === "done";
+    return `<article class="cx-card" style="${cvar(st.mode === "rpg" ? 7 : 8)}"><div class="cx-thumb">${sceneSvg((cxSteps(st)[n - 1] || {}).sc || CX_GENRES[st.genre].decor[0])}</div>
+      <div class="cx-cinfo"><p class="cx-tags"><span>${st.mode === "rpg" ? "Épopée" : "Conte"}</span><span>${esc(CX_GENRES[st.genre].label)}</span></p><b>${esc(st.title)}</b>
+      <p class="small muted">${done ? `Terminée : « ${esc(st.end || "")} »` : n ? `Étape ${n} sur ${st.max}` : st.mode === "rpg" && !st.rpg ? "Héros à créer" : "Prête à commencer"}</p>
+      <div class="row"><button class="btn c" style="${cvar(st.mode === "rpg" ? 7 : 8)}" data-a="cx-open" data-id="${st.id}">${done ? "Relire" : n ? "Continuer" : "Commencer"}</button>${confirmRow("contes", st.id)}</div></div></article>`; }).join("")}</div>`
+    : empty("Aucune histoire pour l'instant", "Choisissez le conte ou l'épopée juste au-dessus pour écrire votre première histoire.", "lettres")}</section>`;
+}
+function cxNewView() {
+  const cx = S.cx, rpg = cx.mode === "rpg";
+  return `${layerHead("")}
+  <section class="setup-hero" style="${cvar(rpg ? 7 : 8)}"><span class="g" aria-hidden="true">${rpg ? rpgIcon(SWORD) : ico("book")}</span><h1>${rpg ? "Une nouvelle épopée" : "Un nouveau conte"}</h1><p>${esc(fr(rpg ? "Posez le décor : l'aventure, les combats et le boss final seront construits autour." : "Posez le décor : l'histoire sera écrite pour vous, avec vos prénoms et vos personnalités."))}</p></section>
+  <div class="seg" role="group" aria-label="Format"><button aria-pressed="${!rpg}" data-a="cx-set" data-k="mode" data-v="conte">Conte</button><button aria-pressed="${rpg}" data-a="cx-set" data-k="mode" data-v="rpg">Épopée (jeu de rôle)</button></div>
+  <div class="stack"><h2 class="sec">Le genre</h2><div class="chips">${Object.entries(CX_GENRES).map(([k, g]) => `<button class="chip" aria-pressed="${cx.genre === k}" data-a="cx-set" data-k="genre" data-v="${k}">${esc(g.label)}</button>`).join("")}</div></div>
+  <div class="stack"><h2 class="sec">La longueur</h2><div class="cx-lens">${Object.entries(CX_LENGTHS).map(([k, l]) => `<button class="cx-len" aria-pressed="${cx.length === k}" data-a="cx-set" data-k="length" data-v="${k}"><b>${l.label}</b><span>${l.hint}</span></button>`).join("")}</div></div>
+  <div class="field"><label for="cx-ctx">Le contexte</label><textarea id="cx-ctx" data-d maxlength="400" rows="3" placeholder="${esc(fr("Où, quand, quelle situation ? Par exemple : on se perd pendant un voyage à Venise…"))}">${dv("cx-ctx")}</textarea>
+    <div class="cx-ideas">${CX_IDEAS.map((t, i) => `<button class="chip" data-a="cx-idea" data-i="${i}">${esc(fr(t))}</button>`).join("")}</div></div>
+  <div class="field"><label for="cx-det">Vos détails (facultatif)</label><textarea id="cx-det" data-d maxlength="500" rows="3" placeholder="${esc(fr("Un lieu qui compte pour vous, une blague à vous, un surnom, un plat préféré, un ami… Tout ce qui rendra l'histoire vraiment à vous."))}">${dv("cx-det")}</textarea></div>
+  <button class="chip cx-yjt" aria-pressed="${cx.yassen !== false}" data-a="cx-set" data-k="yassen" data-v="${cx.yassen === false ? "1" : ""}">${cx.yassen === false ? "Sans Yassen Jr." : "Avec Yassen Jr. en invité"}</button>
+  <button class="btn wide c" style="${cvar(rpg ? 7 : 8)}" data-a="cx-pitch">Imaginer trois histoires</button>
+  <div class="cx-aifoot">${cxAiPill()}</div>`;
+}
+function cxPitchView() {
+  const cx = S.cx, rpg = cx.mode === "rpg";
+  if (cx.busy) return `${layerHead("")}${cxLoader("Trois histoires s'imaginent pour vous")}`;
+  return `${layerHead("")}<h1 class="sheet-title">Laquelle vous fait envie ?</h1>
+  <div class="cx-pitches">${(cx.pitches || []).map((p, i) => `<article class="cx-pitch" style="${cvar([8, 4, 6][i])}"><p class="cx-tags"><span>${esc(p.ambiance || CX_GENRES[cx.genre].label)}</span></p><h2>${esc(p.titre)}</h2><p>${esc(p.resume)}</p>
+    <button class="btn c" style="${cvar([8, 4, 6][i])}" data-a="cx-choose-pitch" data-i="${i}">${rpg ? "Choisir et créer nos héros" : "Commencer cette histoire"}</button></article>`).join("")}</div>
+  <div class="actions"><button class="btn ghost wide" data-a="cx-pitch">D'autres idées</button><button class="link" data-a="cx-view" data-v="new">Modifier le contexte</button></div>
+  <p class="small muted" style="text-align:center">${cx.pitchAi ? "Imaginées par l'IA à partir de vos réponses." : "Imaginées par le générateur intégré."}</p>`;
+}
+function cxHeroesView() {
+  const cx = S.cx, H = cx.heroes;
+  const sec = k => {
+    const h = H[k], C = h.cls && RPG_CLASSES[h.cls], left = RPG_POINTS - Object.values(h.pts).reduce((a, b) => a + b, 0);
+    return `<section class="cx-hsec"><div class="cx-hhead"><span class="cx-hav big">${avatarSvg(k)}</span><div><p class="sec">Héros</p><h2>${esc(nm(k))}</h2><p class="small muted">${C ? esc(C.role) : "Choisis ta classe"}</p></div></div>
+      <div class="cx-classes">${Object.entries(RPG_CLASSES).map(([id, c]) => `<button class="cx-class" style="${cvar(c.c)}" aria-pressed="${h.cls === id}" data-a="cx-cls" data-k="${k}" data-v="${id}">${rpgIcon(c.icon)}<b>${c.name}</b></button>`).join("")}</div>
+      ${C ? `<div class="cx-cdesc"><p><b>${esc(C.spell.name)}</b> · ${esc(fr(C.spell.desc))}</p><p><b>${esc(C.special.name)}</b> (une fois par combat) · ${esc(fr(C.special.desc))}</p></div>
+      <div class="cx-stats">${Object.keys(CX_STATS).map(s => { const val = C.base[s] + (h.pts[s] || 0);
+        return `<div class="cx-stat"><span class="cx-sic">${rpgIcon(STAT_ICON[s])}</span><span class="cx-sname">${CX_STATS[s]}</span><span class="cx-pips">${Array.from({ length: RPG_CAP }, (_, i) => `<i class="${i < C.base[s] ? "b" : i < val ? "p" : ""}"></i>`).join("")}</span>
+          <button class="cx-pm" data-a="cx-pt" data-k="${k}" data-s="${s}" data-v="-1" ${h.pts[s] ? "" : "disabled"} aria-label="Retirer un point de ${CX_STATS[s]}">−</button><button class="cx-pm" data-a="cx-pt" data-k="${k}" data-s="${s}" data-v="1" ${left > 0 && val < RPG_CAP ? "" : "disabled"} aria-label="Ajouter un point de ${CX_STATS[s]}">+</button></div>`; }).join("")}</div>
+      <p class="small ${left ? "" : "muted"}">${left ? `Encore ${left} point${left > 1 ? "s" : ""} à répartir.` : "Tous les points sont répartis."} PV ${C.pv + C.base.force + (h.pts.force || 0)} · PM ${C.pm + C.base.esprit + (h.pts.esprit || 0)}</p>` : ""}</section>`;
+  };
+  const ready = H.a.cls && H.b.cls;
+  return `${layerHead("")}<h1 class="sheet-title">Vos héros</h1><p class="muted">${esc(fr("Chacun choisit sa classe et répartit ses points. Force pour frapper, Agilité pour esquiver, Esprit pour les sorts, Charme pour apaiser et convaincre."))}</p>
+  ${sec("a")}${sec("b")}
+  <button class="btn wide c" style="${cvar(7)}" data-a="cx-start-rpg" ${ready ? "" : "disabled"}>Partir à l'aventure</button>`;
+}
+function cxReadView() {
+  const cx = S.cx, st = cxStory(), steps = cxSteps(st), replay = cx.view === "replay";
+  const i = replay ? Math.max(0, Math.min(steps.length - 1, cx.ri || 0)) : steps.length - 1, s = steps[i];
+  const head = `<div class="g-head"><button class="icon-btn" data-a="cx-view" data-v="lib" aria-label="Retour à vos histoires">×</button><div class="g-prog"><span>${esc(st.title)}</span></div><span class="g-timer">${s && s.end ? "Fin" : `Étape ${i + 1} sur ${st.max}`}</span></div>`;
+  if (!s) return head + cxStage(CX_GENRES[st.genre].decor[0], st) + (cx.busy ? cxLoader("L'histoire commence à s'écrire") : `<button class="btn wide" data-a="cx-begin">Commencer l'histoire</button>${cx.err ? `<p class="small muted">${esc(cx.err)}</p>` : ""}`);
+  const col = cvar(st.mode === "rpg" ? 7 : 8);
+  const paras = cxSentences(s.text).reduce((acc, p) => { const l = acc[acc.length - 1]; if (l && l.length < 160) acc[acc.length - 1] = l + " " + p; else acc.push(p); return acc; }, []);
+  let page = `<article class="story-page cx-page${s.end ? " end" : ""}" style="${col}">${s.end ? `<p class="card-for">Fin</p><h2 class="sheet-title">${esc(s.end)}</h2>` : ""}${paras.map((p, n) => `<p class="story-text" style="animation-delay:${(n * 0.25).toFixed(2)}s">${esc(p)}</p>`).join("")}</article>`;
+  if (s.talk) page += `<div class="panel cx-talk"><p class="sec">Petite pause</p><p>${esc(s.talk)}</p></div>`;
+  let tail = "";
+  if (replay) {
+    const pk = s.picked != null && s.choices[s.picked];
+    tail = (pk ? `<div class="choice mine">${esc(pk.t)}${s.outcome ? `<small class="cx-out">${esc(s.outcome)}</small>` : ""}</div>` : "")
+      + `<div class="row cx-nav"><button class="btn ghost" data-a="cx-ri" data-v="-1" ${i ? "" : "disabled"}>Précédente</button><button class="btn ghost" data-a="cx-ri" data-v="1" ${i < steps.length - 1 ? "" : "disabled"}>Suivante</button></div>`;
+  } else if (cx.busy) tail = cxLoader(cx.busyMsg || "La suite s'écrit");
+  else if (s.end) tail = `<div class="cx-endstats">${st.rpg ? `<span>${st.rpg.wins || 0} combat${(st.rpg.wins || 0) > 1 ? "s" : ""} gagné${(st.rpg.wins || 0) > 1 ? "s" : ""}</span><span>${st.rpg.bosses || 0} boss vaincu${(st.rpg.bosses || 0) > 1 ? "s" : ""}</span><span>Niveau ${Math.max(st.rpg.heroes.a.lvl, st.rpg.heroes.b.lvl)}</span>` : `<span>${steps.length} étapes</span><span>${steps.filter(x => x.picked != null).length} choix ensemble</span>`}</div>
+    <div class="actions">${st.saved ? `<p class="small muted">Gardée dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="cx-album">Garder cette fin dans l'album</button>`}<button class="btn wide c" style="${col}" data-a="cx-replay">Relire depuis le début</button><button class="btn line wide" data-a="cx-view" data-v="lib">Une nouvelle histoire</button></div>`;
+  else if (s.event && !s.done) {
+    if (s.event.type === "combat") { const e = s.event.enemy;
+      tail = `<div class="cx-foecard${e.boss ? " boss" : ""}"><div class="cx-foeart">${monsterSvg(e.espece, e.boss)}</div><div><p class="sec">${e.boss ? "Boss final" : "Un combat vous attend"}</p><h2>${esc(e.nom)}</h2><p class="small muted">${e.pv} PV · point faible : ${CX_STATS[e.faiblesse] || "?"}</p></div></div>
+        <button class="btn wide c" style="${col}" data-a="cx-fight">${e.boss ? "Affronter le boss" : "Combattre"}</button>`; }
+    else { const it = s.event.item; tail = `<div class="cx-loot"><span class="cx-it big ${it.type}" aria-hidden="true"></span><div><p class="sec">Trésor</p><h2>${esc(it.nom)}</h2><p class="small muted">${esc(ITEM_KINDS[it.type])}</p></div></div><button class="btn wide c" style="${col}" data-a="cx-loot">Le mettre dans le sac</button>`; }
+  } else if (cx.check) {
+    const c = s.choices[cx.check.ci], R = st.rpg, tal = rpgBonus(st, "talisman");
+    if (cx.roll) { const r = cx.roll;
+      tail = `<div class="cx-roll ${r.ok ? "ok" : "ko"}"><div class="die" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M30 3l24 14v26L30 57 6 43V17z" fill="var(--surface)" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M30 3v18M6 17l24 4 24-4M30 21l-14 22h28z" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".5"/></svg><b>${r.v}</b></div>
+        <p class="cx-rollt">${r.ok ? "Réussi !" : "Raté…"}</p><p class="small">${esc(nm(r.who))} : ${r.v} + ${r.stat} (${CX_STATS[c.stat]})${tal ? ` + ${tal}` : ""} = <b>${r.tot}</b> contre ${c.dc}</p></div>
+        <button class="btn wide c" style="${col}" data-a="cx-after-roll">Voir la suite</button>`; }
+    else tail = `<div class="panel cx-check"><p class="sec">Jet de ${CX_STATS[c.stat]} · difficulté ${c.dc}</p><p><b>${esc(c.t)}</b></p><p class="small muted">Qui tente sa chance ? On lance un dé à 20 faces et on ajoute sa ${CX_STATS[c.stat]}.</p>
+      <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${col}" data-a="cx-roll" data-v="${k}" ${R.heroes[k].pv > 0 ? "" : "disabled"}>${esc(nm(k))} · +${R.heroes[k].stats[c.stat]}</button>`).join("")}</div>
+      <button class="link" data-a="cx-uncheck">Choisir autre chose</button></div>`;
+  } else tail = `<div class="stack"><p class="lbl">Que faites-vous ?</p>${s.choices.map((c, n) => `<button class="choice cx-choice" data-a="cx-pick" data-i="${n}">${esc(c.t)}${c.stat ? `<span class="cx-req">${rpgIcon(STAT_ICON[c.stat])}${CX_STATS[c.stat]} · ${c.dc}</span>` : ""}</button>`).join("")}</div>${cx.err ? `<p class="small muted">${esc(cx.err)}</p>` : ""}`;
+  return head + cxStage(s.sc, st) + (st.rpg && !replay ? cxHud(st) : "") + page + tail;
+}
+function cxFightView() {
+  const F = S.fight, st = F.st, R = st.rpg, e = F.enemy, H = R.heroes, fresh = F.seq !== F.drawn, fx = fresh ? F.fx : [];
+  F.drawn = F.seq;
+  const on = who => fx.filter(f => f.on === who);
+  const nums = who => on(who).filter(f => f.v !== undefined).map((f, n) => `<span class="fx-num ${f.kind}" style="animation-delay:${(n * 0.12).toFixed(2)}s">${f.kind === "heal" ? "+" + f.v : f.kind === "miss" ? "raté" : f.kind === "dodge" ? "esquive" : "−" + f.v}</span>`).join("");
+  const cls = who => on(who).map(f => "fx-" + f.kind).join(" ");
+  const turnH = F.turn !== "enemy" && !F.over ? F.turn : null;
+  const hero = k => { const h = H[k], C = RPG_CLASSES[h.cls];
+    return `<div class="cx-fh ${cls(k)}${h.pv <= 0 ? " ko" : ""}${turnH === k ? " active" : ""}${F.shield > 0 || F.taunt === k ? " shielded" : ""}"><div class="cx-fhb">${avatarSvg(k)}</div>${nums(k)}
+      <div class="cx-fbars" style="${cvar(C.c)}"><b>${esc(nm(k))}</b>${cxBar(h.pv, h.pvMax, "pv")}${cxBar(h.pm, h.pmMax, "pm")}</div></div>`; };
+  const status = [F.poison ? "Empoisonné" : "", F.lulled ? "Endormi" : "", F.charge ? "Prend son élan !" : "", F.phase === 2 ? "Enragé" : ""].filter(Boolean);
+  const arena = `<div class="cx-arena${e.boss ? " boss" : ""}${fresh && fx.some(f => f.kind === "crit" || f.kind === "rage") ? " quake" : ""}"><div class="cx-abg">${sceneSvg(F.sc || "foret")}</div>
+    <div class="cx-foe ${cls("foe")}${e.pv <= 0 || F.over === "calm" ? " gone" : ""}"><div class="cx-ftop"><b>${esc(e.nom)}</b>${e.boss ? `<span class="cx-boss">BOSS</span>` : ""}</div>${cxBar(e.pv, e.pvMax, "foe")}${status.length ? `<p class="cx-status">${status.join(" · ")}</p>` : ""}<div class="cx-fart">${monsterSvg(e.espece, e.boss)}</div>${nums("foe")}</div>
+    <div class="cx-heroes">${hero("a")}${hero("b")}</div>
+    ${F.roll && fresh ? `<div class="cx-d20 ${F.roll.ok ? "ok" : "ko"}" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M30 3l24 14v26L30 57 6 43V17z" fill="var(--surface)" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg><b>${F.roll.v}</b></div>` : ""}</div>`;
+  const log = `<div class="cx-log" aria-live="polite">${F.log.slice(-3).map((l, n, a) => `<p class="${n === a.length - 1 ? "last" : ""}">${esc(l)}</p>`).join("")}</div>`;
+  let ctrl = "";
+  if (F.over === "win" || F.over === "calm") { const r = F.result || {};
+    ctrl = `<div class="cx-over win"><p class="cx-overt">${F.over === "calm" ? "Apaisé !" : e.boss ? "Boss vaincu !" : "Victoire !"}</p><p>+${r.gain || 0} XP${(r.loot || []).length ? ` · Butin : ${r.loot.map(x => esc(x.nom)).join(", ")}` : ""}</p>${(r.ups || []).map(k => `<p class="cx-lvl">${esc(nm(k))} passe au niveau ${H[k].lvl} !</p>`).join("")}</div>
+      <button class="btn wide c" style="${cvar(7)}" data-a="cx-fight-end">Continuer l'histoire</button>`; }
+  else if (F.over === "lose") ctrl = `<div class="cx-over lose"><p class="cx-overt">À terre… mais ensemble.</p><p>${esc(fr("Personne n'est puni ici : vous vous relevez main dans la main."))}</p></div>
+      <div class="actions"><button class="btn wide c" style="${cvar(7)}" data-a="cx-retry">Se relever et retenter</button><button class="btn ghost wide" data-a="cx-fight-end">Continuer l'histoire autrement</button></div>`;
+  else if (F.turn === "enemy") ctrl = `<p class="cx-turn foe">Au tour de ${esc(e.nom)}…</p>`;
+  else if (F.menu === "item") {
+    const usable = (R.items || []).map((it, i) => [it, i]).filter(([it]) => ["potion", "ether", "plume", "bombe"].includes(it.type));
+    ctrl = `<p class="cx-turn">Quel objet, ${esc(nm(F.turn))} ?</p><div class="cx-items">${usable.length ? usable.map(([it, i]) => `<div class="cx-item"><span class="cx-it ${it.type}" aria-hidden="true"></span><span><b>${esc(it.nom)}</b><small>${esc(ITEM_KINDS[it.type])}</small></span><span class="row">${it.type === "bombe" ? `<button class="chip" data-a="cx-act" data-v="item" data-i="${i}">Lancer</button>` : ["a", "b"].map(k => `<button class="chip" data-a="cx-act" data-v="item" data-i="${i}" data-t="${k}">${esc(nm(k))}</button>`).join("")}</span></div>`).join("") : `<p class="small muted">Rien d'utilisable dans le sac.</p>`}</div><button class="link" data-a="cx-menu" data-v="">Retour</button>`;
+  } else { const h = H[F.turn], C = RPG_CLASSES[h.cls], used = F.specials[F.turn];
+    const btn = (act, icon, label, sub, dis) => `<button class="cx-act" data-a="${act === "item" ? "cx-menu" : "cx-act"}" data-v="${act}" ${dis ? "disabled" : ""}>${rpgIcon(icon)}<b>${label}</b><small>${sub}</small></button>`;
+    ctrl = `<p class="cx-turn" style="${cvar(C.c)}">À toi, ${esc(nm(F.turn))} · ${C.name}</p><div class="cx-acts">
+      ${btn("attack", SWORD, "Attaquer", h.cls === "lame" ? "Force ou Agilité" : "Force", false)}
+      ${btn("spell", C.icon, C.spell.name, `${C.spell.cost} PM`, h.pm < C.spell.cost)}
+      ${btn("special", '<path d="M12 2l2.6 6.2L21 9l-5 4.4L17.5 20 12 16.8 6.5 20 8 13.4 3 9l6.4-.8z"/>', C.special.name, used ? "déjà utilisé" : "1 fois", used)}
+      ${btn("charm", STAT_ICON.charme, "Charmer", e.boss ? "le troubler" : "l'apaiser", false)}
+      ${btn("item", '<path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/>', "Objet", `${(R.items || []).length} dans le sac`, !(R.items || []).length)}
+      ${btn("guard", '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>', "Se défendre", "−50 % · +3 PM", false)}</div>`;
+  }
+  return `<div class="g-head"><button class="icon-btn" data-a="cx-flee" aria-label="Quitter le combat">×</button><div class="g-prog"><span>${e.boss ? "Combat de boss" : "Combat"} · tour ${F.round}</span></div></div>${arena}${log}${ctrl}`;
+}
+
+/* Actions des histoires sur mesure et de l'épopée. */
+function cxSave(st) {
+  const { id, ...data } = st;
+  data.updatedAt = Date.now();
+  S.cx.cache = { id, ...data };
+  return Store.put("contes", id, data);
+}
+// L'étape suivante s'écrit : l'IA (ou le générateur) reçoit l'histoire telle qu'elle est maintenant.
+async function cxGenerate(outcome) {
+  const base = cxStory(); if (!base || S.cx.busy) return;
+  const n = cxSteps(base).length;
+  S.cx.busy = true; S.cx.err = ""; S.cx.busyMsg = n ? "La suite s'écrit" : "L'histoire commence à s'écrire"; render(true);
+  let res;
+  try { res = await cxNextStep(cxCopy(base), outcome); } catch (e) { res = null; }
+  S.cx.busy = false;
+  const cur = cxStory();
+  // Si l'autre téléphone a déjà écrit cette étape, on garde la sienne.
+  if (!res || !cur || cxSteps(cur).length !== n) { if (!res) S.cx.err = "La suite n'a pas pu s'écrire. Réessayez dans un instant."; render(true); return; }
+  const upd = cxCopy(cur);
+  upd.steps = [...cxSteps(cur), res.step];
+  if (res.step.end) { upd.status = "done"; upd.end = res.step.end; Jeu.event("fin"); Jeu.flag("conte"); }
+  cxSave(upd);
+  render(true);
+  const L = document.querySelector("#layer .layer"); if (L) L.scrollTo({ top: 0, behavior: reduceMotion() ? "auto" : "smooth" });
+}
+function cxCommit(mut) { const st = cxStory(); if (!st) return null; const upd = cxCopy(st); mut(upd, upd.steps[upd.steps.length - 1]); cxSave(upd); return upd; }
+function cxFightOver() {
+  const F = S.fight;
+  if (F.over === "win" || F.over === "calm") { F.result = rpgWin(F.st); if (F.enemy.boss) Jeu.flag("boss"); Buddies.cheer(); }
+}
+function cxEnemySoon() {
+  const id = S.fight.id;
+  setTimeout(() => {
+    const F = S.fight;
+    if (!F || F.id !== id || F.over || F.turn !== "enemy") return;
+    rpgEnemyAct(F.st); F.seq++;
+    if (F.over) cxFightOver(); else rpgNextTurn(F.st);
+    if (S.layer && S.layer.type === "conte") render(true);
+  }, 1100);
+}
+const CX_ACT = {
+  "cx-new"(d) { S.cx = { ...S.cx, view: "new", mode: d.v === "rpg" ? "rpg" : "conte", help: false }; },
+  "cx-view"(d) { S.cx.view = d.v; S.cx.check = null; S.cx.roll = null; S.cx.bag = false; if (d.v === "lib") { S.fight = null; S.cx.id = null; } },
+  "cx-set"(d) { if (d.k === "yassen") S.cx.yassen = !!d.v; else if (d.k === "mode") S.cx.mode = d.v === "rpg" ? "rpg" : "conte"; else if (d.k === "genre" && CX_GENRES[d.v]) S.cx.genre = d.v; else if (d.k === "length" && CX_LENGTHS[d.v]) S.cx.length = d.v; },
+  "cx-idea"(d) { S.drafts["cx-ctx"] = fr(CX_IDEAS[+d.i] || ""); },
+  "cx-aihelp"() { S.cx.help = !S.cx.help; },
+  async "cx-pitch"() {
+    const cx = S.cx, o = { mode: cx.mode, genre: cx.genre, length: cx.length, context: draft("cx-ctx").trim().slice(0, 400), details: draft("cx-det").trim().slice(0, 500), yassen: cx.yassen !== false };
+    cx.opts = o; cx.view = "pitch"; cx.busy = true; render(true);
+    const r = await cxPitches(o);
+    cx.pitches = r.list; cx.pitchAi = r.ai; cx.busy = false;
+    if (S.layer && S.layer.type === "conte") render(true);
+  },
+  "cx-choose-pitch"(d) {
+    const cx = S.cx, p = (cx.pitches || [])[+d.i], o = cx.opts; if (!p || !o) return;
+    const id = uid(), st = { id, title: p.titre, pitch: p.resume, mood: p.ambiance || "", genre: o.genre, length: o.length, max: CX_LENGTHS[o.length].steps, mode: o.mode, context: o.context, details: o.details, yassen: o.yassen, seed: p.seed, steps: [], status: "play", createdAt: Date.now() };
+    cx.id = id; cxSave(st); clearDrafts("cx-ctx", "cx-det");
+    if (o.mode === "rpg") { cx.heroes = { a: { cls: "", pts: {} }, b: { cls: "", pts: {} } }; cx.view = "heroes"; }
+    else { cx.view = "read"; cxGenerate(null); }
+  },
+  "cx-cls"(d) { S.cx.heroes[d.k] = { cls: d.v, pts: {} }; },
+  "cx-pt"(d) {
+    const h = S.cx.heroes[d.k], C = RPG_CLASSES[h.cls]; if (!C) return;
+    const used = Object.values(h.pts).reduce((a, b) => a + b, 0), cur = h.pts[d.s] || 0, v = +d.v;
+    if (v > 0 && (used >= RPG_POINTS || C.base[d.s] + cur >= RPG_CAP)) return;
+    if (v < 0 && cur <= 0) return;
+    h.pts[d.s] = cur + v;
+  },
+  "cx-start-rpg"() {
+    const H = S.cx.heroes; if (!H.a.cls || !H.b.cls) return;
+    const mk = k => { const C = RPG_CLASSES[H[k].cls], s = {}; Object.keys(CX_STATS).forEach(x => { s[x] = C.base[x] + (H[k].pts[x] || 0); }); return rpgHero(H[k].cls, s); };
+    if (!cxCommit(st => { st.rpg = { heroes: { a: mk("a"), b: mk("b") }, items: [{ nom: "Potion de soin", type: "potion", valeur: 1 }, { nom: "Potion de soin", type: "potion", valeur: 1 }, { nom: "Éther", type: "ether", valeur: 1 }], gold: 10, wins: 0, bosses: 0 }; })) return;
+    S.cx.view = "read"; cxGenerate(null);
+  },
+  "cx-open"(d) {
+    const st = Store.cols.contes.find(x => x.id === d.id); if (!st) return;
+    S.cx.id = d.id; S.cx.cache = st; S.cx.check = null; S.cx.roll = null; S.cx.err = "";
+    if (st.mode === "rpg" && !st.rpg) { S.cx.heroes = { a: { cls: "", pts: {} }, b: { cls: "", pts: {} } }; S.cx.view = "heroes"; return; }
+    if (st.status === "done") { S.cx.view = "replay"; S.cx.ri = 0; return; }
+    S.cx.view = "read";
+    if (!cxSteps(st).length) cxGenerate(null);
+  },
+  "cx-begin"() { cxGenerate(null); },
+  "cx-pick"(d) {
+    const st = cxStory(), s = cxSteps(st)[cxSteps(st).length - 1], i = +d.i, c = s && s.choices[i]; if (!c || S.cx.busy) return;
+    if (c.stat && st.rpg) { S.cx.check = { ci: i }; S.cx.roll = null; return; }
+    cxCommit((u, last) => { last.picked = i; });
+    cxGenerate([s.outcome, `ils choisissent « ${c.t} »`].filter(Boolean).join(" ; "));
+  },
+  "cx-roll"(d) {
+    const st = cxStory(), s = cxSteps(st)[cxSteps(st).length - 1], c = s.choices[S.cx.check.ci], h = st.rpg.heroes[d.v];
+    const r = d20(), stat = h.stats[c.stat], tot = r + stat + rpgBonus(st, "talisman");
+    S.cx.roll = { v: r, tot, ok: r === 20 || (r !== 1 && tot >= c.dc), who: d.v, stat };
+  },
+  "cx-uncheck"() { S.cx.check = null; S.cx.roll = null; },
+  "cx-after-roll"() {
+    const r = S.cx.roll, ci = S.cx.check.ci; if (!r) return;
+    let out = "";
+    cxCommit((u, last) => { const c = last.choices[ci]; last.picked = ci; out = [last.outcome, `${nm(r.who)} tente « ${c.t} » : jet de ${CX_STATS[c.stat]} ${r.ok ? "réussi" : "raté"} (${r.tot} contre ${c.dc})`].filter(Boolean).join(" ; "); last.outcome = out; });
+    S.cx.check = null; S.cx.roll = null;
+    cxGenerate(out);
+  },
+  "cx-loot"() {
+    let it;
+    cxCommit((u, last) => { it = last.event.item; u.rpg.items = [...(u.rpg.items || []), it].slice(0, 12); last.done = "ok"; last.outcome = `ils trouvent ${it.nom}`; });
+    if (it) gainToast(`${it.nom} rejoint votre sac !`);
+  },
+  "cx-bag"() { S.cx.bag = !S.cx.bag; },
+  "cx-use"(d) {
+    let msg = "";
+    cxCommit(u => { msg = rpgUseItem(u, +d.i, d.t, null); });
+    toast(msg || "Pas besoin pour l'instant.");
+  },
+  "cx-fight"() {
+    const st = cxStory(), s = cxSteps(st)[cxSteps(st).length - 1]; if (!s || !s.event || s.event.type !== "combat") return;
+    const copy = cxCopy(st);
+    rpgStartFight(copy, s.event.enemy);
+    Object.assign(S.fight, { st: copy, sc: s.sc, seq: 1, drawn: 0 });
+    S.cx.view = "fight";
+  },
+  "cx-menu"(d) { if (S.fight) S.fight.menu = d.v || null; },
+  "cx-act"(d) {
+    const F = S.fight; if (!F || F.over || F.turn === "enemy") return;
+    if (!rpgHeroAct(F.st, F.turn, d.v, { i: +d.i, t: d.t })) { toast("Impossible pour l'instant."); return; }
+    F.menu = null; F.seq++;
+    if (F.over) { cxFightOver(); return; }
+    rpgNextTurn(F.st);
+    if (F.turn === "enemy") cxEnemySoon();
+  },
+  "cx-retry"() { const F = S.fight; if (!F) return; rpgRise(F.st); const e = { ...F.enemy, pv: F.enemy.pvMax }; const sc = F.sc; rpgStartFight(F.st, e); Object.assign(S.fight, { st: F.st, sc, seq: 1, drawn: 0 }); },
+  "cx-fight-end"() {
+    const F = S.fight; if (!F) return;
+    const e = F.enemy, res = F.over;
+    if (res === "lose") rpgRise(F.st);
+    cxCommit((u, last) => { u.rpg = F.st.rpg; last.done = res === "lose" ? "lose" : res;
+      last.outcome = res === "win" ? `victoire contre ${e.nom}` : res === "calm" ? `${e.nom} apaisé par la douceur des héros` : `défaite face à ${e.nom}, mais ils se relèvent ensemble et trouvent une autre voie`; });
+    S.fight = null; S.cx.view = "read";
+    if (res === "win" && e.boss) gainToast(`${e.nom} est vaincu !`);
+  },
+  "cx-flee"() { S.fight = null; S.cx.view = "read"; },
+  "cx-replay"() { S.cx.view = "replay"; S.cx.ri = 0; },
+  "cx-ri"(d) { S.cx.ri = Math.max(0, (S.cx.ri || 0) + +d.v); const L = document.querySelector("#layer .layer"); if (L) L.scrollTop = 0; },
+  "cx-album"() {
+    const st = cxStory(), last = cxSteps(st)[cxSteps(st).length - 1]; if (!last) return;
+    Store.add("capsule", { kind: "souvenir", question: fr(`${st.title} · ${st.end || "Fin"}`), entries: [{ who: "a", label: "Notre fin", text: fr(last.text) }] });
+    cxCommit(u => { u.saved = true; }); toast("Gardée dans l'album");
+  }
+};
+
 /* ───────────────────────── Rendu ───────────────────────── */
 let pendingRender = false;
 function render(force) {
@@ -4853,6 +5859,7 @@ function render(force) {
   if (!S.layer) { layer.innerHTML = ""; return; }
   const key = S.layer.type + (S.game ? S.game.i + S.game.phase : "")
     + (S.arc ? S.arc.game + S.arc.i + S.arc.phase + (S.arc.round || "") : "")
+    + (S.layer.type === "conte" && S.cx ? S.cx.view + (S.cx.id || "") + (cxStory() ? cxSteps(cxStory()).length : "") + (S.cx.busy ? "b" : "") + (S.cx.ri || "") : "")
     + (S.layer.type === "live" && Live.state ? "lv" + Live.state.startAt + (Live.state.i || 0) + (Live.state.node || "") + (Live.state.round || "") : "") + (S.story ? S.story.id + S.story.node + S.story.phase : "");
   const prev = layer.firstElementChild, keep = prev && prev.dataset.key === key ? prev.scrollTop : 0;
   let html = "";
@@ -4866,6 +5873,7 @@ function render(force) {
   else if (S.layer.type === "live") html = liveView();
   else if (S.layer.type === "tresors") html = tresorsView();
   else if (S.layer.type === "onboard") html = onboardView();
+  else if (S.layer.type === "conte") html = conteView();
   layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
   questBurst();
@@ -4890,8 +5898,10 @@ function defiDone(c, day) {
 }
 
 const ACT = {
+  ...CX_ACT,
   tab(d) { S.tab = d.tab; S.confirm = null; window.scrollTo(0, 0); },
   "open-mode"(d) {
+    if (d.mode === "conte" || d.mode === "epopee") { S.layer = { type: "conte" }; S.fight = null; S.cx = { ...S.cx, view: d.mode === "epopee" ? "new" : "lib", mode: d.mode === "epopee" ? "rpg" : "conte", id: null, help: false, check: null, roll: null }; return; }
     if (d.mode === "puzzle") { S.layer = { type: "puzzle" }; S.pz = null; S.pzSize = S.pzSize || 3; return; }
     if (d.mode === "arcade") { S.layer = { type: "arcade" }; S.arc = null; return; }
     if (d.mode === "recit") { S.layer = { type: "story" }; S.story = null; S.storyStyle = couple().style === "secret" ? "secret" : "ensemble"; return; }
@@ -4903,7 +5913,7 @@ const ACT = {
     if (S.pzRemote) pzRemoteClose();
     if (S.layer && S.layer.type === "game") return quitGame();
     if (S.layer && S.layer.type === "defis" && S.dfSeen.length) flushSeen(S.dfSeen, false);
-    S.layer = null; S.editAv = null; S.fromOb = false;
+    S.layer = null; S.editAv = null; S.fromOb = false; S.fight = null;
   },
   setup(d) { S.setup[d.k] = d.k === "dur" ? +d.v : d.v; },
   start() { if (S.setup.style === "distance" && Store.backend === "shared") startLiveCards(S.setup); else startGame(S.setup); },
@@ -5078,7 +6088,7 @@ const ACT = {
     const n = S.pzSize || 3, N = n * n;
     let order;
     do { order = shuffle([...Array(N).keys()]); } while (order.every((p, i) => p === i));
-    const L = { n, order, turn: pzMe() || "a", moves: 0, startAt: Date.now(), done: false, time: 0 };
+    const L = { n, photo: pzPhotoId(S.pzPhoto), order, turn: pzMe() || "a", moves: 0, startAt: Date.now(), done: false, time: 0 };
     S.pzLive = L; S.pzrSetup = false; S.pzSel = null;
     Store.db.doc("live/puzzle").set(L).catch(e => Store.fail(e));
   },
@@ -5099,7 +6109,10 @@ const ACT = {
   },
   "pz-size"(d) { S.pzSize = +d.v; },
   "pz-start"() { startPuzzle(); },
-  "pz-harder"() { S.pzSize = Math.min(5, S.pz.n + 1); startPuzzle(); },
+  "pz-harder"() { S.pzSize = Math.min(8, S.pz.n + 1); startPuzzle(); },
+  "pz-photo"(d) { S.pzPhoto = d.v; S.pzDel = null; },
+  "pz-del-ask"(d) { S.pzDel = d.v; },
+  "pz-del"(d) { Store.patchMeta("puzzle", { ["photos/" + d.v]: null }); if (S.pzPhoto === d.v) S.pzPhoto = "yassen"; S.pzDel = null; toast("Photo retirée de l'album"); },
   "pz-menu"() { S.pz = null; },
   "pz-peek"() { S.pz.peek = !S.pz.peek; },
   "pz-reset-img"() { Store.setMeta("puzzle", { img: "" }); toast("Retour au portrait d'origine de Yassen Jr."); },
