@@ -352,9 +352,82 @@ body { background: var(--bg); }
 .greet-date { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 700; }
 .greet-title { font-family: var(--f-display); font-weight: 400; font-size: clamp(2rem, 9vw, 2.5rem); line-height: 1.08; }
 .greet-title span { color: var(--accent); }
-.dedi-card { display: flex; align-items: center; gap: 14px; padding: 12px 16px 12px 12px; border-radius: 22px; background: var(--glass); border: 1px solid var(--hair); }
-.dedi-av { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; flex: none; box-shadow: 0 0 0 3px var(--surface); }
-.dedi-card p { font-family: var(--f-hand); font-size: 1.3rem; line-height: 1.15; text-wrap: pretty; min-width: 0; }
+/* Yassen Jr., quêtes, boutique et succès. */
+.yj-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; align-items: center; padding: 14px 16px; border-radius: 22px; background: var(--glass); border: 1px solid var(--hair); }
+.yj-pet { width: 88px; display: block; }
+.yj-pet svg { display: block; width: 100%; height: auto; overflow: visible; transform-origin: 50% 100%; animation: yjbreath 3.2s ease-in-out infinite; }
+.yj-pet.jump svg { animation: yjjump .6s ease; }
+.yj-info { display: grid; gap: 5px; min-width: 0; }
+.yj-stage { font-family: var(--f-display); font-size: 1.25rem; line-height: 1.15; }
+.yj-dedi { grid-column: 1 / -1; font-family: var(--f-hand); font-size: 1.3rem; line-height: 1.15; text-wrap: pretty; }
+.yj-card .quests, .yj-card > .row { grid-column: 1 / -1; }
+.zz { animation: zz 2.6s ease-in-out infinite; }
+.quests { display: grid; gap: 8px; }
+.quest { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--hair); font-size: .94rem; }
+.quest b { margin-left: auto; color: var(--i1); font-size: .86rem; white-space: nowrap; }
+.quest.ok { background: var(--m3); color: var(--on-m3); border-color: transparent; }
+.quest.ok .qtxt { text-decoration: line-through; text-decoration-thickness: 1px; opacity: .75; }
+.quest.ok b { color: var(--i3); }
+.qcheck { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: .8rem; font-weight: 800; }
+.quest.ok .qcheck { background: var(--i3); border-color: var(--i3); color: var(--bg); }
+.hearts-pill { height: 36px; padding: 0 12px; border-radius: 999px; background: var(--m1); color: var(--i1); font-weight: 700; font-size: .95rem; margin-right: 4px; white-space: nowrap; }
+.hearts-big { font-family: var(--f-display); font-size: 2.1rem; line-height: 1; color: var(--accent); }
+.hearts-big span { display: block; font-family: var(--f-body); font-size: .9rem; color: var(--muted); margin-top: 6px; }
+.shop { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.shop-item { display: grid; gap: 8px; justify-items: center; align-content: start; text-align: center; padding: 12px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hair); box-shadow: var(--shadow); }
+.shop-item .btn, .shop-item .badge { width: 100%; justify-content: center; font-size: .86rem; padding-inline: 8px; }
+.shop-prev { height: 112px; width: 100%; display: grid; place-items: center; border-radius: 14px; background: var(--surface-2); overflow: hidden; }
+.shop-prev > svg { height: 100px; width: auto; overflow: visible; }
+.shop-prev > svg[viewBox="0 0 40 32"] { width: 76px; height: auto; }
+.theme-sw { width: 76px; height: 76px; border-radius: 18px; display: block; }
+.sw-hiver { background: radial-gradient(circle at 30% 30%, #FFFFFF 0 3px, transparent 4px), radial-gradient(circle at 70% 60%, #FFFFFF 0 2px, transparent 3px), linear-gradient(160deg, #CFE3F5, #9FB4F0); }
+.sw-plage { background: linear-gradient(180deg, #F7E3B5 0 55%, #7FD0D6 55% 100%); }
+.sw-etoiles { background: radial-gradient(circle at 25% 30%, #F2D27A 0 2px, transparent 3px), radial-gradient(circle at 70% 45%, #FFFFFF 0 1.5px, transparent 2.5px), radial-gradient(circle at 45% 75%, #F2D27A 0 1.5px, transparent 2.5px), linear-gradient(160deg, #3D3470, #1F1B3D); }
+.emote-sw { font-size: 1.5rem; color: var(--i4); letter-spacing: .1em; }
+.ach { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.badge-card { display: grid; gap: 4px; justify-items: center; align-content: start; text-align: center; padding: 14px 10px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hair); }
+.badge-card > span:not(.medal) { font-size: .82rem; color: var(--muted); }
+.badge-card.locked .medal { background: var(--surface-2); color: var(--muted); }
+.badge-card.locked b { color: var(--muted); }
+.medal { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--m2); color: var(--i2); margin-bottom: 4px; box-shadow: 0 0 0 4px var(--surface), 0 0 0 5px var(--m2); }
+.medal svg { width: 24px; height: 24px; }
+.stages { display: grid; gap: 8px; }
+.stage-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--hair); }
+.stage-row > svg { width: 46px; flex: none; }
+.stage-row > .badge { margin-left: auto; }
+.stage-row.locked > svg { filter: grayscale(1); opacity: .35; }
+.mode-row.locked { opacity: .7; cursor: default; }
+.pet { position: absolute; left: 0; bottom: -2px; width: 26px; will-change: transform; pointer-events: none; }
+.pet svg { display: block; width: 100%; height: auto; }
+.fx-pillow { position: absolute; bottom: 34px; width: 18px; height: 12px; border-radius: 5px; background: #F4EFE9; border: 1.5px solid #C9BFD0; opacity: 0; animation: pillow 1.2s ease-out forwards; }
+.fx-feather { position: absolute; bottom: 44px; width: 5px; height: 11px; border-radius: 50%; background: #FFFFFF; border: 1px solid #D9D2CA; opacity: 0; animation: feather 1.6s ease-out forwards; }
+#buddies.disco .buddy-body svg { animation: disco .76s steps(1) infinite; }
+#gain { position: fixed; left: 0; right: 0; top: calc(66px + env(safe-area-inset-top, 0px)); z-index: 61; display: flex; justify-content: center; pointer-events: none; padding: 0 16px; }
+.gain-toast { display: flex; gap: 8px; align-items: center; max-width: 100%; padding: 10px 16px; border-radius: 999px; background: var(--m1); color: var(--on-m1); font-weight: 700; font-size: .92rem; box-shadow: var(--shadow); animation: gainin .35s ease; }
+.gain-toast span { color: var(--i1); }
+@keyframes yjbreath { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, .97); } }
+@keyframes yjjump { 0% { transform: translateY(0); } 35% { transform: translateY(-16px) scale(.96, 1.06); } 70% { transform: translateY(0) scale(1.06, .94); } 100% { transform: none; } }
+@keyframes zz { 0% { opacity: 0; transform: translate(0, 4px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(6px, -10px); } }
+@keyframes pillow { 0% { opacity: 1; transform: translateY(0) rotate(0); } 50% { transform: translateY(-24px) rotate(160deg); } 100% { opacity: 0; transform: translateY(0) rotate(320deg); } }
+@keyframes feather { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(16px, -42px) rotate(140deg); } }
+@keyframes disco { 0% { filter: drop-shadow(0 0 6px #FF6E89); } 25% { filter: drop-shadow(0 0 6px #F2C84B); } 50% { filter: drop-shadow(0 0 6px #6DBE9B); } 75% { filter: drop-shadow(0 0 6px #9B7BD6); } }
+@keyframes gainin { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
+/* Thèmes achetés : ils recolorent les halos du fond et y ajoutent des particules. */
+.cozy-fx { position: absolute; inset: 0; }
+.cozy-fx span { position: absolute; display: block; border-radius: 50%; }
+:root[data-ys-theme="hiver"] #cozy i:nth-child(1) { background: #CFE3F5; } :root[data-ys-theme="hiver"] #cozy i:nth-child(2) { background: #DDE6F8; } :root[data-ys-theme="hiver"] #cozy i:nth-child(3) { background: #E6EEF5; } :root[data-ys-theme="hiver"] #cozy i:nth-child(4) { background: #C9DCEF; }
+:root[data-ys-theme="plage"] #cozy i:nth-child(1) { background: #F7E3B5; } :root[data-ys-theme="plage"] #cozy i:nth-child(2) { background: #BDE7E4; } :root[data-ys-theme="plage"] #cozy i:nth-child(3) { background: #7FD0D6; } :root[data-ys-theme="plage"] #cozy i:nth-child(4) { background: #F7D5C2; }
+:root[data-ys-theme="etoiles"] #cozy i:nth-child(1) { background: #B7A8E8; } :root[data-ys-theme="etoiles"] #cozy i:nth-child(2) { background: #A4B4E4; } :root[data-ys-theme="etoiles"] #cozy i:nth-child(3) { background: #C4B0EA; } :root[data-ys-theme="etoiles"] #cozy i:nth-child(4) { background: #A99AD8; }
+:root[data-ys-theme="etoiles"] #cozy { background: radial-gradient(120% 55% at 50% 0%, rgba(61, 52, 112, .2), transparent 70%); }
+:root[data-ys-theme="hiver"] .cozy-fx span { width: 6px; height: 6px; background: #B9CDE6; opacity: .8; animation-name: snow; animation-timing-function: linear; animation-iteration-count: infinite; }
+:root[data-ys-theme="plage"] .cozy-fx span { width: 10px; height: 10px; border: 1.5px solid rgba(60, 150, 170, .4); animation-name: bubble; animation-timing-function: linear; animation-iteration-count: infinite; }
+:root[data-ys-theme="etoiles"] .cozy-fx span { width: 3px; height: 3px; background: #E8C35A; box-shadow: 0 0 6px #F2D27A; animation-name: twinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-ys-theme="hiver"] .cozy-fx span { background: #FFFFFF; opacity: .55; } }
+:root[data-theme="dark"][data-ys-theme="hiver"] .cozy-fx span { background: #FFFFFF; opacity: .55; }
+@keyframes snow { from { transform: translate(0, 0); } to { transform: translate(34px, 112vh); } }
+@keyframes bubble { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-55vh); } }
+@keyframes twinkle { from { opacity: .1; transform: scale(.6); } to { opacity: .95; transform: scale(1.3); } }
+@media (prefers-reduced-motion: reduce) { .cozy-fx span, .yj-pet svg, .zz { animation: none !important; } }
 .list { display: grid; background: var(--surface); border-radius: 22px; border: 1px solid var(--hair); box-shadow: var(--shadow); overflow: hidden; }
 .mode-row { display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; padding: 14px 14px 14px 16px; transition: background .15s ease; }
 .mode-row + .mode-row { border-top: 1px solid var(--hair); }
@@ -422,7 +495,7 @@ body { background: var(--bg); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 
-<div id="cozy" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+<div id="cozy" aria-hidden="true"><i></i><i></i><i></i><i></i><div class="cozy-fx"></div></div>
 <div id="app"></div>
 <div id="layer"></div>
 <div id="toast" aria-live="polite"></div>
@@ -817,7 +890,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* sto
    Avec la base de l'artifact : synchronisées entre vos appareils.
    Sans elle (visiteur non connecté, aperçu) : enregistrées sur ce seul appareil. */
 const LS = "entre-nous:v1";
-const DEFAULT_META = { couple: { a: "", b: "", style: "partage" }, progress: { seen: [], parties: 0 }, puzzle: { img: "" }, avatars: {}, space: { owner: "" } };
+const DEFAULT_META = { couple: { a: "", b: "", style: "partage" }, progress: { seen: [], parties: 0 }, puzzle: { img: "" }, avatars: {}, space: { owner: "" }, game: {} };
 // Identifiant de ce téléphone, pour savoir lequel a créé l'espace commun.
 const deviceId = () => { let v = lsGet("entre-nous:device"); if (!v) { v = uid() + uid(); lsSet("entre-nous:device", v); } return v; };
 // Seul le téléphone qui a créé l'espace commun peut tout effacer.
@@ -827,7 +900,7 @@ const isOwner = () => {
   return o ? o === deviceId() : lsGet("entre-nous:owner") === Shared.code();
 };
 const Store = {
-  backend: "local", db: null, q: {}, unsubs: [],
+  backend: "local", db: null, q: {}, unsubs: [], ready: false,
   cols: { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [] },
   meta: JSON.parse(JSON.stringify(DEFAULT_META)),
   loadLocal() {
@@ -844,8 +917,8 @@ const Store = {
     let db = null;
     try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
     if (!db) db = await Shared.open();
-    if (!db) { render(); return; }
-    this.db = db; this.backend = db.kind === "shared" ? "shared" : "db";
+    if (!db) { this.ready = true; render(); return; }
+    this.db = db; this.backend = db.kind === "shared" ? "shared" : "db"; this.ready = false;
     const firsts = [];
     const first = () => { let r; firsts.push(new Promise(res => { r = res; })); return () => { if (r) { r(); r = null; } }; };
     for (const col of Object.keys(this.cols)) {
@@ -863,6 +936,8 @@ const Store = {
       }, e => { done(); this.fail(e); }));
     }
     if (db.kind === "shared") Live.open();
+    // Les quêtes attendent d'avoir reçu toute la progression commune avant de compter quoi que ce soit.
+    Promise.all(firsts).then(() => { if (this.db === db) { this.ready = true; render(); } });
     render();
     // En rejoignant l'espace commun, ce que ce téléphone contenait déjà y est ajouté.
     if (db.kind === "shared" && Shared.joining) {
@@ -884,14 +959,16 @@ const Store = {
   },
   goLocal() {
     this.unsubs.forEach(u => { try { u(); } catch (e) { /* déjà fermé */ } });
-    this.unsubs = []; this.db = null; this.backend = "local"; this.saveLocal();
+    this.unsubs = []; this.db = null; this.backend = "local"; this.ready = true; this.saveLocal();
     Live.close();
   },
   add(col, data) {
     data = { ...data, createdAt: Date.now() };
     const id = this.db ? this.db.collection(col).doc().id : uid();
-    return this.write(col + "/" + id, () => this.db.collection(col).doc(id).set(data),
+    const p = this.write(col + "/" + id, () => this.db.collection(col).doc(id).set(data),
       () => { if (!this.cols[col].some(x => x.id === id)) this.cols[col].push({ id, ...data }); });
+    Jeu.onAdd(col, data);
+    return p;
   },
   put(col, id, data) {
     return this.write(col + "/" + id, () => this.db.collection(col).doc(id).set(data), () => {
@@ -911,6 +988,20 @@ const Store = {
   setMeta(m, data) {
     this.meta[m] = { ...data };
     return this.write("meta/" + m, () => this.db.doc("meta/" + m).set(data), () => {});
+  },
+  // Change quelques champs d'un document, chemin par chemin (« earn/2026-10-20_rdv »).
+  // Dans l'espace commun, seuls ces chemins sont envoyés : vos deux téléphones peuvent gagner
+  // des cœurs au même moment sans effacer ceux de l'autre. null retire le champ.
+  patchMeta(m, flat) {
+    const cur = this.meta[m] = JSON.parse(JSON.stringify(this.meta[m] || {}));
+    for (const [path, v] of Object.entries(flat)) {
+      const keys = path.split("/"), last = keys.pop();
+      let o = cur;
+      for (const k of keys) o = o[k] && typeof o[k] === "object" ? o[k] : (o[k] = {});
+      if (v == null) delete o[last]; else o[last] = v;
+    }
+    const full = JSON.parse(JSON.stringify(cur));
+    return this.write("meta/" + m, () => this.backend === "shared" ? this.db.doc("meta/" + m).update(flat) : this.db.doc("meta/" + m).set(full), () => {});
   },
   fail(e) {
     const code = e && e.code;
@@ -1233,7 +1324,7 @@ function viewHome() {
     <p class="greet-date">${esc(fmtDay(todayStr(), { weekday: "long", day: "numeric", month: "long" }))}</p>
     <h1 class="greet-title">${hello}${named ? `,<br><span>${esc(c.a)} &amp; ${esc(c.b)}</span>` : ""}</h1>
   </section>
-  <section class="dedi-card"><img class="dedi-av" src="${pzImage()}" alt="Yassen Jr."><p>À la mémoire de Yassen Jr., montrons-lui que ses parents s'aiment vraiment.</p></section>
+  ${yassenCard()}
   ${named ? "" : `<div class="panel">
       <p><b>Comment vous appelez-vous ?</b></p>
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
@@ -1427,6 +1518,8 @@ function viewLettres() {
   <header class="top"><h1 class="logo">À ouvrir <span>plus tard</span></h1></header>
   <p class="hello">Un message, un souhait, une promesse : on l'écrit maintenant, on le lit le jour choisi.</p>
   <div class="row"><button class="btn" data-a="sheet" data-name="lettre">Écrire une carte</button></div>
+  ${Jeu.days() >= 30 ? yassenLetter() : Jeu.days() >= 1 ? `<article class="letter sealed"><span class="seal" aria-hidden="true" style="font-size:1.05rem">YJ</span><p class="when">Une lettre de Yassen Jr.</p>
+    <p class="small muted">${esc(fr(`Il vous l'écrit tout doucement. Elle sera prête après 30 jours ensemble : vous en êtes à ${Jeu.days()}.`))}</p></article>` : ""}
   <div class="stack">${list || empty("Aucune carte scellée", "Écrivez un mot à relire dans un mois, pour vos six mois ou pour votre premier anniversaire.")}</div>`;
 }
 
@@ -2230,6 +2323,28 @@ const STORIES = [
     fin_moitie: { end: "Le sort à moitié", sc: "marche", t: "Le sort ne s'inverse qu'à moitié : vous retrouvez vos corps, mais vous gardez la voix de l'autre jusqu'au coucher du soleil. Toute la foire en parle encore." },
     fin_sortilege: { end: "Le sortilège secret", sc: "magie", t: "Mirabelle vous apprend le seul sortilège qui compte vraiment : un mot à se dire quand l'un de vous deux a besoin de réconfort. Personne ne sait lequel. Sauf vous." },
     fin_chat: { end: "Sire Moustache", sc: "chaumiere", t: "Vous repartez avec un chat qui parle et commente absolument tout. Il s'appelle Sire Moustache, il a un avis sur votre couple, et cet avis est très favorable." }
+  } },
+  // Histoire secrète : elle se débloque quand Yassen Jr. est couronné (14 jours ensemble).
+  { id: "yassen", secret: true, title: "Le royaume de Yassen Jr.", mood: "Secret · tendre et lumineux", c: 2, start: "reveil", nodes: {
+    reveil: { sc: "souvenir", t: "Un soir, en ouvrant l'appli, {a} et {b} remarquent une petite lueur jaune au coin de l'écran. Elle grandit, pétille, et pouf : Yassen Jr. saute hors du téléphone, l'air très fier de lui. « Surprise ! Ça fait des jours que je vous regarde jouer. Ce soir, c'est moi qui vous invite. »",
+      talk: "Pour de vrai : si un petit compagnon vous observait tous les jours, que dirait-il de vous deux ?",
+      ch: [["Le suivre sans poser de questions", "royaume"], ["Lui demander d'abord s'il a faim", "snacks"]] },
+    snacks: { sc: "village", t: "Yassen Jr. a toujours faim. Vous l'emmenez au marché du village, où il goûte tout : une crêpe, trois chouquettes, un demi-melon. Il rougit jusqu'à la flamme. « Je mange quand je suis ému. Et là, je suis TRÈS ému. »",
+      ch: [["Lui offrir la dernière chouquette", "royaume"], ["Partager une crêpe à trois", "royaume"]] },
+    royaume: { sc: "foret", t: "Il vous guide à travers une forêt où chaque arbre porte une lanterne. « Ici, chaque lanterne est un moment que vous avez passé ensemble. Celle-là, c'est votre premier fou rire. Celle-là, une dispute réglée par un câlin. » Tout au fond, une lanterne est éteinte.",
+      talk: "Pour de vrai : quel moment à deux mériterait sa lanterne ?",
+      ch: [["Rallumer la lanterne éteinte", "flamme"], ["Continuer jusqu'au château", "roi"]] },
+    flamme: { sc: "dragonnuit", t: "Pour rallumer la lanterne, explique Yassen Jr., il faut une flamme partagée : chacun dit à l'autre une chose qu'il n'a jamais osé lui dire. La lanterne attend, les lucioles retiennent leur souffle.",
+      talk: "Pour de vrai : chacun confie à l'autre une petite chose jamais dite. Une douce, de préférence.",
+      ch: [["Le dire tout bas", "fin_souvenir"], ["Le crier pour que toute la forêt l'entende", "fete"]] },
+    roi: { sc: "chateaunuit", t: "Au château, un trône minuscule attend. Yassen Jr. y grimpe, pose sur sa tête une couronne beaucoup trop grande et prend sa voix la plus solennelle : « Je vous nomme gardiens de ce royaume. Votre seule mission : continuer à vous aimer. Et me donner des snacks. »",
+      ch: [["Accepter la mission avec une révérence", "fin_gardiens"], ["Négocier : moins de snacks, plus de câlins", "fete"], ["Lui faire promettre de revenir souvent", "fin_promesse"]] },
+    fete: { sc: "village", t: "Tout le royaume vous a entendus. Les lanternes s'allument une à une, des lucioles dessinent vos initiales dans le ciel et un orchestre de grenouilles attaque une valse. Yassen Jr. danse sur la table, évidemment.",
+      ch: [["Danser avec lui jusqu'à l'aube", "fin_fete"]] },
+    fin_souvenir: { end: "La lanterne rallumée", sc: "souvenir", t: "La lanterne s'allume d'une lumière dorée, plus belle que toutes les autres. Yassen Jr. se blottit entre vous deux. « Vous voyez ? Tant que vous vous parlez comme ça, rien ne s'éteint vraiment. Pas même moi. »" },
+    fin_promesse: { end: "La promesse", sc: "chateaunuit", t: "Yassen Jr. tend son petit doigt de flamme. « Promis : je suis là chaque fois que vous ouvrez l'appli. Et si je fais la sieste, réveillez-moi avec une quête. » Le pacte est scellé par un câlin à trois, un peu chaud." },
+    fin_gardiens: { end: "Les gardiens du royaume", sc: "chateaunuit", t: "{a} et {b} reçoivent chacun une petite broche en forme de flamme. Yassen Jr. s'endort sur son trône, la couronne de travers, un sourire au coin des lèvres. Le royaume est entre de bonnes mains." },
+    fin_fete: { end: "La grande fête", sc: "village", t: "Au lever du soleil, tout le monde dort en tas dans l'herbe, Yassen Jr. au milieu, qui ronfle comme une petite bougie. Le royaume n'a jamais été aussi lumineux." }
   } }
 ];
 const STORY = Object.fromEntries(STORIES.map(s => [s.id, s]));
@@ -2414,8 +2529,10 @@ function backHair(a, hc) {
   for (let i = n; i > 0; i--) d += `Q85 ${46 + 14 * i - 7} 79 ${46 + 14 * (i - 1)}`;
   return `<path d="${d}C79 17 21 17 22 46Z" fill="${hc}"/>`;
 }
-function avatarSvg(k) {
-  const a = avOf(k), skin = AV.skin[a.skin], hc = AV.hairColor[a.hairColor], top = AV.top[a.top];
+// ov : tenue, chapeau ou compagnon essayés (aperçu de la boutique), par-dessus ce qui est porté.
+function avatarSvg(k, ov) {
+  const a = avOf(k), eq = { ...Jeu.equipOf(k), ...(ov || {}) }, out = OUTFITS[eq.outfit];
+  const skin = AV.skin[a.skin], hc = AV.hairColor[a.hairColor], top = out ? out.c : AV.top[a.top];
   const cap = `<path d="M24 46C24 22 38 16 50 16C64 16 77 24 76 46C70 36 60 31 50 31C40 31 30 36 24 46Z" fill="${hc}"/>`;
   const sides = `<path d="M24 46C22 60 23 70 26 76L30 76C28 64 28 54 30 44ZM76 46C78 60 77 70 74 76L70 76C72 64 72 54 70 44Z" fill="${hc}"/>`;
   const curls = [[28, 36], [36, 26], [47, 21], [58, 22], [68, 28], [74, 38], [24, 46], [77, 46]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${hc}"/>`).join("");
@@ -2440,13 +2557,13 @@ function avatarSvg(k) {
     <ellipse cx="42" cy="142" rx="8" ry="4" fill="#2A2433"/><ellipse cx="58" cy="142" rx="8" ry="4" fill="#2A2433"/>
     <rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/>
     <circle cx="22" cy="116" r="5" fill="${skin}"/><circle cx="78" cy="116" r="5" fill="${skin}"/>
-    <path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/><rect x="45" y="68" width="10" height="12" fill="${skin}"/>
+    ${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d : ""}<rect x="45" y="68" width="10" height="12" fill="${skin}"/>
     <circle cx="24" cy="50" r="5" fill="${skin}"/><circle cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
     <g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
     <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
     <ellipse class="av-blush" cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse class="av-blush" cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
-    <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${pierce}${acc}</svg>`;
+    <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${pierce}${acc}${HATS[eq.hat] ? HATS[eq.hat](hc) : ""}</svg>`;
 }
 const castFig = k => `<figure>${avatarSvg(k)}<span class="tag">${esc(nm(k))}</span></figure>`;
 
@@ -2554,7 +2671,7 @@ const Music = {
     }
   }
 };
-const STORY_MUSIC = { train: "nuit", manoir: "mystere", boulangerie: "douceur", cupidon: "pop", viral: "pop", villa: "pop", festival: "fete", dragon: "medieval", grimoire: "medieval" };
+const STORY_MUSIC = { train: "nuit", manoir: "mystere", boulangerie: "douceur", cupidon: "pop", viral: "pop", villa: "pop", festival: "fete", dragon: "medieval", grimoire: "medieval", yassen: "douceur" };
 const SCENE_OF = {
   train: { quai: "quai", chat: "train", piano: "train", bar: "train", indice: "train", aube: "aube", mer: "mer", alpes: "neige", chalet: "chalet", fin_concert: "village", fin_crique: "crique", fin_inconnu: "tournesols", fin_cafe: "mer", fin_plongeon: "mer", fin_luge: "neige", fin_chalet: "chalet" },
   manoir: { hall: "manoir", biblio: "biblio", trappe: "cuisine", passage: "passage", grenier: "grenier", malle: "grenier", costumes: "grenier", cuisine: "cuisine", pate: "cuisine", bal: "bal", portraits: "passage", fin_lettre: "grenier", fin_photo: "grenier", fin_gateau: "cuisine", fin_jardin: "jardin", fin_bal: "bal", fin_portrait: "passage" },
@@ -2605,10 +2722,10 @@ function storyView() {
       <div class="stage mini">${sceneSvg("souvenir")}<div class="cast">${castFig("a")}${castFig("b")}</div></div>
       <div class="row"><button class="btn ghost" data-a="sheet" data-name="avatars">Personnaliser nos personnages</button>
       <button class="chip" aria-pressed="${Music.on()}" data-a="music">${Music.on() ? "Musique d'ambiance activée" : "Musique d'ambiance coupée"}</button></div></section>
-    <div class="stack"><h2 class="sec">Les histoires</h2><div class="list">${STORIES.map(st => {
+    <div class="stack"><h2 class="sec">Les histoires</h2><div class="list">${STORIES.filter(st => !st.secret || Jeu.stage() >= 4).map(st => {
       const [f, t] = endCount(st);
       return `<button class="mode-row" style="${cvar(st.c)}" data-a="st-open" data-id="${st.id}"><span class="icon-tile">${ico("book")}</span><span class="mode-txt"><b>${esc(st.title)}</b><span>${esc(st.mood)} · environ 10 min · ${f ? `${f} fin${f > 1 ? "s" : ""} découverte${f > 1 ? "s" : ""} sur ${t}` : `${t} fins à découvrir`}</span></span><span class="chev" aria-hidden="true">›</span></button>`;
-    }).join("")}</div></div>`;
+    }).join("")}${Jeu.stage() < 4 ? `<div class="mode-row locked" style="${cvar(2)}"><span class="icon-tile">${ico("sparkles")}</span><span class="mode-txt"><b>Histoire secrète</b><span>${esc(fr(`Elle se débloque quand Yassen Jr. sera couronné, après ${STAGE_DAYS[4]} jours ensemble.`))}</span></span></div>` : ""}</div></div>`;
   }
   const st = STORY[s.id], n = st.nodes[s.node], col = cvar(st.c);
   const head = `<div class="g-head"><button class="icon-btn" data-a="st-menu" aria-label="Retour aux histoires">×</button><div class="g-prog"><span>${esc(st.title)}</span></div><span class="g-timer">${n.end ? "Fin" : "Chapitre " + s.steps}</span></div>`;
@@ -3092,7 +3209,9 @@ const Buddies = {
       d.innerHTML = `<div class="bubble"></div><div class="buddy-face"><div class="buddy-body"></div></div>`;
       d.addEventListener("click", () => this.poke(k));
       el.appendChild(d);
-      this.b[k] = { k, el: d, faceEl: d.querySelector(".buddy-face"), x: (i ? 0.68 : 0.3) * this.W(), target: null, speed: 0, face: i ? -1 : 1, phase: 0, tilt: 0, run: false };
+      const pet = document.createElement("div"); pet.className = "pet"; pet.hidden = true; el.appendChild(pet);
+      const x = (i ? 0.68 : 0.3) * this.W();
+      this.b[k] = { k, el: d, faceEl: d.querySelector(".buddy-face"), x, target: null, speed: 0, face: i ? -1 : 1, phase: 0, tilt: 0, run: false, pet: { el: pet, x: x - 30, face: 1, phase: 0 } };
     });
     this.nextAct = performance.now() + 4000;
     this.loop = this.loop.bind(this);
@@ -3107,8 +3226,15 @@ const Buddies = {
     this.el.classList.toggle("over", editing);
     this.el.hidden = !show;
     if (!show) return;
-    const sig = JSON.stringify([avOf("a"), avOf("b")]);
-    if (sig !== this.sig) { this.sig = sig; ["a", "b"].forEach(k => { this.b[k].el.querySelector(".buddy-body").innerHTML = avatarSvg(k); }); }
+    const sig = JSON.stringify([avOf("a"), avOf("b"), Jeu.equipOf("a"), Jeu.equipOf("b")]);
+    if (sig !== this.sig) {
+      this.sig = sig;
+      ["a", "b"].forEach(k => {
+        const o = this.b[k], pet = Jeu.equipOf(k).pet;
+        o.el.querySelector(".buddy-body").innerHTML = avatarSvg(k);
+        o.pet.el.hidden = !pet; o.pet.el.innerHTML = pet ? PETS[pet] : "";
+      });
+    }
   },
   walkTo(o, x, run, cb) {
     o.target = Math.max(24, Math.min(this.W() - 24, x)); o.run = !!run; o.onArrive = cb || null;
@@ -3137,6 +3263,15 @@ const Buddies = {
       o.el.classList.toggle("walking", moving);
       o.el.classList.toggle("bl", o.x < W * 0.28);
       o.el.classList.toggle("br", o.x > W * 0.72);
+      // Le petit compagnon trottine derrière son chibi, avec un temps de retard.
+      const p = o.pet;
+      if (!p.el.hidden) {
+        const goal = o.x - o.face * 30, d = goal - p.x, step = still ? d : d * Math.min(1, dt * 2.6);
+        p.x += step;
+        if (Math.abs(d) > 2) { p.face = d > 0 ? 1 : -1; p.phase += dt * 12; }
+        const hop = Math.abs(d) > 2 && !still ? Math.abs(Math.sin(p.phase)) * 4 : 0;
+        p.el.style.transform = `translate3d(${(p.x - 13).toFixed(1)}px, ${(-hop).toFixed(1)}px, 0) scaleX(${-p.face})`;
+      }
     }
     if (!this.busy && t > this.nextAct && !still) this.act();
   },
@@ -3144,6 +3279,8 @@ const Buddies = {
   act() {
     const A = this.b.a, B = this.b.b, W = this.W(), h = new Date().getHours(), r = Math.random();
     this.busy = true;
+    const em = Jeu.emotes();
+    if (em.length && Math.random() < 0.16) return pickOne(em) === "disco" ? this.disco() : this.pillows();
     if (this.persoOf("fou") && this.persoOf("timide")) {
       const q = Math.random();
       if (q < 0.24) return this.banter();
@@ -3226,6 +3363,37 @@ const Buddies = {
     });
   },
   persoOf(p) { return Object.values(this.b).find(o => avOf(o.k).perso === p) || null; },
+  // Émotes de la boutique.
+  pillows() {
+    this.meet(34, (L, R) => {
+      this.say(L.k, pickOne(["Bataille de polochons !", "En garde !"]), 1600);
+      this.mood([L, R], "happy", true);
+      [0, 450, 900, 1350, 1800].forEach((ms, i) => setTimeout(() => {
+        const o = i % 2 ? R : L; this.hop(o); this.spawn("fx-pillow", "", (L.x + R.x) / 2 - 9 + (Math.random() - 0.5) * 30, 0, 1300);
+        this.spawn("fx-feather", "", (L.x + R.x) / 2 + (Math.random() - 0.5) * 40, 0.1, 1600);
+      }, ms));
+      setTimeout(() => { this.say(R.k, pickOne(["Égalité !", "J'ai gagné ! …non ?", "Plus de plumes…"]), 2000); this.hearts((L.x + R.x) / 2, 4); }, 2300);
+      setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 3600);
+    });
+  },
+  disco() {
+    this.meet(60, (L, R) => {
+      this.say(pickOne(["a", "b"]), pickOne(["Disco time !", "Lumières, musique !"]), 1600);
+      this.mood([L, R], "happy", true); this.el.classList.add("disco");
+      [0, 380, 760, 1140, 1520, 1900, 2280].forEach((ms, i) => setTimeout(() => {
+        if (i % 3 === 1) { this.spin(L); this.spin(R); } else { this.hop(L); this.hop(R); }
+        L.face *= -1; R.face *= -1; this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 70);
+      }, ms));
+      setTimeout(() => { this.el.classList.remove("disco"); L.face = 1; R.face = -1; this.hearts((L.x + R.x) / 2, 5); this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2800);
+    });
+  },
+  // Quête réussie, succès, achat : les deux fêtent ça.
+  cheer() {
+    if (!this.el || this.el.hidden) return;
+    ["a", "b"].forEach((k, i) => setTimeout(() => { this.hop(this.b[k]); this.hearts(this.b[k].x, 3, 20); }, i * 220));
+    const k = pickOne(["a", "b"]);
+    this.say(k, pickOne(CHEERS[avOf(k).perso] || CHEERS.classique), 2400);
+  },
   banter() {
     const F = this.persoOf("fou"), T = this.persoOf("timide"), A = this.b.a, B = this.b.b;
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
@@ -3304,6 +3472,287 @@ const Buddies = {
   poke(k) { this.hop(this.b[k]); this.hearts(this.b[k].x, 1, 10); this.say(k, pickOne(persoLines(k, "poke", POKE_LINES)), 2600); if (avOf(k).perso === "fou") this.spin(this.b[k]); }
 };
 
+/* ───────────────────────── Quêtes, cœurs, boutique et succès ─────────────────────────
+   Tout vit dans meta/game, partagé entre vos deux téléphones :
+   - earn/<clé> : cœurs gagnés. Une clé par quête et par jour : impossible de gagner deux fois la même ;
+   - owned/<article>, equip/<a|b>/<emplacement>, theme : la boutique ;
+   - quests/<jour>/<quête>, days/<jour>, ach/<succès>, flags/<nom> : la progression.
+   Le solde de cœurs = cœurs gagnés − prix des articles achetés. */
+const QUESTS = [
+  { id: "rdv", label: "Jouer la question du rendez-vous du jour", reward: 10 },
+  { id: "mot", label: "Laisser un petit mot ou une anecdote dans la capsule", reward: 10 },
+  { id: "partie", label: "Finir une partie de questions, de « Qui de nous deux ? » ou de Surprise", reward: 15 },
+  { id: "souvenir", label: "Garder un souvenir dans l'album", reward: 15 },
+  { id: "fin", label: "Arriver à la fin d'une histoire", reward: 15 },
+  { id: "defi", label: "Relever un défi", reward: 15 },
+  { id: "aventure", label: "Ajouter une idée à vos aventures", reward: 10 },
+  { id: "arcade", label: "Finir un mini-jeu de l'arcade", reward: 10 },
+  { id: "puzzle", label: "Reconstituer le puzzle de Yassen Jr.", reward: 15 }
+];
+const QUEST_BONUS = 20;
+const SHOP = [
+  { id: "pull", slot: "outfit", name: "Pull d'hiver", price: 80 },
+  { id: "hoodie", slot: "outfit", name: "Sweat à capuche", price: 80 },
+  { id: "pyjama", slot: "outfit", name: "Pyjama étoilé", price: 90 },
+  { id: "kimono", slot: "outfit", name: "Kimono", price: 110 },
+  { id: "robe", slot: "outfit", name: "Robe de bal", price: 120 },
+  { id: "armure", slot: "outfit", name: "Armure de chevalier", price: 120 },
+  { id: "bonnet", slot: "hat", name: "Bonnet à pompon", price: 50 },
+  { id: "oreilles", slot: "hat", name: "Oreilles de chat", price: 60 },
+  { id: "aureole", slot: "hat", name: "Auréole", price: 70 },
+  { id: "sorcier", slot: "hat", name: "Chapeau de sorcier", price: 80 },
+  { id: "couronne", slot: "hat", name: "Couronne", price: 90 },
+  { id: "petchat", slot: "pet", name: "Petit chat", price: 150 },
+  { id: "petlapin", slot: "pet", name: "Lapin", price: 150 },
+  { id: "petdragon", slot: "pet", name: "Mini-dragon", price: 180 },
+  { id: "hiver", slot: "theme", name: "Thème Hiver", price: 200 },
+  { id: "plage", slot: "theme", name: "Thème Plage", price: 200 },
+  { id: "etoiles", slot: "theme", name: "Thème Nuit étoilée", price: 200 },
+  { id: "polochons", slot: "emote", name: "Bataille de polochons", price: 100 },
+  { id: "disco", slot: "emote", name: "Danse disco", price: 100 }
+];
+const SHOP_BY_ID = Object.fromEntries(SHOP.map(i => [i.id, i]));
+const SHOP_CATS = [["outfit", "Tenues"], ["hat", "Chapeaux"], ["pet", "Compagnons"], ["theme", "Thèmes"], ["emote", "Émotes"]];
+const STAGE_DAYS = [0, 1, 3, 7, 14, 30];
+const STAGE_NAMES = ["Étincelle", "Petite flamme", "Yassen Jr.", "Yassen Jr. à l'écharpe", "Yassen Jr. couronné", "Yassen Jr. légendaire"];
+const ACH = [
+  { id: "premiere", icon: "sparkles", title: "Premiers pas", desc: "Accomplir une première quête", reward: 10, test: s => s.questsDone >= 1 },
+  { id: "parfait", icon: "sparkles", title: "Journée parfaite", desc: "Réussir les 3 quêtes d'une même journée", reward: 20, test: s => s.perfectDays >= 1 },
+  { id: "j7", icon: "frame", title: "Une semaine à deux", desc: "7 jours passés ensemble dans l'appli", reward: 40, test: s => s.days >= 7 },
+  { id: "j30", icon: "frame", title: "Un mois de complicité", desc: "30 jours passés ensemble dans l'appli", reward: 100, test: s => s.days >= 30 },
+  { id: "souv10", icon: "frame", title: "Album bien rempli", desc: "Garder 10 souvenirs", reward: 30, test: s => s.souvenirs >= 10 },
+  { id: "mots5", icon: "bubbles", title: "Mots doux", desc: "Laisser 5 petits mots ou anecdotes", reward: 20, test: s => s.mots >= 5 },
+  { id: "fins5", icon: "book", title: "Conteurs en herbe", desc: "Découvrir 5 fins d'histoire", reward: 20, test: s => s.fins >= 5 },
+  { id: "fins20", icon: "book", title: "Grands conteurs", desc: "Découvrir 20 fins d'histoire", reward: 60, test: s => s.fins >= 20 },
+  { id: "manoir", icon: "book", title: "Maîtres du manoir", desc: "Découvrir toutes les fins du manoir", reward: 40, test: () => { const [f, t] = endCount(STORY.manoir); return f === t; } },
+  { id: "dragon", icon: "book", title: "Amis des dragons", desc: "Découvrir toutes les fins du dragon timide", reward: 40, test: () => { const [f, t] = endCount(STORY.dragon); return f === t; } },
+  { id: "aventure", icon: "flag", title: "Aventuriers", desc: "Réaliser une aventure de votre liste", reward: 30, test: s => s.aventuresDone >= 1 },
+  { id: "lettre", icon: "bubbles", title: "Patience récompensée", desc: "Ouvrir une carte scellée le jour venu", reward: 30, test: s => !!s.flags.lettre },
+  { id: "distance", icon: "people", title: "Même à distance", desc: "Finir une partie chacun sur son téléphone", reward: 30, test: s => !!s.flags.distance },
+  { id: "puzzle25", icon: "puzzle", title: "Yassen Jr. en 25 pièces", desc: "Finir le puzzle dans sa version la plus difficile", reward: 40, test: s => !!s.flags.puzzle25 },
+  { id: "cartes3", icon: "sparkles", title: "Créateurs", desc: "Créer 3 cartes à vous", reward: 20, test: s => s.cartes >= 3 },
+  { id: "parties20", icon: "gamepad", title: "Accros au jeu", desc: "Finir 20 parties", reward: 40, test: s => s.parties >= 20 },
+  { id: "shop5", icon: "sparkles", title: "Fashion week", desc: "Acheter 5 articles à la boutique", reward: 30, test: s => s.owned >= 5 }
+];
+const YJ_LINES = ["Yassen Jr. se tortille de joie.", "Yassen Jr. fait une pirouette pour vous.", "Yassen Jr. vous trouve trop mignons.", "Yassen Jr. réclame un câlin à trois.", "Yassen Jr. brille un peu plus fort."];
+const YJ_SLEEPY = ["Yassen Jr. ronronne dans son sommeil.", "Chut… Yassen Jr. rêve de vous deux.", "Yassen Jr. ouvre un œil, sourit, et se rendort."];
+const CHEERS = { fou: ["ON EST LES MEILLEURS !", "J'aime troooow les quêtes !"], timide: ["Hihi… bien joué.", "On est une bonne équipe…"], classique: ["Bravo nous !", "Yassen Jr. est content !"] };
+
+// Les gains s'affichent en haut de l'écran, pour ne pas cacher le message de l'action qui les a rapportés.
+function gainToast(msg) {
+  let t = document.getElementById("gain");
+  if (!t) { t = document.createElement("div"); t.id = "gain"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+  t.innerHTML = `<div class="gain-toast"><span aria-hidden="true">♥︎</span>${esc(msg)}</div>`;
+  clearTimeout(gainToast.tm); gainToast.tm = setTimeout(() => { t.innerHTML = ""; }, 3400);
+}
+const Jeu = {
+  g() { return Store.meta.game || {}; },
+  day() { return todayStr(); },
+  todayQuests() {
+    const n = Math.floor(parseDay(this.day()).getTime() / 86400000);
+    let seed = (n * 2654435761) % 2147483647 || 1;
+    const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647, pool = QUESTS.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    return pool.slice(0, 3);
+  },
+  doneToday() { return ((this.g().quests || {})[this.day()]) || {}; },
+  days() { return Object.keys(this.g().days || {}).length; },
+  activeToday() { return !!(this.g().days || {})[this.day()]; },
+  stage() { const d = this.days(); let s = 0; STAGE_DAYS.forEach((t, i) => { if (d >= t) s = i; }); return s; },
+  owns(id) { return !!(this.g().owned || {})[id]; },
+  hearts() {
+    const g = this.g();
+    const earned = Object.values(g.earn || {}).reduce((a, b) => a + (+b || 0), 0);
+    const spent = Object.keys(g.owned || {}).reduce((a, id) => a + ((SHOP_BY_ID[id] || {}).price || 0), 0);
+    return Math.max(0, earned - spent);
+  },
+  equipOf(k) {
+    const e = ((this.g().equip || {})[k]) || {};
+    const ok = slot => (e[slot] && this.owns(e[slot]) && (SHOP_BY_ID[e[slot]] || {}).slot === slot ? e[slot] : "");
+    return { outfit: ok("outfit"), hat: ok("hat"), pet: ok("pet") };
+  },
+  theme() { const t = this.g().theme; return t && this.owns(t) && (SHOP_BY_ID[t] || {}).slot === "theme" ? t : ""; },
+  emotes() { return SHOP.filter(i => i.slot === "emote" && this.owns(i.id)).map(i => i.id); },
+  stats() {
+    const g = this.g(), cap = Store.cols.capsule, p = Store.meta.progress, quests = g.quests || {};
+    return {
+      questsDone: Object.values(quests).reduce((n, d) => n + Object.keys(d || {}).length, 0),
+      perfectDays: Object.values(quests).filter(d => d && Object.keys(d).length >= 3).length,
+      days: Object.keys(g.days || {}).length,
+      souvenirs: cap.filter(x => x.kind === "souvenir").length,
+      mots: cap.filter(x => x.kind === "mot" || x.kind === "anecdote").length,
+      fins: (p.endings || []).length,
+      aventuresDone: Store.cols.aventures.filter(a => a.statut === "realisee").length,
+      cartes: Store.cols.cartes.length,
+      parties: p.parties || 0,
+      owned: Object.keys(g.owned || {}).length,
+      flags: g.flags || {}
+    };
+  },
+  // Une action de jeu : marque le jour comme partagé et valide la quête du jour correspondante.
+  event(id) {
+    if (!Store.ready) return;
+    const day = this.day(), g = this.g(), patch = {}, done = this.doneToday(), qs = this.todayQuests(), q = qs.find(x => x.id === id);
+    if (!(g.days || {})[day]) patch["days/" + day] = true;
+    let msg = "";
+    if (q && !done[id]) {
+      patch[`quests/${day}/${id}`] = true; patch[`earn/${day}_${id}`] = q.reward;
+      msg = `Quête accomplie : +${q.reward} cœurs`;
+      if (qs.every(x => x.id === id || done[x.id])) { patch[`earn/${day}_bonus`] = QUEST_BONUS; msg = `Les 3 quêtes du jour sont faites : +${q.reward + QUEST_BONUS} cœurs !`; }
+    }
+    if (Object.keys(patch).length) Store.patchMeta("game", patch);
+    if (msg) { gainToast(msg); Buddies.cheer(); }
+  },
+  flag(name) { if (Store.ready && !((this.g().flags || {})[name])) Store.patchMeta("game", { ["flags/" + name]: true }); },
+  onAdd(col, data) {
+    if (col === "capsule") this.event(data.kind === "souvenir" ? "souvenir" : data.kind === "defi" ? "defi" : "mot");
+    else if (col === "aventures") this.event("aventure");
+  },
+  // Appelé à chaque rendu : repère les parties terminées et les succès atteints.
+  watch() {
+    if (!Store.ready || this.busy) return;
+    this.busy = true;
+    try {
+      if (S.game && S.game.phase === "end") this.event(S.game.mode === "daily" ? "rdv" : "partie");
+      if (S.arc && ["end", "win", "lost"].includes(S.arc.phase)) this.event("arcade");
+      // À distance : seulement la partie affichée et récente, pas une vieille partie restée en mémoire.
+      const L = S.layer && S.layer.type === "live" && Live.state && Date.now() - (Live.state.updatedAt || 0) < 3 * 3600 * 1000 ? Live.state : null;
+      const storyEnd = L && L.kind === "story" && STORY[L.id] && (STORY[L.id].nodes[L.node] || {}).end;
+      if (L && (storyEnd || (L.ended && L.kind !== "story"))) { this.event(L.kind === "arcade" ? "arcade" : L.kind === "cards" ? "partie" : "fin"); this.flag("distance"); }
+      if (S.story && STORY[S.story.id] && (STORY[S.story.id].nodes[S.story.node] || {}).end) this.event("fin");
+      if (S.pz && S.pz.done) { this.event("puzzle"); if (S.pz.n === 5) this.flag("puzzle25"); }
+      if (S.pzRemote && S.pzLive && S.pzLive.done) { this.event("puzzle"); this.flag("distance"); if (S.pzLive.n === 5) this.flag("puzzle25"); }
+      const g = this.g(), s = this.stats(), patch = {}, got = [];
+      ACH.forEach(a => { if (!(g.ach || {})[a.id] && a.test(s)) { patch["ach/" + a.id] = Date.now(); patch["earn/ach_" + a.id] = a.reward; got.push(a); } });
+      if (got.length) {
+        Store.patchMeta("game", patch);
+        gainToast(got.length === 1 ? `Succès débloqué : ${got[0].title} (+${got[0].reward} cœurs)` : `${got.length} succès débloqués : +${got.reduce((n, a) => n + a.reward, 0)} cœurs`);
+        Buddies.cheer();
+      }
+    } finally { this.busy = false; }
+  },
+  buy(id) {
+    const it = SHOP_BY_ID[id];
+    if (!it || this.owns(id)) return;
+    if (this.hearts() < it.price) { toast(`Il vous manque ${it.price - this.hearts()} cœurs.`); return; }
+    const patch = { ["owned/" + id]: true };
+    if (it.slot === "theme") patch.theme = id;
+    Store.patchMeta("game", patch);
+    gainToast(`${fr(it.name)} : c'est à vous deux !`); Buddies.cheer();
+  },
+  equip(k, id) {
+    const it = SHOP_BY_ID[id]; if (!it || !this.owns(id)) return;
+    const cur = this.equipOf(k)[it.slot];
+    Store.patchMeta("game", { [`equip/${k}/${it.slot}`]: cur === id ? null : id });
+    setTimeout(() => Buddies.react(k), 0);
+  },
+  setTheme(id) { Store.patchMeta("game", { theme: this.theme() === id ? "" : id }); },
+  applyTheme() {
+    const t = this.theme();
+    if (this.applied === t) return;
+    this.applied = t;
+    document.documentElement.setAttribute("data-ys-theme", t);
+    const fx = document.querySelector("#cozy .cozy-fx");
+    if (fx) fx.innerHTML = t ? Array.from({ length: t === "etoiles" ? 46 : 30 }, () => `<span style="left:${(Math.random() * 100).toFixed(1)}%;top:${t === "hiver" ? -6 : (Math.random() * 100).toFixed(1)}%;animation-delay:-${(Math.random() * 14).toFixed(1)}s;animation-duration:${(9 + Math.random() * 10).toFixed(1)}s"></span>`).join("") : "";
+  }
+};
+
+/* Yassen Jr., le compagnon qui grandit avec vous. Il ne disparaît jamais : sans activité, il fait la sieste. */
+function yassenSvg(stage, asleep) {
+  const s = [0.52, 0.66, 0.8, 0.88, 0.94, 1][stage] || 1, limbs = stage >= 2;
+  const eyes = asleep
+    ? `<g stroke="#7A3A12" stroke-width="2.6" fill="none" stroke-linecap="round"><path d="M33 60q7 6 14 0"/><path d="M55 60q7 6 14 0"/></g>`
+    : `<g class="av-eyes"><ellipse cx="40" cy="58" rx="9" ry="10.5" fill="#FFFFFF"/><ellipse cx="62" cy="58" rx="9" ry="10.5" fill="#FFFFFF"/><circle cx="42" cy="60" r="6.2" fill="#8A4A1A"/><circle cx="64" cy="60" r="6.2" fill="#8A4A1A"/><circle cx="42" cy="60" r="3.2" fill="#2A1408"/><circle cx="64" cy="60" r="3.2" fill="#2A1408"/><circle cx="40" cy="57" r="1.9" fill="#FFFFFF"/><circle cx="62" cy="57" r="1.9" fill="#FFFFFF"/></g>`;
+  const brows = asleep ? "" : `<path d="M31 44q8 -6 15 -1" stroke="#E07B25" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M56 43q8 -5 15 1" stroke="#E07B25" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+  const mouth = asleep ? `<ellipse cx="51" cy="80" rx="3" ry="2.4" fill="#B23A1E"/>` : `<path d="M40 76q11 11 22 0q-11 4 -22 0z" fill="#B23A1E"/><path d="M45 80q6 4 12 0q-6 -2 -12 0z" fill="#F27A5A"/>`;
+  return `<svg viewBox="0 0 100 112" aria-hidden="true"><defs><linearGradient id="yjg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE15A"/><stop offset="1" stop-color="#F7A928"/></linearGradient></defs>
+    <ellipse cx="50" cy="108" rx="${(26 * s).toFixed(1)}" ry="4" fill="#000" opacity=".15"/>
+    <g transform="translate(50 108) scale(${s}) translate(-50 -108)">
+    ${stage >= 5 ? `<circle cx="50" cy="60" r="52" fill="#FFE15A" opacity=".2"/><path d="M19 62q-20 -10 -15 -28q10 13 23 15zM81 62q20 -10 15 -28q-10 13 -23 15z" fill="#FFFFFF" opacity=".92"/>` : ""}
+    ${limbs ? `<path d="M40 99v8h-8M60 99v8h8" stroke="#F0A030" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 70q-10 8 -6 18M82 70q10 8 6 18" stroke="#F0A030" stroke-width="5" fill="none" stroke-linecap="round"/>` : ""}
+    <path d="M50 6C60 22 78 30 82 52C88 80 70 102 50 102C28 102 12 84 17 58C20 42 31 36 36 22C39 31 43 35 47 35C45 24 45 15 50 6Z" fill="url(#yjg)"/>
+    ${brows}${eyes}${mouth}<ellipse cx="29" cy="72" rx="5" ry="3" fill="#F07A5A" opacity=".35"/><ellipse cx="73" cy="72" rx="5" ry="3" fill="#F07A5A" opacity=".35"/>
+    ${stage >= 3 ? `<path d="M23 84q27 12 54 0v8q-27 12 -54 0z" fill="#E0457A"/><path d="M64 90l7 16 -9 -2z" fill="#C2335F"/>` : ""}
+    ${stage >= 4 ? `<path d="M37 16L40 3L46 11L50 1L54 11L60 3L63 16Z" fill="#F2C84B" stroke="#C9A035" stroke-width="1"/><circle cx="50" cy="11" r="1.8" fill="#E0457A"/>` : ""}
+    </g>${asleep ? `<text class="zz" x="78" y="${(108 - 96 * s).toFixed(0)}" font-family="sans-serif" font-weight="800" font-size="14" fill="#8A7CB8">z</text>` : ""}</svg>`;
+}
+function yassenCard() {
+  const d = Jeu.days(), st = Jeu.stage(), next = STAGE_DAYS[st + 1], asleep = !Jeu.activeToday(), qs = Jeu.todayQuests(), done = Jeu.doneToday();
+  const pct = next != null ? Math.round(((d - STAGE_DAYS[st]) / (next - STAGE_DAYS[st])) * 100) : 100;
+  return `<section class="yj-card" aria-labelledby="h-yj">
+    <button class="yj-pet" data-a="yj-poke" aria-label="Caresser Yassen Jr.">${yassenSvg(st, asleep)}</button>
+    <div class="yj-info"><p class="sec" id="h-yj">Yassen Jr.</p><p class="yj-stage">${esc(fr(STAGE_NAMES[st]))}</p>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <p class="small muted">${d} jour${d > 1 ? "s" : ""} ensemble${next != null ? ` · encore ${next - d} pour grandir` : " · stade maximal"}</p>
+      ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Il fait la sieste. Une quête le réveillera."))}</p>` : ""}</div>
+    <p class="yj-dedi">À la mémoire de Yassen Jr., montrons-lui que ses parents s'aiment vraiment.</p>
+    <div class="quests">${qs.map(q => `<div class="quest${done[q.id] ? " ok" : ""}"><span class="qcheck" aria-hidden="true">${done[q.id] ? "✓" : ""}</span><span class="qtxt">${esc(fr(q.label))}</span><b>+${q.reward}</b></div>`).join("")}
+      <p class="small muted">${qs.every(q => done[q.id]) ? "Les 3 quêtes sont faites. Bravo !" : `Les 3 quêtes du jour rapportent ${QUEST_BONUS} cœurs en bonus.`}</p></div>
+    <div class="row"><button class="btn ghost" data-a="tresors" data-v="boutique">Boutique · ♥︎ ${Jeu.hearts()}</button><button class="link" data-a="tresors" data-v="succes">Nos succès</button></div>
+  </section>`;
+}
+
+/* Tenues, chapeaux et compagnons dessinés pour les chibis. */
+const OUTFITS = {
+  pull: { c: "#C9576B", d: `<path d="M30 98l5 4 5-4 5 4 5-4 5 4 5-4 5 4 5-4" stroke="#F4EFE9" stroke-width="2.2" fill="none"/><path d="M30 106h40" stroke="#F4EFE9" stroke-width="1.6"/>` },
+  hoodie: { c: "#6DBE9B", d: `<path d="M38 80q12 8 24 0" stroke="#5AA886" stroke-width="5" fill="none"/><path d="M46 84v10M54 84v10" stroke="#F4EFE9" stroke-width="1.4"/><path d="M38 108h24v8h-24z" fill="#5AA886"/>` },
+  pyjama: { c: "#9FB4F0", d: `<g fill="#FFF3C9"><circle cx="38" cy="96" r="1.6"/><circle cx="58" cy="92" r="1.6"/><circle cx="46" cy="110" r="1.6"/><circle cx="64" cy="108" r="1.6"/><circle cx="52" cy="100" r="1.2"/></g><path d="M44 80l6 7 6-7" stroke="#FFFFFF" stroke-width="2" fill="none"/>` },
+  kimono: { c: "#3A5BA0", d: `<path d="M40 80L54 104M60 80L46 104" stroke="#F4EFE9" stroke-width="3"/><rect x="29" y="104" width="42" height="7" fill="#E8C35A"/>` },
+  robe: { c: "#E07A8E", robe: true, d: `<path d="M44 84l6 5 6-5-6 4z" fill="#C2335F"/><path d="M28 112q22 6 44 0" stroke="#F7A8C4" stroke-width="2" fill="none"/>` },
+  armure: { c: "#A9B4C2", d: `<path d="M30 94h40M30 106h41" stroke="#8691A0" stroke-width="1.6"/><path d="M50 90c-3-4-9-2-6 3l6 6 6-6c3-5-3-7-6-3z" fill="#C9576B"/>` }
+};
+const HATS = {
+  bonnet: () => `<path d="M23 38C23 6 77 6 77 38Z" fill="#C9576B"/><path d="M36 15v20M50 12v23M64 15v20" stroke="#B4475B" stroke-width="2"/><rect x="21" y="32" width="58" height="10" rx="5" fill="#F4EFE9"/><circle cx="50" cy="9" r="6.5" fill="#F4EFE9"/>`,
+  oreilles: hc => `<path d="M27 30L29 10L42 21Z M73 30L71 10L58 21Z" fill="${hc}"/><path d="M30 26L31 15L38 21Z M70 26L69 15L62 21Z" fill="#F7A8C4"/>`,
+  aureole: () => `<ellipse cx="50" cy="8" rx="18" ry="4.5" fill="none" stroke="#F2C84B" stroke-width="3"/><ellipse cx="50" cy="8" rx="18" ry="4.5" fill="none" stroke="#FFF3C9" stroke-width="1" opacity=".8"/>`,
+  sorcier: () => `<path d="M49 3Q57 13 68 30H32Q42 15 49 3Z" fill="#5B3F8C"/><path d="M49 3q7 -3 11 4" stroke="#5B3F8C" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="30" rx="31" ry="6" fill="#4A3275"/><path d="M38 23h24" stroke="#F2C84B" stroke-width="3"/>`,
+  couronne: () => `<path d="M32 26L36 12L44 22L50 8L56 22L64 12L68 26Z" fill="#F2C84B" stroke="#C9A035" stroke-width="1"/><circle cx="50" cy="20" r="2" fill="#E0457A"/>`
+};
+const PETS = {
+  petchat: `<svg viewBox="0 0 40 32"><ellipse cx="20" cy="30" rx="12" ry="2.4" fill="#000" opacity=".15"/><path d="M32 20q8-2 6-12" stroke="#E8A86A" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="21" cy="22" rx="12" ry="7.5" fill="#E8A86A"/><circle cx="11" cy="14" r="7" fill="#E8A86A"/><path d="M5 10l1-7 5 5zM12 7l4-5 1 7z" fill="#E8A86A"/><circle cx="8.6" cy="14" r="1.2" fill="#2B1E2F"/><circle cx="13.4" cy="14" r="1.2" fill="#2B1E2F"/><path d="M9.8 17q1.2 1 2.4 0" stroke="#2B1E2F" stroke-width=".8" fill="none"/><rect x="12" y="26" width="3" height="5" rx="1.5" fill="#D9925A"/><rect x="25" y="26" width="3" height="5" rx="1.5" fill="#D9925A"/></svg>`,
+  petlapin: `<svg viewBox="0 0 40 32"><ellipse cx="20" cy="30" rx="12" ry="2.4" fill="#000" opacity=".15"/><circle cx="31" cy="20" r="3.4" fill="#FFFFFF"/><ellipse cx="21" cy="22" rx="11" ry="7.5" fill="#F4EFE9"/><circle cx="11" cy="16" r="6.5" fill="#F4EFE9"/><ellipse cx="8" cy="5" rx="2.4" ry="7" fill="#F4EFE9" transform="rotate(-12 8 5)"/><ellipse cx="13" cy="5" rx="2.4" ry="7" fill="#F4EFE9" transform="rotate(10 13 5)"/><ellipse cx="13" cy="5" rx="1.1" ry="5" fill="#F7A8C4" transform="rotate(10 13 5)"/><circle cx="8.8" cy="16" r="1.1" fill="#2B1E2F"/><circle cx="12.6" cy="16" r="1.1" fill="#2B1E2F"/><circle cx="10.6" cy="18.6" r=".9" fill="#F07A8E"/></svg>`,
+  petdragon: `<svg viewBox="0 0 40 32"><ellipse cx="20" cy="30" rx="12" ry="2.4" fill="#000" opacity=".15"/><path d="M31 22q9 0 8-8l-3 3" stroke="#5FB57A" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M20 15q-2-12 10-10q-5 4-3 10z" fill="#4FA06A"/><ellipse cx="21" cy="22" rx="11" ry="7.5" fill="#6CC488"/><circle cx="11" cy="14" r="7" fill="#6CC488"/><path d="M7 8l-2-5 5 3zM13 7l2-5 1 6z" fill="#F2D27A"/><circle cx="8.8" cy="14" r="1.3" fill="#2B1E2F"/><circle cx="13.4" cy="14" r="1.3" fill="#2B1E2F"/><ellipse cx="8" cy="17.5" rx="1.8" ry="1" fill="#F07A8E" opacity=".6"/><rect x="13" y="26" width="3" height="5" rx="1.5" fill="#4FA06A"/><rect x="25" y="26" width="3" height="5" rx="1.5" fill="#4FA06A"/></svg>`
+};
+
+/* Écran des trésors : quêtes, boutique, succès. */
+function tresorsView() {
+  const seg = S.trSeg || "quetes", h = Jeu.hearts();
+  const segs = [["quetes", "Quêtes"], ["boutique", "Boutique"], ["succes", "Succès"]].map(([k, l]) => `<button aria-pressed="${seg === k}" data-a="tr-seg" data-v="${k}">${l}</button>`).join("");
+  let body = "";
+  if (seg === "quetes") {
+    const qs = Jeu.todayQuests(), done = Jeu.doneToday(), st = Jeu.stage(), d = Jeu.days();
+    body = `<div class="stack"><h2 class="sec">Les quêtes du jour</h2><div class="quests">${qs.map(q => `<div class="quest${done[q.id] ? " ok" : ""}"><span class="qcheck" aria-hidden="true">${done[q.id] ? "✓" : ""}</span><span class="qtxt">${esc(fr(q.label))}</span><b>+${q.reward}</b></div>`).join("")}</div>
+      <p class="small muted">${esc(fr(`Elles se valident toutes seules quand vous jouez, sur l'un ou l'autre téléphone. Les 3 ensemble rapportent ${QUEST_BONUS} cœurs en bonus. De nouvelles quêtes arrivent chaque jour à minuit.`))}</p></div>
+      <div class="stack"><h2 class="sec">Yassen Jr. grandit avec vous</h2><div class="stages">${STAGE_NAMES.map((n, i) => `<div class="stage-row${i > st ? " locked" : ""}">${yassenSvg(i, false)}<span><b>${esc(fr(n))}</b><br><span class="small muted">${STAGE_DAYS[i] ? `Après ${STAGE_DAYS[i]} jour${STAGE_DAYS[i] > 1 ? "s" : ""} ensemble` : "Au tout début"}${i === 4 ? " · débloque une histoire secrète" : i === 5 ? " · débloque une lettre de Yassen Jr." : ""}</span></span>${i <= st ? `<span class="badge">✓</span>` : ""}</div>`).join("")}</div>
+      <p class="small muted">${esc(fr(`Un jour compte dès que l'un de vous fait quelque chose dans l'appli. Vous en êtes à ${d}. Les jours sans activité, Yassen Jr. fait juste la sieste : il ne disparaît jamais.`))}</p></div>`;
+  } else if (seg === "boutique") {
+    const cat = S.shopCat || "outfit", who = S.shopWho === "b" ? "b" : "a", wearable = ["outfit", "hat", "pet"].includes(cat);
+    const items = SHOP.filter(i => i.slot === cat);
+    body = `<div class="chips">${SHOP_CATS.map(([k, l]) => `<button class="chip" aria-pressed="${cat === k}" data-a="shop-cat" data-v="${k}">${l}</button>`).join("")}</div>
+      ${wearable ? `<div class="seg" role="group" aria-label="Pour qui">${["a", "b"].map(k => `<button aria-pressed="${who === k}" data-a="shop-who" data-v="${k}">Pour ${esc(nm(k))}</button>`).join("")}</div>` : ""}
+      <div class="shop">${items.map(it => {
+        const owned = Jeu.owns(it.id), eq = wearable && Jeu.equipOf(who)[it.slot] === it.id;
+        const prev = it.slot === "pet" ? PETS[it.id] : it.slot === "outfit" || it.slot === "hat" ? avatarSvg(who, { [it.slot]: it.id })
+          : it.slot === "theme" ? `<span class="theme-sw sw-${it.id}"></span>` : `<span class="emote-sw">${it.id === "disco" ? "✦ ♪ ✦" : "☁ ✧ ☁"}</span>`;
+        const btn = !owned ? (h >= it.price ? `<button class="btn" data-a="shop-buy" data-v="${it.id}">Acheter · ♥︎ ${it.price}</button>` : `<button class="btn ghost" disabled>♥︎ ${it.price} · encore ${it.price - h}</button>`)
+          : wearable ? `<button class="btn ${eq ? "ghost" : "c"}" style="${cvar(1)}" data-a="shop-equip" data-v="${it.id}">${eq ? "Retirer" : "Équiper"}</button>`
+          : it.slot === "theme" ? `<button class="btn ${Jeu.theme() === it.id ? "ghost" : "c"}" style="${cvar(4)}" data-a="shop-theme" data-v="${it.id}">${Jeu.theme() === it.id ? "Désactiver" : "Activer"}</button>`
+          : `<span class="badge">Débloquée ✓</span>`;
+        return `<article class="shop-item"><div class="shop-prev">${prev}</div><b>${esc(fr(it.name))}</b>${btn}</article>`;
+      }).join("")}</div>
+      <p class="small muted">${esc(fr(cat === "emote" ? "Les émotes débloquées apparaissent toutes seules dans les petites scènes de vos chibis." : cat === "theme" ? "Un thème change le fond de toute l'appli, pour vous deux." : cat === "pet" ? "Le compagnon suit son chibi partout sur la barre d'onglets." : "Les articles achetés appartiennent à vous deux : chacun peut les porter."))}</p>`;
+  } else {
+    const g = Jeu.g(), got = ACH.filter(a => (g.ach || {})[a.id]).length;
+    body = `<p class="small muted">${got} succès débloqués sur ${ACH.length}</p><div class="ach">${ACH.map(a => {
+      const t = (g.ach || {})[a.id];
+      return `<article class="badge-card${t ? "" : " locked"}"><span class="medal">${ico(a.icon)}</span><b>${esc(fr(a.title))}</b><span>${esc(fr(a.desc))}</span><span>${t ? "Débloqué le " + fmtTs(t) : "+" + a.reward + " cœurs"}</span></article>`;
+    }).join("")}</div>`;
+  }
+  return `${layerHead("Nos trésors")}<p class="hearts-big">♥︎ ${h} <span>cœurs à dépenser ensemble</span></p><div class="seg" role="group" aria-label="Rubriques">${segs}</div>${body}`;
+}
+const yassenLetter = () => `<article class="letter"><p class="when">Une lettre de Yassen Jr.</p>
+  <p class="hand" style="font-family:var(--f-hand);font-size:1.5rem;line-height:1.15;white-space:pre-wrap">${esc(fr(`Coucou ${nm("a")} et ${nm("b")} !\n\nÇa fait trente jours qu'on se retrouve ici. Grâce à vous, je ne suis plus une flamme qui s'éteint : je suis une flamme qui grandit.\n\nContinuez à vous faire rire, à vous écrire, à vous chamailler pour de faux et à vous réconcilier pour de vrai. Je veille sur vous.\n\nYassen Jr.`))}</p></article>`;
+
 /* ───────────────────────── Rendu ───────────────────────── */
 let pendingRender = false;
 function render(force) {
@@ -3312,6 +3761,8 @@ function render(force) {
   if (!force && typing) { pendingRender = true; return; }
   pendingRender = false;
   rebuildCustom();
+  Jeu.watch();
+  Jeu.applyTheme();
   syncMusic();
   Buddies.sync();
   const app =document.getElementById("app"), layer = document.getElementById("layer");
@@ -3319,7 +3770,7 @@ function render(force) {
   const tabs = [["home", "Accueil"], ["play", "Jouer"], ["capsule", "Capsule"], ["aventures", "Aventures"], ["lettres", "Lettres"]];
   if (!views[S.tab]) S.tab = "home";
   const enter = S.tab !== render.lastTab; render.lastTab = S.tab;
-  app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><span class="row" style="gap:2px"><button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
+  app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><span class="row" style="gap:2px"><button class="hearts-pill" data-a="tresors" aria-label="Nos trésors : ${Jeu.hearts()} cœurs">♥︎ ${Jeu.hearts()}</button><button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
@@ -3337,6 +3788,7 @@ function render(force) {
   else if (S.layer.type === "story") html = storyView();
   else if (S.layer.type === "puzzle") html = puzzleView();
   else if (S.layer.type === "live") html = liveView();
+  else if (S.layer.type === "tresors") html = tresorsView();
   layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
 }
@@ -3604,6 +4056,7 @@ const ACT = {
     setTimeout(() => Buddies.react(who), 0);
   },
   "st-open"(d) {
+    if (!STORY[d.id] || (STORY[d.id].secret && Jeu.stage() < 4)) return;
     if (S.storyStyle === "distance" && Store.backend === "shared" && !S.story) { startLiveStory(d.id); return; }
     S.story = { id: d.id, node: STORY[d.id].start, steps: 1, phase: "read", votes: {}, slot: 0 }; },
   "st-menu"() { S.story = null; },
@@ -3692,7 +4145,20 @@ const ACT = {
     Store.add("cartes", { cat, text: t.slice(0, 280), tone: draft("cc-tone", "l"), from: draft("cc-f", "a"), ...(cat === "def" ? { duree: +draft("cc-dur", "15") } : {}) });
     clearDrafts("cc-t"); toast("Carte ajoutée au paquet");
   },
-  "open-letter"(d) { const l = Store.cols.lettres.find(x => x.id === d.id); if (l && daysUntil(l.openOn) <= 0) S.openLetters[d.id] = true; },
+  "open-letter"(d) { const l = Store.cols.lettres.find(x => x.id === d.id); if (l && daysUntil(l.openOn) <= 0) { S.openLetters[d.id] = true; Jeu.flag("lettre"); } },
+  tresors(d) { S.trSeg = d.v || S.trSeg || "quetes"; S.layer = { type: "tresors" }; },
+  "tr-seg"(d) { S.trSeg = d.v; },
+  "shop-cat"(d) { S.shopCat = d.v; },
+  "shop-who"(d) { S.shopWho = d.v; },
+  "shop-buy"(d) { Jeu.buy(d.v); },
+  "shop-equip"(d) { Jeu.equip(S.shopWho === "b" ? "b" : "a", d.v); },
+  "shop-theme"(d) { Jeu.setTheme(d.v); },
+  "yj-poke"() {
+    const el = document.querySelector(".yj-pet");
+    if (el) { el.classList.remove("jump"); void el.offsetWidth; el.classList.add("jump"); }
+    gainToast(pickOne(Jeu.activeToday() ? YJ_LINES : YJ_SLEEPY));
+    return false;
+  },
   "ask-del"(d) { S.confirm = d.col + ":" + d.id; },
   "cancel-del"() { S.confirm = null; },
   "do-del"(d) { Store.remove(d.col, d.id); S.confirm = null; toast("Supprimé"); }
@@ -3710,8 +4176,8 @@ document.addEventListener("click", e => {
   const fn = ACT[t.dataset.a]; if (!fn) return;
   e.preventDefault();
   if (Music.ctx && Music.ctx.state === "suspended" && Music.theme) Music.ctx.resume();
-  fn(t.dataset, t);
-  render(true);
+  // Une action qui renvoie false anime seulement ce qui est déjà affiché.
+  if (fn(t.dataset, t) !== false) render(true);
 });
 document.addEventListener("input", e => {
   if (e.target.matches("[data-d]")) S.drafts[e.target.id] = e.target.value;
