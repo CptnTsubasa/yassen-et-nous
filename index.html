@@ -5099,7 +5099,7 @@ const CX_IDEAS = ["On se rencontre pour la première fois dans un train de nuit"
 const APPCHECK_SITE_KEY = "";
 // L'IA : Gemini par Firebase AI Logic. Son SDK est chargé à part, à la demande.
 const AI = {
-  ver: "12.0.0", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"], mi: 0, state: "",
+  ver: "12.0.0", models: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"], mi: 0, state: "",
   async init() {
     if (this.ai) return this.ai;
     const [A, M] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-ai.js`)]);
@@ -5127,8 +5127,13 @@ const AI = {
         return out;
       } catch (e) {
         last = e;
-        // Modèle retiré ou inconnu : on essaie le suivant. Toute autre erreur remonte.
-        if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(String(e && e.message))) { this.mi++; continue; }
+        // Modèle retiré ou inconnu : on prend celui que Google recommande, sinon le suivant. Toute autre erreur remonte.
+        const msg = String(e && e.message);
+        if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) {
+          const rec = /use (?:models\/)?(gemini-[\w.-]+)/i.exec(msg);
+          if (rec && !this.models.includes(rec[1])) this.models.splice(this.mi + 1, 0, rec[1]);
+          this.mi++; continue;
+        }
         break;
       }
     }
