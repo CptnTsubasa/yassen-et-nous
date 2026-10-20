@@ -308,7 +308,12 @@ body { background: var(--bg); }
 .buddy.happy .av-eyes { display: none; }
 .buddy.happy .av-happy, .buddy.grr .av-grr { display: inline; }
 .buddy-fx { position: absolute; left: 0; right: 0; bottom: 0; height: 0; pointer-events: none; }
-.fx-heart, .fx-note { position: absolute; bottom: 44px; width: 14px; opacity: 0; animation: floatup 2s ease-out forwards; }
+#buddies.over { z-index: 45; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+.fx-big { position: absolute; bottom: 52px; width: 30px; opacity: 0; animation: bigheart 1.8s ease-out forwards; filter: drop-shadow(0 0 6px rgba(255, 79, 122, .55)); }
+@keyframes bigheart { 0% { opacity: 0; transform: scale(.2); } 25% { opacity: 1; transform: scale(1.25); } 45% { transform: scale(1); } 100% { opacity: 0; transform: translateY(-34px) scale(1); } }
+.fx-heart, .fx-note { position: absolute; bottom: 44px; opacity: 0; animation: floatup 2s ease-out forwards; }
+.fx-heart svg { display: block; }
+.fx-big svg { display: block; width: 100%; height: auto; }
 .fx-note { font-size: 15px; font-weight: 700; color: var(--i4); width: auto; }
 @keyframes floatup { 0% { opacity: 0; transform: translateY(0) scale(.5); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-48px) scale(1.1); } }
 .fx-cloud { position: absolute; bottom: -6px; width: 74px; z-index: 2; animation: brawl .22s linear infinite; }
@@ -1217,6 +1222,10 @@ function viewHome() {
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
       <div class="row"><button class="btn" data-a="sheet" data-name="names">Ajouter nos prénoms</button></div>
     </div>`}
+  ${(Store.meta.avatars || {}).a ? "" : `<section class="panel" aria-labelledby="h-chibi"><h2 class="sec" id="h-chibi">Vos petits personnages</h2>
+      <div class="stage mini">${sceneSvg("souvenir")}<div class="cast">${castFig("a")}${castFig("b")}</div></div>
+      <p class="small muted">${esc(fr("Créez vos mini-vous : ils se baladent dans l'appli et jouent les héros de vos histoires."))}</p>
+      <div class="row"><button class="btn" data-a="sheet" data-name="avatars">Créer nos personnages</button></div></section>`}
   ${liveBanner()}
   ${dailyBlock()}
   <section class="stack" aria-labelledby="h-quick"><div class="group-h"><h2 class="sec" id="h-quick">Envie de jouer ?</h2><button class="link" data-a="tab" data-tab="play">Tous les jeux</button></div>
@@ -1667,6 +1676,7 @@ function sheetView() {
     <div class="stack"><p class="lbl">Façon de jouer par défaut</p><div class="chips">
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "partage"}" data-a="set-draft" data-k="nstyle" data-v="partage">Mode partagé</button>
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "secret"}" data-a="set-draft" data-k="nstyle" data-v="secret">Réponses secrètes</button></div></div>
+    <div class="row"><button class="btn ghost" data-a="sheet" data-name="avatars">Personnaliser nos personnages</button></div>
     <div class="stack"><p class="lbl">Nos petits personnages sur la barre d'onglets</p><div class="chips">
       <button class="chip" aria-pressed="${Buddies.enabled()}" data-a="buddies" data-v="1">Affichés</button>
       <button class="chip" aria-pressed="${!Buddies.enabled()}" data-a="buddies" data-v="0">Masqués</button></div></div>
@@ -1722,7 +1732,8 @@ function sheetView() {
     <div class="stack"><h2 class="sec">Couleur des cheveux</h2>${sw("hairColor", AV.hairColor, "Couleur")}</div>
     <div class="stack"><h2 class="sec">Haut</h2>${sw("top", AV.top, "Haut")}</div>
     <div class="stack"><h2 class="sec">Accessoire</h2>${ch("acc", AV.acc)}</div>
-    <p class="small muted">${esc(fr("Vos personnages jouent les héros de « Il était une fois nous ». Chacun peut personnaliser les deux."))}</p>`;
+    <p class="small muted">${esc(fr("Vos personnages se baladent dans l'appli et jouent les héros de « Il était une fois nous ». Chacun peut personnaliser les deux, et les changements s'appliquent tout de suite."))}</p>
+    <div style="height:110px" aria-hidden="true"></div>`;
   }
   if (name === "cartes") {
     const cat = draft("cc-cat", "dec"), tone = draft("cc-tone", "l");
@@ -3000,7 +3011,9 @@ const Buddies = {
   W() { return (this.el && this.el.clientWidth) || 360; },
   sync() {
     if (!this.el) this.mount();
-    const show = this.enabled() && !S.layer;
+    const editing = !!(S.layer && S.layer.type === "sheet" && S.layer.name === "avatars");
+    const show = (this.enabled() || editing) && (!S.layer || editing);
+    this.el.classList.toggle("over", editing);
     this.el.hidden = !show;
     if (!show) return;
     const sig = JSON.stringify([avOf("a"), avOf("b")]);
@@ -3063,14 +3076,16 @@ const Buddies = {
   hug() {
     this.meet(27, (L, R) => {
       this.mood([L, R], "happy", true); L.tilt = R.tilt = 10;
-      this.hearts((L.x + R.x) / 2, 5); this.say(pickOne(["a", "b"]), pickOne(HUG_LINES), 2400);
+      const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
+      setTimeout(() => this.hearts(mid, 5), 1100);
+      this.say(pickOne(["a", "b"]), pickOne(HUG_LINES), 2400);
       setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 2700);
     });
   },
   kiss() {
     this.meet(29, (L, R) => {
       this.mood([L, R], "happy", true); L.tilt = R.tilt = 7;
-      this.hearts((L.x + R.x) / 2, 2); this.say(pickOne(["a", "b"]), pickOne(KISS_LINES), 1800);
+      this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); this.say(pickOne(["a", "b"]), pickOne(KISS_LINES), 1800);
       setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
     });
   },
@@ -3083,7 +3098,7 @@ const Buddies = {
       setTimeout(() => this.cloud((L.x + R.x) / 2, 1500), 1900);
       setTimeout(() => {
         this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
-        if (Math.random() < 0.5) { this.mood([L, R], "happy", true); this.say(pickOne(["a", "b"]), pickOne(PEACE_LINES), 2200); this.hearts((L.x + R.x) / 2, 2);
+        if (Math.random() < 0.5) { this.mood([L, R], "happy", true); this.say(pickOne(["a", "b"]), pickOne(PEACE_LINES), 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 4);
           setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 1800); }
         else this.chase(second, first);
       }, 3500);
@@ -3098,6 +3113,7 @@ const Buddies = {
     setTimeout(() => this.walkTo(chaser, edge + (edge > W / 2 ? -34 : 34), true, () => {
       runner.face = -chaser.face; this.mood([runner, chaser], "happy", true);
       this.say(chaser.k, pickOne(["Trop rapide…", "Pause, je n'ai plus de souffle !", "Je t'attrape la prochaine fois."]), 2200);
+      this.hearts((runner.x + chaser.x) / 2, 3);
       setTimeout(() => { this.mood([runner, chaser], "happy", false); this.done(); }, 2000);
     }), 300);
   },
@@ -3105,7 +3121,7 @@ const Buddies = {
     this.meet(56, (L, R) => {
       this.say(pickOne(["a", "b"]), pickOne(["On danse ?", "Petite choré !"]), 1600);
       this.mood([L, R], "happy", true);
-      [0, 550, 1100, 1650].forEach((ms, i) => setTimeout(() => { this.hop(L); this.hop(R); if (i % 2) { L.face *= -1; R.face *= -1; } this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 40); }, ms));
+      [0, 550, 1100, 1650].forEach((ms, i) => setTimeout(() => { this.hop(L); this.hop(R); if (i % 2) { L.face *= -1; R.face *= -1; } this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 40); if (i % 2) this.hearts((L.x + R.x) / 2, 2); }, ms));
       setTimeout(() => { L.face = 1; R.face = -1; this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2300);
     });
   },
@@ -3113,7 +3129,7 @@ const Buddies = {
     const A = this.b.a, B = this.b.b, k = Math.random() < 0.5 ? "a" : "b";
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
     this.say(k, buddyLine(k), 2600);
-    setTimeout(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); }, 2700);
+    setTimeout(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
     setTimeout(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5300);
   },
   nap() {
@@ -3128,7 +3144,18 @@ const Buddies = {
     s.style.left = x.toFixed(0) + "px"; s.style.animationDelay = delay + "s";
     this.fx.appendChild(s); setTimeout(() => s.remove(), life);
   },
-  hearts(x, n) { for (let i = 0; i < n; i++) this.spawn("fx-heart", FX_HEART, x - 7 + (Math.random() - 0.5) * 26, i * 0.22, 2300 + i * 220); },
+  hearts(x, n, spread = 30) {
+    for (let i = 0; i < n; i++) {
+      const size = 10 + Math.random() * 9, c = pickOne(["#FF6E89", "#FF4F7A", "#FF9EB5", "#F7A8C4", "#E8459A"]);
+      this.spawn("fx-heart", FX_HEART.replace("#FF6E89", c).replace("<svg ", `<svg width="${size.toFixed(0)}" `), x - size / 2 + (Math.random() - 0.5) * spread, i * 0.2, 2300 + i * 200);
+    }
+  },
+  bigHeart(x) { this.spawn("fx-big", FX_HEART, x - 15, 0, 1900); },
+  react(k) {
+    if (!this.b[k] || !this.el || this.el.hidden) return;
+    this.hop(this.b[k]); this.hearts(this.b[k].x, 2, 18);
+    this.say(k, pickOne(["Nouveau look !", "Ça me va bien ?", "Trop stylé, non ?", "Tu aimes ?", "Coucou le nouveau moi !"]), 2200);
+  },
   note(x) { this.spawn("fx-note", "♪︎", x, 0, 2100); },
   cloud(x, ms) { this.spawn("fx-cloud", FX_CLOUD, x - 37, 0, ms); },
   say(k, text, ms = 4200) {
@@ -3142,7 +3169,7 @@ const Buddies = {
     if (this.el && !this.el.hidden && !document.hidden && !this.busy) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
     setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
   },
-  poke(k) { this.hop(this.b[k]); this.say(k, pickOne(POKE_LINES), 2600); }
+  poke(k) { this.hop(this.b[k]); this.hearts(this.b[k].x, 1, 10); this.say(k, pickOne(POKE_LINES), 2600); }
 };
 
 /* ───────────────────────── Rendu ───────────────────────── */
@@ -3160,7 +3187,7 @@ function render(force) {
   const tabs = [["home", "Accueil"], ["play", "Jouer"], ["capsule", "Capsule"], ["aventures", "Aventures"], ["lettres", "Lettres"]];
   if (!views[S.tab]) S.tab = "home";
   const enter = S.tab !== render.lastTab; render.lastTab = S.tab;
-  app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></div></header>
+  app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><span class="row" style="gap:2px"><button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
@@ -3428,6 +3455,7 @@ const ACT = {
     const who = S.avWho === "b" ? "b" : "a", cur = { a: avOf("a"), b: avOf("b") };
     cur[who][d.k] = ["skin", "hairColor", "top"].includes(d.k) ? +d.v : d.v;
     Store.setMeta("avatars", cur);
+    setTimeout(() => Buddies.react(who), 0);
   },
   "st-open"(d) {
     if (S.storyStyle === "distance" && Store.backend === "shared" && !S.story) { startLiveStory(d.id); return; }
