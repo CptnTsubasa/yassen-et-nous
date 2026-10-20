@@ -973,6 +973,7 @@ function rtdbAdapter(F, fdb, base) {
   });
   return {
     kind: "shared",
+    wipe: () => F.remove(F.ref(fdb, base)),
     doc: docRef,
     collection: col => ({
       doc: id => docRef(col + "/" + (id || F.push(at(col)).key)),
@@ -992,7 +993,8 @@ function sharedPanel() {
     <button class="link" data-a="sh-leave">Détacher ce téléphone de l'espace commun</button></section>`;
   return `<section class="panel" aria-labelledby="h-shared"><h2 class="sec" id="h-shared">Notre progression commune</h2>
     <p class="small">${esc(fr("Créez votre espace commun : tout ce que vous faites se retrouve sur vos deux téléphones, sans compte à créer."))}</p>
-    <button class="btn" data-a="sh-create">Créer notre espace commun</button>
+    <div class="actions"><button class="btn wide" data-a="sh-create" data-v="fresh">Créer un espace tout neuf</button>
+    <button class="btn ghost wide" data-a="sh-create" data-v="keep">Créer et garder ce qu'il y a sur ce téléphone</button></div>
     <p class="small muted">${esc(fr("Si l'autre l'a déjà créé, il suffit d'ouvrir le lien d'invitation reçu."))}</p></section>`;
 }
 
@@ -1696,7 +1698,14 @@ function sheetView() {
       <div class="field"><label for="sync-in">Code reçu</label><textarea id="sync-in" data-d rows="3" style="min-height:0" placeholder="Colle ici le code envoyé par l'autre (il commence par YS1:)">${dv("sync-in")}</textarea></div>
       <button class="btn" data-a="sync-merge">Ajouter à ma progression</button>
       <p class="small muted">${esc(fr("La photo du puzzle n'est pas incluse dans le code. Un élément supprimé d'un côté n'est pas supprimé de l'autre."))}</p>
-    </section>`}`;
+    </section>`}
+    <section class="panel" aria-labelledby="h-reset"><h2 class="sec" id="h-reset">Repartir de zéro</h2>
+      <p class="small">${esc(fr(Store.backend === "shared"
+        ? "Efface tout dans votre espace commun et sur ce téléphone : prénoms, personnages, souvenirs, aventures, lettres, cartes et progression. Le lien d'invitation reste valable : l'autre arrivera dans un espace tout neuf."
+        : "Efface tout sur ce téléphone : prénoms, personnages, souvenirs, aventures, lettres, cartes et progression. L'appli redevient comme au premier jour."))}</p>
+      ${S.confirmReset ? `<div class="confirm"><span>Tout effacer pour de bon ?</span><button class="btn" data-a="reset-all">Oui, tout effacer</button><button class="btn ghost" data-a="reset-ask" data-v="">Annuler</button></div>`
+        : `<button class="btn line" data-a="reset-ask" data-v="1">Tout effacer et repartir de zéro</button>`}
+    </section>`;
   }
   if (name === "mot") {
     const kind = S.mot;
@@ -1734,6 +1743,7 @@ function sheetView() {
     <div class="seg" role="group" aria-label="Personnage">${["a", "b"].map(k => `<button aria-pressed="${who === k}" data-a="av-who" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
     <div class="stack"><h2 class="sec">Peau</h2>${sw("skin", AV.skin, "Teinte")}</div>
     <div class="stack"><h2 class="sec">Coiffure</h2>${ch("hair", AV.hair)}</div>
+    <div class="stack"><h2 class="sec">Longueur</h2>${ch("len", AV.len)}</div>
     <div class="stack"><h2 class="sec">Couleur des cheveux</h2>${sw("hairColor", AV.hairColor, "Couleur")}</div>
     <div class="stack"><h2 class="sec">Haut</h2>${sw("top", AV.top, "Haut")}</div>
     <div class="stack"><h2 class="sec">Accessoire</h2>${ch("acc", AV.acc)}</div>
@@ -2366,27 +2376,44 @@ const AV = {
   top: ["#5E8BD9", "#E07A8E", "#6DBE9B", "#F2B544", "#9B7BD6", "#3A3346", "#F4EFE9", "#E8845C"],
   hair: [["court", "Court"], ["frange", "Frange"], ["boucles", "Bouclés"], ["ondules", "Ondulés"], ["carre", "Carré"], ["long", "Longs"], ["queue", "Queue de cheval"], ["chignon", "Chignon"], ["rase", "Rasé"]],
   acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["casquette", "Casquette"], ["beret", "Béret"], ["fleur", "Fleur"], ["oreilles", "Boucles d'oreilles"]],
-  perso: [["timide", "Mignonne et timide"], ["fou", "Un peu fou"], ["classique", "Classique"]]
+  perso: [["timide", "Mignonne et timide"], ["fou", "Un peu fou"], ["classique", "Classique"]],
+  len: [["auto", "Selon la coiffure"], ["courte", "Courte"], ["mi", "Mi-longue"], ["longue", "Longue"], ["tres", "Très longue"]]
 };
-const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", perso: "fou" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", perso: "timide" } };
+const AV_DEFAULT = { a: { skin: 1, hairColor: 1, top: 0, hair: "court", acc: "aucun", perso: "fou", len: "auto" }, b: { skin: 2, hairColor: 0, top: 1, hair: "long", acc: "fleur", perso: "timide", len: "auto" } };
 function avOf(k) {
   const v = ((Store.meta.avatars || {})[k]) || {}, d = AV_DEFAULT[k];
   const idx = (f, list) => Number.isInteger(v[f]) && v[f] >= 0 && v[f] < list.length ? v[f] : d[f];
   const opt = (f, list) => list.some(o => o[0] === v[f]) ? v[f] : d[f];
-  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), perso: opt("perso", AV.perso) };
+  return { skin: idx("skin", AV.skin), hairColor: idx("hairColor", AV.hairColor), top: idx("top", AV.top), hair: opt("hair", AV.hair), acc: opt("acc", AV.acc), perso: opt("perso", AV.perso), len: opt("len", AV.len) };
+}
+// Cheveux de la longueur choisie : lisses, ou en vagues pour les coiffures ondulées et bouclées.
+function backHair(a, hc) {
+  if (a.hair === "queue") {
+    const L = { courte: 0.6, mi: 1, longue: 1.5, tres: 2 }[a.len] || 1;
+    return `<path d="M72 30q24 8 14 ${(46 * L).toFixed(0)}q-6 ${(-16 * L).toFixed(0)} -18 ${(-26 * L).toFixed(0)}z" fill="${hc}"/>`;
+  }
+  const Y = { mi: 76, longue: 102, tres: 124 }[a.len];
+  if (!Y) return "";
+  if (a.hair !== "ondules" && a.hair !== "boucles") return `<path d="M21 46C21 17 79 17 79 46L81 ${Y - 4}Q50 ${Y + 8} 19 ${Y - 4}Z" fill="${hc}"/>`;
+  const n = Math.max(1, Math.round((Y - 54) / 14)), end = 46 + 14 * n;
+  let d = "M22 46";
+  for (let i = 0; i < n; i++) d += `Q15 ${46 + 14 * i + 7} 21 ${46 + 14 * (i + 1)}`;
+  d += `Q28 ${end + 9} 36 ${end + 2}Q43 ${end + 10} 50 ${end + 2}Q57 ${end + 10} 64 ${end + 2}Q72 ${end + 9} 79 ${end}`;
+  for (let i = n; i > 0; i--) d += `Q85 ${46 + 14 * i - 7} 79 ${46 + 14 * (i - 1)}`;
+  return `<path d="${d}C79 17 21 17 22 46Z" fill="${hc}"/>`;
 }
 function avatarSvg(k) {
   const a = avOf(k), skin = AV.skin[a.skin], hc = AV.hairColor[a.hairColor], top = AV.top[a.top];
   const cap = `<path d="M24 46C24 22 38 16 50 16C64 16 77 24 76 46C70 36 60 31 50 31C40 31 30 36 24 46Z" fill="${hc}"/>`;
   const sides = `<path d="M24 46C22 60 23 70 26 76L30 76C28 64 28 54 30 44ZM76 46C78 60 77 70 74 76L70 76C72 64 72 54 70 44Z" fill="${hc}"/>`;
   const curls = [[28, 36], [36, 26], [47, 21], [58, 22], [68, 28], [74, 38], [24, 46], [77, 46]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${hc}"/>`).join("");
-  const back = { long: `<path d="M22 46C20 16 80 16 78 46L82 104Q50 114 18 104Z" fill="${hc}"/>`, carre: `<path d="M21 46C21 17 79 17 79 46L80 74Q50 82 20 74Z" fill="${hc}"/>`,
+  const back = a.len !== "auto" && a.hair !== "rase" && a.hair !== "chignon" ? backHair(a, hc) : { long: `<path d="M22 46C20 16 80 16 78 46L82 104Q50 114 18 104Z" fill="${hc}"/>`, carre: `<path d="M21 46C21 17 79 17 79 46L80 74Q50 82 20 74Z" fill="${hc}"/>`,
     queue: `<path d="M72 30q24 8 14 46q-6 -16 -18 -26z" fill="${hc}"/>`, chignon: `<circle cx="50" cy="15" r="11" fill="${hc}"/>`,
     boucles: `<circle cx="22" cy="60" r="8" fill="${hc}"/><circle cx="78" cy="60" r="8" fill="${hc}"/>`,
     ondules: `<path d="M24 44C22 54 25 60 30 61L70 61C75 60 78 54 76 44Z" fill="${hc}"/>` }[a.hair] || "";
   const front = { court: cap, frange: cap + `<path d="M27 40C32 26 46 22 58 24C68 26 74 32 75 42C66 36 62 38 56 34C50 40 40 38 34 36C31 38 29 40 27 40Z" fill="${hc}"/>`,
     boucles: curls, carre: cap + sides,
-    ondules: `<path d="M22 47C17 35 23 24 30 24C29 13 41 8 47 15C52 6 65 8 67 17C76 15 84 26 78 38C81 42 80 46 77 49C73 41 67 38 62 41C60 34 53 33 51 38C47 31 40 33 39 39C35 34 29 37 28 44C26 44 24 45 22 47Z" fill="${hc}"/><path d="M23 46C22 52 23 56 26 59L28 49ZM77 46C78 52 77 56 74 59L72 49Z" fill="${hc}"/><g fill="none" stroke="#000" stroke-opacity=".2" stroke-width="1.6" stroke-linecap="round"><path d="M33 27q4 -5 8 -1"/><path d="M47 19q4 -5 8 -1"/><path d="M60 22q4 -4 8 0"/><path d="M38 33q3 -3 6 0"/><path d="M55 30q3 -3 6 0"/><path d="M68 32q3 -2 5 1"/></g>`, long: cap + sides, queue: cap, chignon: cap, rase: `<g opacity=".45">${cap}</g>` }[a.hair];
+    ondules: `<path d="M22 47C17 35 23 24 30 24C29 13 41 8 47 15C52 6 65 8 67 17C76 15 84 26 78 38C81 42 80 46 77 49C73 41 67 38 62 41C60 34 53 33 51 38C47 31 40 33 39 39C35 34 29 37 28 44C26 44 24 45 22 47Z" fill="${hc}"/><path d="M23 46C22 52 23 56 26 59L28 49ZM77 46C78 52 77 56 74 59L72 49Z" fill="${hc}"/><g fill="none" stroke="#000" stroke-opacity=".2" stroke-width="1.6" stroke-linecap="round"><path d="M33 27q4 -5 8 -1"/><path d="M47 19q4 -5 8 -1"/><path d="M60 22q4 -4 8 0"/><path d="M38 33q3 -3 6 0"/><path d="M55 30q3 -3 6 0"/><path d="M68 32q3 -2 5 1"/></g>`, long: cap + sides, queue: cap, chignon: cap, rase: `<g opacity=".45">${cap}</g>` }[a.hair] + ((a.hair === "court" || a.hair === "frange") && ["mi", "longue", "tres"].includes(a.len) ? sides : "");
   const acc = { lunettes: `<g fill="none" stroke="#2B1E2F" stroke-width="1.8"><circle cx="40.5" cy="50" r="6.5"/><circle cx="59.5" cy="50" r="6.5"/><path d="M47 50h6M34 49l-8-2M66 49l8-2"/></g>`,
     casquette: `<path d="M23 42C23 22 38 15 50 15C64 15 77 23 77 42Z" fill="#3A3346"/><path d="M50 40Q74 35 92 42Q72 47 50 44Z" fill="#3A3346"/>`,
     beret: `<ellipse cx="45" cy="22" rx="25" ry="8" fill="#C23B4E" transform="rotate(-12 45 22)"/><circle cx="47" cy="13" r="2.4" fill="#C23B4E"/>`,
@@ -3373,10 +3400,20 @@ const ACT = {
     if (!entries.length) { toast("Notez au moins une réponse pour la garder."); return; }
     Store.add("capsule", { kind: "souvenir", question: c.text, cardId: c.id, entries }); clearDrafts(ia, ib); g.saved.album = true; toast("Gardé dans l'album");
   },
-  "sh-create"() {
+  "sh-create"(d) {
     lsSet(Shared.key, Shared.newCode());
-    Shared.joining = snapshotLocal();
+    Shared.joining = d.v === "keep" ? snapshotLocal() : null;
     Store.connect().then(() => { if (Store.backend === "shared") { S.shLink = Shared.invite(); render(true); } });
+  },
+  "reset-ask"(d) { S.confirmReset = !!d.v; },
+  async "reset-all"() {
+    S.confirmReset = false;
+    try { if (Store.backend === "shared" && Store.db && Store.db.wipe) await Store.db.wipe(); } catch (e) { toast("L'espace commun n'a pas pu être vidé. Vérifie ta connexion puis réessaie."); return; }
+    // On garde seulement le lien vers l'espace commun ; tout le reste repart à zéro.
+    const keep = lsGet(Shared.key);
+    try { Object.keys(localStorage).filter(k => k.startsWith("entre-nous:")).forEach(k => localStorage.removeItem(k)); } catch (e) { /* stockage indisponible */ }
+    if (keep) lsSet(Shared.key, keep);
+    location.reload();
   },
   "sh-copy"() {
     S.shLink = Shared.invite();
