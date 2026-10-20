@@ -238,7 +238,7 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
 .letter .when { font-family: var(--f-hand); font-size: 1.5rem; line-height: 1.1; color: var(--accent); padding-right: 64px; }
 .letter .t { padding-right: 64px; }
 
-.toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; background: var(--fg); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: .92rem; max-width: calc(100% - 32px); text-align: center; box-shadow: var(--shadow); animation: deal .3s ease both; }
+.toast { position: fixed; left: 50%; bottom: calc(178px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; background: var(--fg); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: .92rem; max-width: calc(100% - 32px); text-align: center; box-shadow: var(--shadow); animation: deal .3s ease both; }
 details summary { cursor: pointer; font-weight: 600; color: var(--muted); padding: 6px 0; }
 .dlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
 .dlist button { text-align: left; width: 100%; padding: 10px 12px; border-radius: 12px; background: var(--surface); font-size: .94rem; }
@@ -296,7 +296,7 @@ body { background: var(--bg); }
 #cozy::after { content: ""; position: absolute; inset: 0; background-image: var(--doodle); background-size: 140px 140px; }
 @keyframes cozy { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, 4vmax) scale(1.12); } }
 /* Les petits compagnons, debout sur la barre d'onglets. Leurs déplacements sont calculés en JS. */
-#buddies { position: fixed; left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); bottom: calc(75px + env(safe-area-inset-bottom, 0px)); height: 0; z-index: 21; pointer-events: none; }
+#buddies { position: fixed; left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); height: 0; z-index: 21; pointer-events: none; }
 .buddy { position: absolute; left: 0; bottom: -2px; width: 44px; will-change: transform; pointer-events: auto; cursor: pointer; }
 .buddy-face { transform-origin: 50% 100%; }
 .buddy-body { transform-origin: 50% 100%; }
@@ -516,18 +516,23 @@ body { background: var(--bg); }
 @keyframes disco { 0% { filter: drop-shadow(0 0 6px #FF6E89); } 25% { filter: drop-shadow(0 0 6px #F2C84B); } 50% { filter: drop-shadow(0 0 6px #6DBE9B); } 75% { filter: drop-shadow(0 0 6px #9B7BD6); } }
 @keyframes gainin { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
 /* Le sol où marchent les chibis : un fondu vers le fond, et une petite colline fleurie. */
-#ground { position: fixed; left: 0; right: 0; bottom: 0; height: calc(160px + env(safe-area-inset-bottom, 0px)); z-index: 19; pointer-events: none; background: linear-gradient(to top, var(--bg) 0 52%, transparent); --ground: var(--m3); }
-#ground .hill { position: absolute; left: -12%; right: -12%; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); height: 34px; border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: radial-gradient(circle at 10px 7px, #F7A8C4 0 2px, transparent 2.6px) 0 0 / 58px 14px repeat-x, radial-gradient(circle at 36px 5px, #FFF3C9 0 1.7px, transparent 2.3px) 0 0 / 58px 14px repeat-x, var(--ground); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35); opacity: .9; }
-:root[data-ys-theme="hiver"] #ground { --ground: #E8EFF7; }
-:root[data-ys-theme="plage"] #ground { --ground: #F2E2B8; }
-:root[data-ys-theme="etoiles"] #ground { --ground: #8F86C9; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-ys-theme="hiver"] #ground { --ground: #3A4656; } :root:not([data-theme="light"])[data-ys-theme="plage"] #ground { --ground: #5A4C30; } :root:not([data-theme="light"])[data-ys-theme="etoiles"] #ground { --ground: #3A3470; } }
-.wrap { padding-block: 20px 200px; }
+#ground { position: fixed; left: 0; right: 0; bottom: 0; height: calc(205px + env(safe-area-inset-bottom, 0px)); z-index: 19; pointer-events: none; background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); -webkit-mask-image: linear-gradient(to top, #000 0 64%, transparent); mask-image: linear-gradient(to top, #000 0 64%, transparent);
+  --gbase: var(--m3); --g1: color-mix(in srgb, var(--gbase) 88%, var(--bg)); --g2: color-mix(in srgb, var(--gbase) 52%, var(--bg)); --g3: color-mix(in srgb, var(--gbase) 62%, var(--fg) 26%); }
+#ground .meadow { position: absolute; left: 50%; transform: translateX(-50%); width: min(560px, 100%); height: 52px; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
+:root[data-ys-theme="hiver"] #ground { --gbase: #DCE6F2; }
+:root[data-ys-theme="plage"] #ground { --gbase: #EAD9AE; }
+:root[data-ys-theme="etoiles"] #ground { --gbase: #A69CD8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-ys-theme="hiver"] #ground { --gbase: #3E4B5C; } :root:not([data-theme="light"])[data-ys-theme="plage"] #ground { --gbase: #5A4C30; } :root:not([data-theme="light"])[data-ys-theme="etoiles"] #ground { --gbase: #3A3470; } }
+.wrap { padding-block: 20px 215px; }
 /* Le ciel du fond suit l'heure (un thème acheté passe devant). */
-:root[data-sky="aube"] #cozy i:nth-child(1) { background: #F9C9B6; } :root[data-sky="aube"] #cozy i:nth-child(2) { background: #F7D6E0; } :root[data-sky="aube"] #cozy i:nth-child(3) { background: #FCE5C0; } :root[data-sky="aube"] #cozy i:nth-child(4) { background: #E8D5F0; }
-:root[data-sky="jour"] #cozy i:nth-child(1) { background: #CFE4F5; } :root[data-sky="jour"] #cozy i:nth-child(2) { background: #F6E7C8; } :root[data-sky="jour"] #cozy i:nth-child(3) { background: #DCEFE3; } :root[data-sky="jour"] #cozy i:nth-child(4) { background: #F4D9E4; }
-:root[data-sky="soir"] #cozy i:nth-child(1) { background: #F6B9A2; } :root[data-sky="soir"] #cozy i:nth-child(2) { background: #D9B8EC; } :root[data-sky="soir"] #cozy i:nth-child(3) { background: #F7C9D3; } :root[data-sky="soir"] #cozy i:nth-child(4) { background: #F2D2A6; }
-:root[data-sky="nuit"] #cozy i:nth-child(1) { background: #C9C3EE; } :root[data-sky="nuit"] #cozy i:nth-child(2) { background: #B8C6EA; } :root[data-sky="nuit"] #cozy i:nth-child(3) { background: #D8C8F0; } :root[data-sky="nuit"] #cozy i:nth-child(4) { background: #E2CFEA; }
+#cozy i:nth-child(1) { background: var(--s1, var(--m6)); } #cozy i:nth-child(2) { background: var(--s2, var(--m4)); } #cozy i:nth-child(3) { background: var(--s3, var(--m1)); } #cozy i:nth-child(4) { background: var(--s4, var(--m2)); }
+:root[data-sky="aube"] { --s1: #F3D5CA; --s2: #F0DDE4; --s3: #F3E6D0; --s4: #E5DDEE; }
+:root[data-sky="jour"] { --s1: #DCE6EF; --s2: #EEE7D9; --s3: #DEE9E2; --s4: #ECDFE6; }
+:root[data-sky="soir"] { --s1: #EDCFC6; --s2: #E0D1EA; --s3: #EED6DD; --s4: #ECDDCA; }
+:root[data-sky="nuit"] { --s1: #D8D4EB; --s2: #D0D7E9; --s3: #DDD5EC; --s4: #E3D9E9; }
+:root { --halo: .42; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --halo: .7; } :root:not([data-theme="light"]) #cozy i { filter: blur(42px) brightness(.4) saturate(1.2); } }
+:root[data-theme="dark"] { --halo: .7; } :root[data-theme="dark"] #cozy i { filter: blur(42px) brightness(.4) saturate(1.2); }
 .cozy-fx.stars span { width: 3px; height: 3px; background: #F2D27A; box-shadow: 0 0 5px #F2D27A; animation-name: twinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
 /* Réactions au toucher. */
 .chip, .mode-row, .qcard, .icon-btn, .hearts-pill, .ob-pick, .shop-item .btn, .feature, .chroma { transition: transform .15s ease, background .15s ease; }
@@ -633,7 +638,7 @@ body { background: var(--bg); }
 </style>
 
 <div id="cozy" aria-hidden="true"><i></i><i></i><i></i><i></i><div class="cozy-fx"></div></div>
-<div id="ground" aria-hidden="true" hidden><div class="hill"></div></div>
+<div id="ground" aria-hidden="true" hidden><svg class="meadow" viewBox="0 0 400 52" preserveAspectRatio="none"><path d="M0 26C50 16 96 22 150 19S258 12 308 18 380 22 400 17V52H0Z" fill="var(--g2)"/><path d="M0 33C46 26 98 31 152 29S250 25 300 29 370 32 400 27V52H0Z" fill="var(--g1)"/><g fill="none" stroke="var(--g3)" stroke-width="1.3" stroke-linecap="round"><path d="M15.9 29.7q-1.6-4.4-3.4-5.6M15.9 29.7q.2-5.2 1.4-7M15.9 29.7q2-3.8 4.2-4.6"/><path d="M53.8 29.5q-1.6-4.4-3.4-5.6M53.8 29.5q.2-5.2 1.4-7M53.8 29.5q2-3.8 4.2-4.6"/><path d="M83.4 30.2q-1.6-4.4-3.4-5.6M83.4 30.2q.2-5.2 1.4-7M83.4 30.2q2-3.8 4.2-4.6"/><path d="M115.7 30.5q-1.6-4.4-3.4-5.6M115.7 30.5q.2-5.2 1.4-7M115.7 30.5q2-3.8 4.2-4.6"/><path d="M154.4 30.3q-1.6-4.4-3.4-5.6M154.4 30.3q.2-5.2 1.4-7M154.4 30.3q2-3.8 4.2-4.6"/><path d="M192.8 29.5q-1.6-4.4-3.4-5.6M192.8 29.5q.2-5.2 1.4-7M192.8 29.5q2-3.8 4.2-4.6"/><path d="M235.1 31.3q-1.6-4.4-3.4-5.6M235.1 31.3q.2-5.2 1.4-7M235.1 31.3q2-3.8 4.2-4.6"/><path d="M266.5 29.8q-1.6-4.4-3.4-5.6M266.5 29.8q.2-5.2 1.4-7M266.5 29.8q2-3.8 4.2-4.6"/><path d="M310.5 31.6q-1.6-4.4-3.4-5.6M310.5 31.6q.2-5.2 1.4-7M310.5 31.6q2-3.8 4.2-4.6"/><path d="M347.9 30.3q-1.6-4.4-3.4-5.6M347.9 30.3q.2-5.2 1.4-7M347.9 30.3q2-3.8 4.2-4.6"/><path d="M385.7 29.4q-1.6-4.4-3.4-5.6M385.7 29.4q.2-5.2 1.4-7M385.7 29.4q2-3.8 4.2-4.6"/></g><path d="M36 31.7v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="36" cy="25.5" r="2.1" fill="#F4B6C8"/><circle cx="36" cy="25.5" r=".8" fill="#F2C84B"/><path d="M104 30.6v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="104" cy="24.4" r="2.1" fill="#FFF1C9"/><circle cx="104" cy="24.4" r=".8" fill="#F2C84B"/><path d="M146 30.3v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="146" cy="24.1" r="2.1" fill="#F4B6C8"/><circle cx="146" cy="24.1" r=".8" fill="#F2C84B"/><path d="M214 30.2v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="214" cy="24.0" r="2.1" fill="#E9DDF6"/><circle cx="214" cy="24.0" r=".8" fill="#F2C84B"/><path d="M258 30.6v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="258" cy="24.4" r="2.1" fill="#FFF1C9"/><circle cx="258" cy="24.4" r=".8" fill="#F2C84B"/><path d="M330 31.6v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="330" cy="25.4" r="2.1" fill="#F4B6C8"/><circle cx="330" cy="25.4" r=".8" fill="#F2C84B"/><path d="M365 30.4v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="365" cy="24.2" r="2.1" fill="#E9DDF6"/><circle cx="365" cy="24.2" r=".8" fill="#F2C84B"/></svg></div>
 <div id="app"></div>
 <div id="layer"></div>
 <div id="toast" aria-live="polite"></div>
