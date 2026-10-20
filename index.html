@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Y&amp;S</title>
 <meta name="description" content="Notre petit jeu à deux.">
-<meta name="theme-color" content="#F6F2F5">
+<meta name="theme-color" content="#F6F2F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1820" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Y&amp;S">
@@ -219,7 +222,7 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
 .item .hand { font-family: var(--f-hand); font-size: 1.55rem; line-height: 1.15; overflow-wrap: anywhere; white-space: pre-wrap; }
 .item .by { font-size: .82rem; color: var(--muted); }
 .item .tools { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
-.empty { border: 2px dashed var(--line); border-radius: 22px; padding: 26px 20px; text-align: center; display: grid; gap: 10px; justify-items: center; color: var(--muted); }
+.empty { border: 1.5px dashed var(--line); border-radius: 22px; padding: 20px 20px 24px; background: color-mix(in srgb, var(--surface) 55%, transparent); text-align: center; display: grid; gap: 10px; justify-items: center; color: var(--muted); }
 .empty strong { color: var(--fg); font-size: 1.05rem; }
 .group-h { display: flex; align-items: baseline; justify-content: space-between; }
 .status { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 4px; background: var(--surface-2); border-radius: 12px; padding: 3px; }
@@ -353,14 +356,38 @@ body { background: var(--bg); }
 .greet-title { font-family: var(--f-display); font-weight: 400; font-size: clamp(2rem, 9vw, 2.5rem); line-height: 1.08; }
 .greet-title span { color: var(--accent); }
 /* Yassen Jr., quêtes, boutique et succès. */
-.yj-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; align-items: center; padding: 14px 16px; border-radius: 22px; background: var(--glass); border: 1px solid var(--hair); }
-.yj-pet { width: 88px; display: block; }
+.yj-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 16px; align-items: center; padding: 16px; border-radius: 24px; background: var(--glass); border: 1px solid var(--hair); box-shadow: var(--shadow); }
+.yj-ring { position: relative; width: 112px; height: 112px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #FFE15A 26%, transparent) 0 52%, transparent 70%); }
+.yj-ring .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.yj-ring .track { fill: none; stroke: var(--surface-2); stroke-width: 6; }
+.yj-ring .prog { fill: none; stroke: #F2B544; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset .8s ease; filter: drop-shadow(0 0 4px rgba(242, 181, 68, .55)); }
+.yj-pet { width: 84px; display: block; margin-top: -10px; }
 .yj-pet svg { display: block; width: 100%; height: auto; overflow: visible; transform-origin: 50% 100%; animation: yjbreath 3.2s ease-in-out infinite; }
 .yj-pet.jump svg { animation: yjjump .6s ease; }
 .yj-info { display: grid; gap: 5px; min-width: 0; }
 .yj-stage { font-family: var(--f-display); font-size: 1.25rem; line-height: 1.15; }
-.yj-dedi { grid-column: 1 / -1; font-family: var(--f-hand); font-size: 1.3rem; line-height: 1.15; text-wrap: pretty; }
-.yj-card .quests, .yj-card > .row { grid-column: 1 / -1; }
+.yj-links { grid-column: 1 / -1; justify-content: center; }
+.dedi-hero { font-family: var(--f-hand); font-size: 1.6rem; line-height: 1.15; text-align: center; text-wrap: balance; padding: 4px 8px; color: var(--fg); }
+.dedi-hero span { color: var(--accent); font-family: var(--f-body); font-size: .9rem; margin: 0 8px; vertical-align: middle; }
+.since { font-size: .95rem; color: var(--muted); margin-top: 4px; }
+.since b { color: var(--fg); font-weight: 600; }
+.since span { font-size: .85rem; }
+.celebrate { position: relative; overflow: hidden; display: grid; gap: 8px; padding: 18px; border-radius: 24px; text-align: center; background: linear-gradient(135deg, var(--m1), var(--m2) 50%, var(--m4)); color: var(--on-m1); box-shadow: var(--shadow); }
+.celebrate::before { content: "✦ ♥ ✦ ♥ ✦ ♥ ✦"; position: absolute; inset: 6px 0 auto; font-size: .7rem; letter-spacing: .6em; color: var(--i1); opacity: .5; animation: celshine 3s ease-in-out infinite alternate; }
+.cel-title { font-family: var(--f-display); font-size: 1.5rem; line-height: 1.15; margin-top: 10px; }
+.cel-yj { display: flex; gap: 10px; align-items: center; justify-content: center; font-family: var(--f-hand); font-size: 1.3rem; line-height: 1.15; text-align: left; }
+.cel-flame { width: 40px; flex: none; }
+.cel-flame svg { display: block; width: 100%; height: auto; animation: yjjump 1.4s ease-in-out infinite; }
+.quests-card { gap: 10px; }
+.quest { position: relative; }
+.quest.pop .qcheck { animation: qpop .5s ease; }
+.qcheck { position: relative; }
+.q-burst { position: absolute; left: 50%; top: 50%; font-size: 11px; color: #FF6E89; pointer-events: none; animation: qburst .85s ease-out forwards; }
+.empty-art { display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin-bottom: 2px; }
+.ea-fig { width: 46px; }
+.ea-fig svg, .ea-prop svg { display: block; width: 100%; height: auto; }
+.ea-b { transform: scaleX(-1); }
+.ea-prop { width: 44px; margin-bottom: 24px; animation: eafloat 3s ease-in-out infinite; }
 .zz { animation: zz 2.6s ease-in-out infinite; }
 .quests { display: grid; gap: 8px; }
 .quest { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--hair); font-size: .94rem; }
@@ -488,6 +515,40 @@ body { background: var(--bg); }
 @keyframes feather { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(16px, -42px) rotate(140deg); } }
 @keyframes disco { 0% { filter: drop-shadow(0 0 6px #FF6E89); } 25% { filter: drop-shadow(0 0 6px #F2C84B); } 50% { filter: drop-shadow(0 0 6px #6DBE9B); } 75% { filter: drop-shadow(0 0 6px #9B7BD6); } }
 @keyframes gainin { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
+/* Le sol où marchent les chibis : un fondu vers le fond, et une petite colline fleurie. */
+#ground { position: fixed; left: 0; right: 0; bottom: 0; height: calc(160px + env(safe-area-inset-bottom, 0px)); z-index: 19; pointer-events: none; background: linear-gradient(to top, var(--bg) 0 52%, transparent); --ground: var(--m3); }
+#ground .hill { position: absolute; left: -12%; right: -12%; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); height: 34px; border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: radial-gradient(circle at 10px 7px, #F7A8C4 0 2px, transparent 2.6px) 0 0 / 58px 14px repeat-x, radial-gradient(circle at 36px 5px, #FFF3C9 0 1.7px, transparent 2.3px) 0 0 / 58px 14px repeat-x, var(--ground); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35); opacity: .9; }
+:root[data-ys-theme="hiver"] #ground { --ground: #E8EFF7; }
+:root[data-ys-theme="plage"] #ground { --ground: #F2E2B8; }
+:root[data-ys-theme="etoiles"] #ground { --ground: #8F86C9; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-ys-theme="hiver"] #ground { --ground: #3A4656; } :root:not([data-theme="light"])[data-ys-theme="plage"] #ground { --ground: #5A4C30; } :root:not([data-theme="light"])[data-ys-theme="etoiles"] #ground { --ground: #3A3470; } }
+.wrap { padding-block: 20px 200px; }
+/* Le ciel du fond suit l'heure (un thème acheté passe devant). */
+:root[data-sky="aube"] #cozy i:nth-child(1) { background: #F9C9B6; } :root[data-sky="aube"] #cozy i:nth-child(2) { background: #F7D6E0; } :root[data-sky="aube"] #cozy i:nth-child(3) { background: #FCE5C0; } :root[data-sky="aube"] #cozy i:nth-child(4) { background: #E8D5F0; }
+:root[data-sky="jour"] #cozy i:nth-child(1) { background: #CFE4F5; } :root[data-sky="jour"] #cozy i:nth-child(2) { background: #F6E7C8; } :root[data-sky="jour"] #cozy i:nth-child(3) { background: #DCEFE3; } :root[data-sky="jour"] #cozy i:nth-child(4) { background: #F4D9E4; }
+:root[data-sky="soir"] #cozy i:nth-child(1) { background: #F6B9A2; } :root[data-sky="soir"] #cozy i:nth-child(2) { background: #D9B8EC; } :root[data-sky="soir"] #cozy i:nth-child(3) { background: #F7C9D3; } :root[data-sky="soir"] #cozy i:nth-child(4) { background: #F2D2A6; }
+:root[data-sky="nuit"] #cozy i:nth-child(1) { background: #C9C3EE; } :root[data-sky="nuit"] #cozy i:nth-child(2) { background: #B8C6EA; } :root[data-sky="nuit"] #cozy i:nth-child(3) { background: #D8C8F0; } :root[data-sky="nuit"] #cozy i:nth-child(4) { background: #E2CFEA; }
+.cozy-fx.stars span { width: 3px; height: 3px; background: #F2D27A; box-shadow: 0 0 5px #F2D27A; animation-name: twinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
+/* Réactions au toucher. */
+.chip, .mode-row, .qcard, .icon-btn, .hearts-pill, .ob-pick, .shop-item .btn, .feature, .chroma { transition: transform .15s ease, background .15s ease; }
+.chip:active, .qcard:active, .icon-btn:active, .hearts-pill:active, .ob-pick:active, .feature:active, .chroma:active { transform: scale(.94); }
+.mode-row:active { transform: scale(.985); }
+.card { animation: cardflip .55s cubic-bezier(.2, .8, .3, 1.1) both; transform-origin: 50% 60%; }
+/* Écran de lancement. */
+#splash { position: fixed; inset: 0; z-index: 100; pointer-events: none; display: grid; place-items: center; background: radial-gradient(circle at 50% 42%, var(--m1), var(--bg) 70%); transition: opacity .5s ease; }
+#splash.out { opacity: 0; }
+.sp-in { display: grid; justify-items: center; gap: 10px; animation: spin-in .7s cubic-bezier(.2, .8, .3, 1.2) both; }
+.sp-in img { width: 112px; height: 112px; border-radius: 30px; box-shadow: 0 18px 40px -18px rgba(58, 47, 64, .5); }
+.sp-brand { font-family: var(--f-display); font-size: 2.4rem; line-height: 1; }
+.sp-brand span { color: var(--accent); }
+.sp-dedi { font-family: var(--f-hand); font-size: 1.25rem; color: var(--muted); }
+@keyframes cardflip { from { opacity: 0; transform: perspective(900px) rotateY(-70deg) translateY(8px) scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes spin-in { from { opacity: 0; transform: scale(.85) translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes qpop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes qburst { 0% { opacity: 1; transform: translate(-50%, -50%) scale(.6); } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.1); } }
+@keyframes eafloat { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-6px) rotate(3deg); } }
+@keyframes celshine { from { opacity: .25; } to { opacity: .7; } }
+@media (prefers-reduced-motion: reduce) { .card, .sp-in, .ea-prop, .cel-flame svg { animation: none !important; } }
 /* Thèmes achetés : ils recolorent les halos du fond et y ajoutent des particules. */
 .cozy-fx { position: absolute; inset: 0; }
 .cozy-fx span { position: absolute; display: block; border-radius: 50%; }
@@ -572,6 +633,7 @@ body { background: var(--bg); }
 </style>
 
 <div id="cozy" aria-hidden="true"><i></i><i></i><i></i><i></i><div class="cozy-fx"></div></div>
+<div id="ground" aria-hidden="true" hidden><div class="hill"></div></div>
 <div id="app"></div>
 <div id="layer"></div>
 <div id="toast" aria-live="polite"></div>
@@ -1399,8 +1461,12 @@ function viewHome() {
   <section class="greet">
     <p class="greet-date">${esc(fmtDay(todayStr(), { weekday: "long", day: "numeric", month: "long" }))}</p>
     <h1 class="greet-title">${hello}${named ? `,<br><span>${esc(c.a)} &amp; ${esc(c.b)}</span>` : ""}</h1>
+    ${sinceLine()}
   </section>
+  ${dediHero()}
+  ${celebrateCard()}
   ${yassenCard()}
+  ${questsCard()}
   ${named ? "" : `<div class="panel">
       <p><b>Comment vous appelez-vous ?</b></p>
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
@@ -1502,7 +1568,7 @@ function viewCapsule() {
         <p class="q">${esc(x.question)}</p>
         ${(x.entries || []).map(e => `<div><p class="hand">${esc(e.text)}</p><p class="by">${esc(e.label || nm(e.who))}</p></div>`).join("")}
         <div class="tools"><span class="by">${fmtTs(x.createdAt)}</span>${confirmRow("capsule", x.id)}</div>
-      </article>`).join("") : empty("L'album attend son premier souvenir", "Jouez au mode « Notre histoire » et gardez vos réponses, ou ajoutez un souvenir à la main."));
+      </article>`).join("") : empty("L'album attend son premier souvenir", "Jouez au mode « Notre histoire » et gardez vos réponses, ou ajoutez un souvenir à la main.", "album"));
   } else if (seg === "mots") {
     const items = byDate(cap.filter(x => x.kind === "mot" || x.kind === "anecdote"));
     body = `<div class="row"><button class="btn" data-a="sheet" data-name="mot" data-kind="mot">Écrire un petit mot</button><button class="btn ghost" data-a="sheet" data-name="mot" data-kind="anecdote">Noter une anecdote</button></div>` + (items.length ? items.map(x => `
@@ -1510,7 +1576,7 @@ function viewCapsule() {
         <span class="badge">${x.kind === "mot" ? "Petit mot" : "Anecdote"}</span>
         <p class="hand">${esc(x.text)}</p>
         <div class="tools"><span class="by">${x.kind === "mot" ? "De" : "Racontée par"} ${esc(nm(x.from))} · ${fmtTs(x.createdAt)}</span>${confirmRow("capsule", x.id)}</div>
-      </article>`).join("") : empty("Aucun petit mot pour l'instant", "Un mot doux, une blague, une anecdote que vous ne voulez pas oublier : tout a sa place ici."));
+      </article>`).join("") : empty("Aucun petit mot pour l'instant", "Un mot doux, une blague, une anecdote que vous ne voulez pas oublier : tout a sa place ici.", "mots"));
   } else if (seg === "favoris") {
     const items = byDate(Store.cols.favoris).filter(f => CARDS[f.id]);
     body = items.length ? items.map(f => { const c = CARDS[f.id], m = CAT[c.cat]; return `
@@ -1518,7 +1584,7 @@ function viewCapsule() {
         <span class="badge">${m.glyph} ${esc(m.label)}</span>
         <p class="t">${esc(c.text)}</p>
         <div class="tools"><button class="btn c" data-a="replay" data-id="${c.id}">Jouer cette carte</button><button class="link" data-a="fav" data-id="${c.id}">Retirer des favoris</button></div>
-      </article>`; }).join("") : empty("Pas encore de favoris", "Touchez l'étoile ☆ sur une carte pendant une partie pour la retrouver ici.");
+      </article>`; }).join("") : empty("Pas encore de favoris", "Touchez l'étoile ☆ sur une carte pendant une partie pour la retrouver ici.", "favoris");
   } else {
     const defis = cap.filter(x => x.kind === "defi").map(x => ({ ...x, _t: "Défi relevé" }));
     const avs = Store.cols.aventures.filter(a => a.statut === "realisee").map(x => ({ ...x, text: x.title, _t: "Aventure réalisée" }));
@@ -1528,7 +1594,7 @@ function viewCapsule() {
         <span class="badge">${x._t}</span>
         <p class="t">${esc(x.text)}</p>
         <div class="tools"><span class="by">${fmtTs(x.doneAt || x.createdAt)}</span>${x.kind === "defi" ? confirmRow("capsule", x.id) : ""}</div>
-      </article>`).join("") : empty("Rien de coché pour l'instant", "Les défis relevés et les aventures réalisées viendront se ranger ici.");
+      </article>`).join("") : empty("Rien de coché pour l'instant", "Les défis relevés et les aventures réalisées viendront se ranger ici.", "realise");
   }
   return `
   <header class="top"><h1 class="logo">Notre <span>capsule</span></h1></header>
@@ -1536,7 +1602,7 @@ function viewCapsule() {
   <div class="seg" role="group" aria-label="Rubriques de la capsule">${segs}</div>
   <div class="stack">${body}</div>`;
 }
-function empty(title, txt) { return `<div class="empty"><strong>${esc(fr(title))}</strong><p>${esc(fr(txt))}</p></div>`; }
+function empty(title, txt, art) { return `<div class="empty">${art ? emptyArt(art) : ""}<strong>${esc(fr(title))}</strong><p>${esc(fr(txt))}</p></div>`; }
 
 /* ───────────────────────── Vues : aventures ───────────────────────── */
 function viewAventures() {
@@ -1552,7 +1618,7 @@ function viewAventures() {
   <header class="top"><h1 class="logo">Prochaine <span>aventure</span></h1></header>
   <p class="hello">Les rendez-vous qu'on a envie de vivre, du plus simple au plus fou.</p>
   <div class="row"><button class="btn" data-a="sheet" data-name="aventure">Ajouter une idée</button></div>
-  ${all.length ? groups : empty("La liste est vide", "Ajoutez une idée ici, ou depuis les modes « Et si on… ? » et « Défis complices ».")}`;
+  ${all.length ? groups : empty("La liste est vide", "Ajoutez une idée ici, ou depuis les modes « Et si on… ? » et « Défis complices ».", "aventures")}`;
 }
 function avItem(a) {
   const st = a.statut || "afaire";
@@ -1592,7 +1658,7 @@ function viewLettres() {
   <div class="row"><button class="btn" data-a="sheet" data-name="lettre">Écrire une carte</button></div>
   ${Jeu.days() >= 30 ? yassenLetter() : Jeu.days() >= 1 ? `<article class="letter sealed"><span class="seal" aria-hidden="true" style="font-size:1.05rem">YJ</span><p class="when">Une lettre de Yassen Jr.</p>
     <p class="small muted">${esc(fr(`Il vous l'écrit tout doucement. Elle sera prête après 30 jours ensemble : vous en êtes à ${Jeu.days()}.`))}</p></article>` : ""}
-  <div class="stack">${list || empty("Aucune carte scellée", "Écrivez un mot à relire dans un mois, pour vos six mois ou pour votre premier anniversaire.")}</div>`;
+  <div class="stack">${list || empty("Aucune carte scellée", "Écrivez un mot à relire dans un mois, pour vos six mois ou pour votre premier anniversaire.", "lettres")}</div>`;
 }
 
 /* ───────────────────────── Premiers pas ─────────────────────────
@@ -1619,6 +1685,7 @@ function onboardView() {
     <div class="ob-names"><div class="field"><label for="ob-a">Premier prénom</label><input type="text" id="ob-a" data-d maxlength="24" autocomplete="off" value="${dv("ob-a", c.a)}" placeholder="Le tien ou le sien"></div>
     <span class="ob-amp" aria-hidden="true">&amp;</span>
     <div class="field"><label for="ob-b">Second prénom</label><input type="text" id="ob-b" data-d maxlength="24" autocomplete="off" value="${dv("ob-b", c.b)}" placeholder="Et l'autre"></div></div>
+    <div class="field"><label for="ob-since">Ensemble depuis le (facultatif)</label><input type="date" id="ob-since" data-d max="${todayStr()}" value="${dv("ob-since", c.since || "")}"></div>
     <button class="btn wide" data-a="ob-names">Continuer</button>`;
   else if (st === "moi") body = `<h1 class="sheet-title">Et toi, qui es-tu ?</h1>
     <p class="muted">${esc(fr("Pour savoir quel personnage est le tien sur ce téléphone."))}</p>
@@ -1892,6 +1959,7 @@ function sheetView() {
     <p class="muted">Ils apparaissent sur les cartes, les votes et l'écran de masquage.</p>
     <div class="field"><label for="na">Premier prénom</label><input type="text" id="na" data-d maxlength="24" value="${dv("na", c.a)}" autocomplete="off"></div>
     <div class="field"><label for="nb">Second prénom</label><input type="text" id="nb" data-d maxlength="24" value="${dv("nb", c.b)}" autocomplete="off"></div>
+    <div class="field"><label for="nsince">Ensemble depuis le</label><input type="date" id="nsince" data-d max="${todayStr()}" value="${dv("nsince", c.since || "")}"></div>
     <div class="stack"><p class="lbl">Façon de jouer par défaut</p><div class="chips">
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "partage"}" data-a="set-draft" data-k="nstyle" data-v="partage">Mode partagé</button>
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "secret"}" data-a="set-draft" data-k="nstyle" data-v="secret">Réponses secrètes</button></div></div>
@@ -3501,6 +3569,7 @@ const Buddies = {
     const show = (this.enabled() || editing) && (!S.layer || editing);
     this.el.classList.toggle("over", editing);
     this.el.hidden = !show;
+    const ground = document.getElementById("ground"); if (ground) ground.hidden = !show || editing;
     if (!show) return;
     const yjSig = Jeu.stage() + ":" + !Jeu.activeToday();
     if (yjSig !== this.yjSig) { this.yjSig = yjSig; this.yj.sleep = !Jeu.activeToday(); this.yj.body.innerHTML = yassenSvg(Jeu.stage(), this.yj.sleep); }
@@ -4190,6 +4259,18 @@ const Buddies = {
       setTimeout(() => { this.mood([P, O], "happy", false); this.apart(P.x < O.x ? P : O, P.x < O.x ? O : P, () => this.done()); }, 3600);
     }), 700);
   },
+  // Anniversaire ou mois-anniversaire : confettis, cœurs, et Yassen Jr. qui le crie.
+  celebrate(msg) {
+    if (!this.el || this.el.hidden) return;
+    const cols = ["#FF6E89", "#F2C84B", "#6DBE9B", "#5E8BD9", "#9B7BD6"];
+    ["a", "b"].forEach((k, i) => setTimeout(() => {
+      const o = this.b[k]; o.el.classList.remove("bigjump"); void o.el.offsetWidth; o.el.classList.add("bigjump"); o.el.classList.add("happy");
+      for (let j = 0; j < 14; j++) this.prop("fx-confetti", "", o.x - 2, 46, 1500, { "--dx": ((Math.random() - 0.5) * 120).toFixed(0) + "px", "--dy": (-30 - Math.random() * 50).toFixed(0) + "px", background: pickOne(cols) });
+      this.hearts(o.x, 5, 20);
+      setTimeout(() => o.el.classList.remove("bigjump", "happy"), 1600);
+    }, i * 300));
+    setTimeout(() => { this.yjHop(); this.yjSay(msg, 3200); }, 700);
+  },
   // Quête réussie, succès, achat : les deux fêtent ça.
   cheer() {
     if (!this.el || this.el.hidden) return;
@@ -4454,7 +4535,7 @@ const Jeu = {
     if (!(g.days || {})[day]) patch["days/" + day] = true;
     let msg = "";
     if (q && !done[id]) {
-      patch[`quests/${day}/${id}`] = true; patch[`earn/${day}_${id}`] = q.reward;
+      patch[`quests/${day}/${id}`] = true; patch[`earn/${day}_${id}`] = q.reward; this.justDone = id;
       msg = `Quête accomplie : +${q.reward} cœurs`;
       if (qs.every(x => x.id === id || done[x.id])) { patch[`earn/${day}_bonus`] = QUEST_BONUS; msg = `Les 3 quêtes du jour sont faites : +${q.reward + QUEST_BONUS} cœurs !`; }
     }
@@ -4515,11 +4596,14 @@ const Jeu = {
   },
   setTheme(id) { Store.patchMeta("game", { theme: this.theme() === id ? "" : id }); },
   applyTheme() {
-    const t = this.theme();
-    if (this.applied === t) return;
-    this.applied = t;
+    const t = this.theme(), night = !t && skyNow() === "nuit", key = t || (night ? "nuit" : "");
+    if (this.applied === key) return;
+    this.applied = key;
     document.documentElement.setAttribute("data-ys-theme", t);
     const fx = document.querySelector("#cozy .cozy-fx");
+    // Sans thème acheté, la nuit allume quelques étoiles dans le fond.
+    if (fx && night) { fx.className = "cozy-fx stars"; fx.innerHTML = Array.from({ length: 22 }, () => `<span style="left:${(Math.random() * 100).toFixed(1)}%;top:${(Math.random() * 70).toFixed(1)}%;animation-delay:-${(Math.random() * 3).toFixed(1)}s;animation-duration:${(2 + Math.random() * 3).toFixed(1)}s"></span>`).join(""); return; }
+    if (fx) fx.className = "cozy-fx";
     if (fx) fx.innerHTML = t ? Array.from({ length: t === "etoiles" ? 46 : 30 }, () => `<span style="left:${(Math.random() * 100).toFixed(1)}%;top:${t === "hiver" ? -6 : (Math.random() * 100).toFixed(1)}%;animation-delay:-${(Math.random() * 14).toFixed(1)}s;animation-duration:${(9 + Math.random() * 10).toFixed(1)}s"></span>`).join("") : "";
   }
 };
@@ -4543,20 +4627,95 @@ function yassenSvg(stage, asleep) {
     ${stage >= 4 ? `<path d="M37 16L40 3L46 11L50 1L54 11L60 3L63 16Z" fill="#F2C84B" stroke="#C9A035" stroke-width="1"/><circle cx="50" cy="11" r="1.8" fill="#E0457A"/>` : ""}
     </g>${asleep ? `<text class="zz" x="78" y="${(108 - 96 * s).toFixed(0)}" font-family="sans-serif" font-weight="800" font-size="14" fill="#8A7CB8">z</text>` : ""}</svg>`;
 }
+// La dédicace, seule et en grand, en ouverture de l'accueil.
+const dediHero = () => `<p class="dedi-hero"><span aria-hidden="true">♡</span>À la mémoire de Yassen Jr., montrons-lui que ses parents s'aiment vraiment.<span aria-hidden="true">♡</span></p>`;
+// Yassen Jr. au centre d'un anneau qui se remplit avec les jours passés ensemble.
 function yassenCard() {
-  const d = Jeu.days(), st = Jeu.stage(), next = STAGE_DAYS[st + 1], asleep = !Jeu.activeToday(), qs = Jeu.todayQuests(), done = Jeu.doneToday();
-  const pct = next != null ? Math.round(((d - STAGE_DAYS[st]) / (next - STAGE_DAYS[st])) * 100) : 100;
+  const d = Jeu.days(), st = Jeu.stage(), next = STAGE_DAYS[st + 1], asleep = !Jeu.activeToday();
+  const pct = next != null ? (d - STAGE_DAYS[st]) / (next - STAGE_DAYS[st]) : 1, C = 2 * Math.PI * 54;
   return `<section class="yj-card" aria-labelledby="h-yj">
-    <button class="yj-pet" data-a="yj-poke" aria-label="Caresser Yassen Jr.">${yassenSvg(st, asleep)}</button>
+    <button class="yj-ring" data-a="yj-poke" aria-label="Caresser Yassen Jr."><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="prog" cx="60" cy="60" r="54" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><span class="yj-pet">${yassenSvg(st, asleep)}</span></button>
     <div class="yj-info"><p class="sec" id="h-yj">Yassen Jr.</p><p class="yj-stage">${esc(fr(STAGE_NAMES[st]))}</p>
-      <div class="bar"><i style="width:${pct}%"></i></div>
       <p class="small muted">${d} jour${d > 1 ? "s" : ""} ensemble${next != null ? ` · encore ${next - d} pour grandir` : " · stade maximal"}</p>
       ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Yassen Jr. se repose. Il vous attend tranquillement, sans rien vous demander."))}</p>` : ""}</div>
-    <p class="yj-dedi">À la mémoire de Yassen Jr., montrons-lui que ses parents s'aiment vraiment.</p>
-    <div class="quests">${qs.map(q => `<div class="quest${done[q.id] ? " ok" : ""}"><span class="qcheck" aria-hidden="true">${done[q.id] ? "✓" : ""}</span><span class="qtxt">${esc(fr(q.label))}</span><b>+${q.reward}</b></div>`).join("")}
-      <p class="small muted">${qs.every(q => done[q.id]) ? "Les 3 quêtes sont faites. Bravo !" : `Les 3 quêtes du jour rapportent ${QUEST_BONUS} cœurs en bonus.`}</p></div>
-    <div class="row"><button class="btn ghost" data-a="tresors" data-v="boutique">Boutique · ♥︎ ${Jeu.hearts()}</button><button class="link" data-a="tresors" data-v="succes">Nos succès</button></div>
+    <div class="row yj-links"><button class="btn ghost" data-a="tresors" data-v="boutique">Boutique · ♥︎ ${Jeu.hearts()}</button><button class="link" data-a="tresors" data-v="succes">Nos succès</button></div>
   </section>`;
+}
+function questsCard() {
+  const qs = Jeu.todayQuests(), done = Jeu.doneToday(), all = qs.every(q => done[q.id]);
+  return `<section class="panel quests-card" aria-labelledby="h-quests"><div class="group-h"><h2 class="sec" id="h-quests">Les quêtes du jour</h2><span class="small muted">${qs.filter(q => done[q.id]).length} sur 3</span></div>
+    <div class="quests">${qs.map(q => `<div class="quest${done[q.id] ? " ok" : ""}" data-q="${q.id}"><span class="qcheck" aria-hidden="true">${done[q.id] ? "✓" : ""}</span><span class="qtxt">${esc(fr(q.label))}</span><b>+${q.reward}</b></div>`).join("")}</div>
+    <p class="small muted">${all ? "Les 3 quêtes sont faites. Bravo !" : `Les 3 quêtes du jour rapportent ${QUEST_BONUS} cœurs en bonus.`}</p></section>`;
+}
+// « Ensemble depuis » : années, mois et jours depuis votre date, et les anniversaires qui approchent.
+function sinceInfo() {
+  const s = couple().since;
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const start = parseDay(s), now = parseDay(todayStr());
+  if (start > now) return null;
+  const lastDay = (y, m) => new Date(y, m + 1, 0).getDate();
+  // Le mois-anniversaire tombe le même jour du mois (ou le dernier jour pour un 31 en février).
+  const monthDate = n => { const y = start.getFullYear() + Math.floor((start.getMonth() + n) / 12), m = (start.getMonth() + n) % 12; return new Date(y, m, Math.min(start.getDate(), lastDay(y, m))); };
+  let months = (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth();
+  if (monthDate(months) > now) months--;
+  const days = Math.round((now - monthDate(months)) / 86400000), totalDays = Math.round((now - start) / 86400000);
+  const y = Math.floor(months / 12), m = months % 12;
+  const parts = [y ? `${y} an${y > 1 ? "s" : ""}` : "", m ? `${m} mois` : "", days || (!y && !m) ? `${days} jour${days > 1 ? "s" : ""}` : ""].filter(Boolean);
+  const label = parts.length > 1 ? parts.slice(0, -1).join(", ") + " et " + parts[parts.length - 1] : parts[0];
+  const today = months > 0 && days === 0 ? (months % 12 === 0 ? `Joyeux anniversaire : ${y} an${y > 1 ? "s" : ""} ensemble !` : `Joyeux ${months} mois ensemble !`) : "";
+  const nextIn = Math.round((monthDate(months + 1) - now) / 86400000), nextN = months + 1;
+  const next = nextN % 12 === 0 ? `Vos ${nextN / 12} an${nextN > 12 ? "s" : ""} dans ${nextIn} jour${nextIn > 1 ? "s" : ""}` : `Vos ${nextN} mois dans ${nextIn} jour${nextIn > 1 ? "s" : ""}`;
+  return { label, today, next, totalDays };
+}
+function sinceLine() {
+  const si = sinceInfo();
+  if (!si) return "";
+  return `<p class="since">Ensemble depuis <b>${esc(si.label)}</b>${si.today ? "" : ` <span>· ${esc(si.next)}</span>`}</p>`;
+}
+function celebrateCard() {
+  const si = sinceInfo();
+  if (!si || !si.today) return "";
+  return `<section class="celebrate" aria-live="polite"><p class="cel-title">${esc(fr(si.today))}</p>
+    <p class="cel-yj"><span class="cel-flame" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span>${esc(fr(`Yassen Jr. : « ${pickDay(["Je savais que vous y arriveriez.", "Encore plein d'autres comme ça, promis ?", "Vous êtes mes parents préférés. Mes seuls, mais mes préférés.", "Câlin à trois pour fêter ça !"])} »`))}</p>
+    <p class="small muted">${si.totalDays} jours d'amour, et ce n'est que le début.</p></section>`;
+}
+// Le même choix toute la journée, pour qu'un message ne change pas à chaque rendu.
+const pickDay = list => list[Math.floor(parseDay(todayStr()).getTime() / 86400000) % list.length];
+// Petites illustrations des pages vides : vos deux chibis et un objet.
+const EMPTY_PROPS = {
+  album: '<svg viewBox="0 0 40 46"><g transform="rotate(-6 20 23)"><rect x="2" y="2" width="36" height="42" rx="3" fill="#FFFFFF" stroke="#E3D9E2"/><rect x="6" y="6" width="28" height="26" rx="2" fill="#F4CDD6"/><path d="M20 24c-3-4-9-1-6 3l6 5 6-5c3-4-3-7-6-3z" fill="#FF6E89"/></g></svg>',
+  mots: '<svg viewBox="0 0 44 40"><path d="M6 4h32a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H18l-9 7v-7H6a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z" fill="#FFFFFF" stroke="#E3D9E2"/><path d="M22 23c-3-4-9-1-6 3l6 5 6-5c3-4-3-7-6-3z" transform="translate(0 -8)" fill="#FF6E89"/></svg>',
+  favoris: '<svg viewBox="0 0 40 40"><path d="M20 3l5 10.5 11.5 1.6-8.3 8 2 11.4L20 29l-10.2 5.5 2-11.4-8.3-8L15 13.5z" fill="#F2C84B" stroke="#E0A93A" stroke-linejoin="round"/></svg>',
+  realise: '<svg viewBox="0 0 40 44"><path d="M8 4v38" stroke="#8A7CB8" stroke-width="2.5" stroke-linecap="round"/><path d="M9 6h24l-5 7 5 7H9z" fill="#6DBE9B"/><path d="M15 13l3 3 6-6" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  aventures: '<svg viewBox="0 0 46 38"><path d="M2 6l13-4 16 4 13-4v30l-13 4-16-4-13 4z" fill="#F7EBD0" stroke="#E0C99A"/><path d="M15 2v30M31 6v30" stroke="#E0C99A"/><path d="M7 26q6-10 14-6t13-10" stroke="#C9576B" stroke-width="1.6" fill="none" stroke-dasharray="2 3"/><path d="M33 7l4 4M37 7l-4 4" stroke="#C9576B" stroke-width="2" stroke-linecap="round"/></svg>',
+  lettres: '<svg viewBox="0 0 46 34"><rect x="2" y="2" width="42" height="30" rx="3" fill="#FFFFFF" stroke="#E3D9E2"/><path d="M3 4l20 15 20-15" stroke="#E3D9E2" fill="none"/><circle cx="23" cy="19" r="6" fill="#C9576B"/><path d="M23 22c-1.5-2-4.5-.5-3 1.5l3 2.5 3-2.5c1.5-2-1.5-3.5-3-1.5z" transform="translate(0 -4)" fill="#FFFFFF"/></svg>'
+};
+const emptyArt = kind => `<div class="empty-art" aria-hidden="true"><span class="ea-fig">${avatarSvg("a")}</span><span class="ea-prop">${EMPTY_PROPS[kind]}</span><span class="ea-fig ea-b">${avatarSvg("b")}</span></div>`;
+// Le ciel du fond suit l'heure : aube, jour, soir, nuit.
+const skyNow = () => { const h = new Date().getHours(); return h >= 5 && h < 9 ? "aube" : h < 17 && h >= 9 ? "jour" : h >= 17 && h < 21 ? "soir" : "nuit"; };
+// Une quête vient d'être cochée : petite explosion de cœurs sur sa ligne.
+function questBurst() {
+  const id = Jeu.justDone; if (!id) return;
+  Jeu.justDone = null;
+  document.querySelectorAll(`.quest[data-q="${id}"]`).forEach(el => {
+    el.classList.add("pop");
+    for (let i = 0; i < 9; i++) {
+      const s = document.createElement("span"); s.className = "q-burst"; s.textContent = "♥";
+      const a = (i / 9) * Math.PI * 2;
+      s.style.setProperty("--dx", (Math.cos(a) * 34).toFixed(0) + "px"); s.style.setProperty("--dy", (Math.sin(a) * 26 - 8).toFixed(0) + "px");
+      el.querySelector(".qcheck").appendChild(s); setTimeout(() => s.remove(), 900);
+    }
+  });
+}
+// Écran de lancement : Yassen Jr. et Y&S, une seconde, à la première ouverture de la session.
+function splash() {
+  try { if (sessionStorage.getItem("ys-splash")) return; sessionStorage.setItem("ys-splash", "1"); } catch (e) { return; }
+  const icon = document.querySelector('link[rel="apple-touch-icon"]'), d = document.createElement("div");
+  d.id = "splash"; d.setAttribute("aria-hidden", "true");
+  d.innerHTML = `<div class="sp-in"><img src="${icon ? icon.href : ""}" alt=""><p class="sp-brand">Y<span>&amp;</span>S</p><p class="sp-dedi">montrons-lui que ses parents s'aiment vraiment</p></div>`;
+  document.body.appendChild(d);
+  setTimeout(() => d.classList.add("out"), 1150);
+  setTimeout(() => d.remove(), 1700);
 }
 
 /* Chapeaux et compagnons dessinés pour les chibis. */
@@ -4670,6 +4829,7 @@ function render(force) {
   pendingRender = false;
   rebuildCustom();
   Jeu.watch();
+  document.documentElement.setAttribute("data-sky", skyNow());
   Jeu.applyTheme();
   syncMusic();
   Buddies.sync();
@@ -4683,6 +4843,8 @@ function render(force) {
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
+  questBurst();
+  if (!S.celebrated && !S.layer && sinceInfo() && sinceInfo().today) { S.celebrated = true; setTimeout(() => Buddies.celebrate(sinceInfo().today), 1400); }
   if (!S.layer) { layer.innerHTML = ""; return; }
   const key = S.layer.type + (S.game ? S.game.i + S.game.phase : "")
     + (S.arc ? S.arc.game + S.arc.i + S.arc.phase + (S.arc.round || "") : "")
@@ -4701,6 +4863,7 @@ function render(force) {
   else if (S.layer.type === "onboard") html = onboardView();
   layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
+  questBurst();
 }
 
 /* ───────────────────────── Actions ───────────────────────── */
@@ -5018,8 +5181,10 @@ const ACT = {
     if (!a || !b) { toast("Indiquez vos deux prénoms."); return; }
     // Seuls les prénoms changés sont envoyés : si l'autre remplit en même temps, rien ne s'écrase.
     const patch = {}; if (a !== c.a) patch.a = a; if (b !== c.b) patch.b = b;
+    const since = draft("ob-since", c.since || "");
+    if (since !== (c.since || "") && /^\d{4}-\d{2}-\d{2}$/.test(since) && since <= todayStr()) patch.since = since;
     if (Object.keys(patch).length) Store.patchMeta("couple", patch);
-    clearDrafts("ob-a", "ob-b");
+    clearDrafts("ob-a", "ob-b", "ob-since");
   },
   "ob-me"(d) { lsSet("entre-nous:me", d.v); },
   "ob-avatar"() { const me = whoAmI() || "a"; S.avWho = me; S.fromOb = true; S.layer = { type: "sheet", name: "avatars" }; },
@@ -5028,8 +5193,9 @@ const ACT = {
     const c = couple();
     const a = draft("na", c.a).trim(), b = draft("nb", c.b).trim();
     if (!a || !b) { toast("Indiquez vos deux prénoms."); return; }
-    Store.setMeta("couple", { a, b, style: draft("nstyle", c.style || "partage") });
-    clearDrafts("na", "nb", "nstyle"); S.layer = null; toast("C'est noté, " + a + " et " + b);
+    const since = draft("nsince", c.since || "");
+    Store.setMeta("couple", { a, b, style: draft("nstyle", c.style || "partage"), ...(/^\d{4}-\d{2}-\d{2}$/.test(since) && since <= todayStr() ? { since } : {}) });
+    clearDrafts("na", "nb", "nstyle", "nsince"); S.layer = null; toast("C'est noté, " + a + " et " + b);
   },
   "save-mot"() {
     const t = draft("mot-t").trim(); if (!t) { toast("Le mot est encore vide."); return; }
@@ -5148,8 +5314,10 @@ function start(data) {
   if (S.game && S.game.phase === "counting") S.game.phase = "talk";
   if (S.arc && S.arc.phase === "count") S.arc.phase = S.arc.after;
   S.pzRemote = false; S.pzUnsub = null;
+  splash();
   render(true);
   Store.connect();
+  setInterval(() => { document.documentElement.setAttribute("data-sky", skyNow()); Jeu.applyTheme(); }, 300000);
 }
 const hot = window.claude && window.claude.hot;
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
