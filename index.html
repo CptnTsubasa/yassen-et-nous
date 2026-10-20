@@ -383,6 +383,11 @@ body { background: var(--bg); }
 .sw-hiver { background: radial-gradient(circle at 30% 30%, #FFFFFF 0 3px, transparent 4px), radial-gradient(circle at 70% 60%, #FFFFFF 0 2px, transparent 3px), linear-gradient(160deg, #CFE3F5, #9FB4F0); }
 .sw-plage { background: linear-gradient(180deg, #F7E3B5 0 55%, #7FD0D6 55% 100%); }
 .sw-etoiles { background: radial-gradient(circle at 25% 30%, #F2D27A 0 2px, transparent 3px), radial-gradient(circle at 70% 45%, #FFFFFF 0 1.5px, transparent 2.5px), radial-gradient(circle at 45% 75%, #F2D27A 0 1.5px, transparent 2.5px), linear-gradient(160deg, #3D3470, #1F1B3D); }
+.chromas { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.chroma { position: relative; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--c1) 50%, var(--c2) 50%); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.chroma[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.chroma.locked::after { content: "♥"; position: absolute; right: -4px; bottom: -4px; width: 13px; height: 13px; border-radius: 50%; background: var(--surface); color: var(--i1); font-size: 8px; line-height: 13px; text-align: center; box-shadow: 0 0 0 1px var(--line); }
+.chroma-name { font-size: .8rem; color: var(--muted); margin-top: -4px; }
 .emote-sw { font-size: 1.5rem; color: var(--i4); letter-spacing: .1em; }
 .ach { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .badge-card { display: grid; gap: 4px; justify-items: center; align-content: start; text-align: center; padding: 14px 10px; border-radius: 18px; background: var(--surface); border: 1px solid var(--hair); }
@@ -2636,7 +2641,7 @@ function backHair(a, hc) {
 // ov : tenue, chapeau ou compagnon essayés (aperçu de la boutique), par-dessus ce qui est porté.
 function avatarSvg(k, ov) {
   const a = avOf(k), eq = { ...Jeu.equipOf(k), ...(ov || {}) }, out = OUTFITS[eq.outfit];
-  const skin = AV.skin[a.skin], hc = AV.hairColor[a.hairColor], top = out ? out.c : AV.top[a.top];
+  const skin = AV.skin[a.skin], hc = AV.hairColor[a.hairColor], top = out ? tintPal(eq.outfit, eq.tint)[0] : AV.top[a.top];
   const cap = `<path d="M24 46C24 22 38 16 50 16C64 16 77 24 76 46C70 36 60 31 50 31C40 31 30 36 24 46Z" fill="${hc}"/>`;
   const sides = `<path d="M24 46C22 60 23 70 26 76L30 76C28 64 28 54 30 44ZM76 46C78 60 77 70 74 76L70 76C72 64 72 54 70 44Z" fill="${hc}"/>`;
   const curls = [[28, 36], [36, 26], [47, 21], [58, 22], [68, 28], [74, 38], [24, 46], [77, 46]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${hc}"/>`).join("");
@@ -2661,7 +2666,7 @@ function avatarSvg(k, ov) {
     <ellipse cx="42" cy="142" rx="8" ry="4" fill="#2A2433"/><ellipse cx="58" cy="142" rx="8" ry="4" fill="#2A2433"/>
     <rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/>
     <circle cx="22" cy="116" r="5" fill="${skin}"/><circle cx="78" cy="116" r="5" fill="${skin}"/>
-    ${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d : ""}<rect x="45" y="68" width="10" height="12" fill="${skin}"/>
+    ${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}<rect x="45" y="68" width="10" height="12" fill="${skin}"/>
     <circle cx="24" cy="50" r="5" fill="${skin}"/><circle cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
     <g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
@@ -4291,6 +4296,14 @@ const SHOP = [
   { id: "kimono", slot: "outfit", name: "Kimono", price: 110 },
   { id: "robe", slot: "outfit", name: "Robe de bal", price: 120 },
   { id: "armure", slot: "outfit", name: "Armure de chevalier", price: 120 },
+  { id: "salopette", slot: "outfit", name: "Salopette", price: 80 },
+  { id: "mariniere", slot: "outfit", name: "Marinière", price: 80 },
+  { id: "sport", slot: "outfit", name: "Tenue de sport", price: 80 },
+  { id: "tablier", slot: "outfit", name: "Tablier de pâtissier", price: 90 },
+  { id: "hawai", slot: "outfit", name: "Chemise hawaïenne", price: 90 },
+  { id: "doudoune", slot: "outfit", name: "Doudoune", price: 100 },
+  { id: "costume", slot: "outfit", name: "Costume chic", price: 120 },
+  { id: "cape", slot: "outfit", name: "Cape de magicien", price: 130 },
   { id: "bonnet", slot: "hat", name: "Bonnet à pompon", price: 50 },
   { id: "oreilles", slot: "hat", name: "Oreilles de chat", price: 60 },
   { id: "aureole", slot: "hat", name: "Auréole", price: 70 },
@@ -4326,7 +4339,8 @@ const ACH = [
   { id: "puzzle25", icon: "puzzle", title: "Yassen Jr. en 25 pièces", desc: "Finir le puzzle dans sa version la plus difficile", reward: 40, test: s => !!s.flags.puzzle25 },
   { id: "cartes3", icon: "sparkles", title: "Créateurs", desc: "Créer 3 cartes à vous", reward: 20, test: s => s.cartes >= 3 },
   { id: "parties20", icon: "gamepad", title: "Accros au jeu", desc: "Finir 20 parties", reward: 40, test: s => s.parties >= 20 },
-  { id: "shop5", icon: "sparkles", title: "Fashion week", desc: "Acheter 5 articles à la boutique", reward: 30, test: s => s.owned >= 5 }
+  { id: "shop5", icon: "sparkles", title: "Fashion week", desc: "Acheter 5 articles à la boutique", reward: 30, test: s => s.owned >= 5 },
+  { id: "chroma5", icon: "sparkles", title: "Arc-en-ciel", desc: "Débloquer 5 chromas de tenues", reward: 30, test: s => s.chromas >= 5 }
 ];
 const YJ_LINES = ["Yassen Jr. se tortille de joie.", "Yassen Jr. fait une pirouette pour vous.", "Yassen Jr. vous trouve trop mignons.", "Yassen Jr. réclame un câlin à trois.", "Yassen Jr. brille un peu plus fort."];
 const YJ_SLEEPY = ["Yassen Jr. ronronne dans son sommeil.", "Chut… Yassen Jr. rêve de vous deux.", "Yassen Jr. ouvre un œil, sourit, et se rendort."];
@@ -4357,13 +4371,20 @@ const Jeu = {
   hearts() {
     const g = this.g();
     const earned = Object.values(g.earn || {}).reduce((a, b) => a + (+b || 0), 0);
-    const spent = Object.keys(g.owned || {}).reduce((a, id) => a + ((SHOP_BY_ID[id] || {}).price || 0), 0);
+    const spent = Object.keys(g.owned || {}).reduce((a, id) => a + ((SHOP_BY_ID[id] || {}).price || 0), 0) + this.chromaCount() * CHROMA_PRICE;
     return Math.max(0, earned - spent);
   },
+  // Chromas débloqués en plus de ceux offerts avec chaque tenue (chroma/<tenue>/<coloris>).
+  chromaCount() {
+    const c = this.g().chroma || {};
+    return Object.keys(c).reduce((n, o) => n + (OUTFITS[o] ? Object.keys(c[o] || {}).filter(id => c[o][id] && OUTFITS[o].chromas.slice(1).some(x => x[0] === id)).length : 0), 0);
+  },
+  ownsTint(o, c) { return this.owns(o) && !!OUTFITS[o] && (OUTFITS[o].chromas[0][0] === c || !!(((this.g().chroma || {})[o] || {})[c])); },
   equipOf(k) {
     const e = ((this.g().equip || {})[k]) || {};
     const ok = slot => (e[slot] && this.owns(e[slot]) && (SHOP_BY_ID[e[slot]] || {}).slot === slot ? e[slot] : "");
-    return { outfit: ok("outfit"), hat: ok("hat"), pet: ok("pet") };
+    const outfit = ok("outfit"), t = outfit && (e.tint || {})[outfit];
+    return { outfit, hat: ok("hat"), pet: ok("pet"), tint: outfit ? (t && this.ownsTint(outfit, t) ? t : OUTFITS[outfit].chromas[0][0]) : "" };
   },
   theme() { const t = this.g().theme; return t && this.owns(t) && (SHOP_BY_ID[t] || {}).slot === "theme" ? t : ""; },
   emotes() { return SHOP.filter(i => i.slot === "emote" && this.owns(i.id)).map(i => i.id); },
@@ -4380,6 +4401,7 @@ const Jeu = {
       cartes: Store.cols.cartes.length,
       parties: p.parties || 0,
       owned: Object.keys(g.owned || {}).length,
+      chromas: this.chromaCount(),
       flags: g.flags || {}
     };
   },
@@ -4434,11 +4456,20 @@ const Jeu = {
     Store.patchMeta("game", patch);
     gainToast(`${fr(it.name)} : c'est à vous deux !`); Buddies.cheer();
   },
-  equip(k, id) {
+  // Équipe un article (et son chroma pour une tenue) ; le même article déjà porté, dans le même chroma, est retiré.
+  equip(k, id, tint) {
     const it = SHOP_BY_ID[id]; if (!it || !this.owns(id)) return;
-    const cur = this.equipOf(k)[it.slot];
-    Store.patchMeta("game", { [`equip/${k}/${it.slot}`]: cur === id ? null : id });
+    const e = this.equipOf(k), same = e[it.slot] === id && (!tint || e.tint === tint);
+    const patch = { [`equip/${k}/${it.slot}`]: same ? null : id };
+    if (!same && tint && it.slot === "outfit" && this.ownsTint(id, tint)) patch[`equip/${k}/tint/${id}`] = tint;
+    Store.patchMeta("game", patch);
     setTimeout(() => Buddies.react(k), 0);
+  },
+  buyTint(o, c) {
+    if (!this.owns(o) || this.ownsTint(o, c) || !OUTFITS[o] || !OUTFITS[o].chromas.some(x => x[0] === c)) return;
+    if (this.hearts() < CHROMA_PRICE) { toast(`Il vous manque ${CHROMA_PRICE - this.hearts()} cœurs.`); return; }
+    Store.patchMeta("game", { [`chroma/${o}/${c}`]: true });
+    gainToast(`Nouveau chroma : ${fr(OUTFITS[o].chromas.find(x => x[0] === c)[1])} !`); Buddies.cheer();
   },
   setTheme(id) { Store.patchMeta("game", { theme: this.theme() === id ? "" : id }); },
   applyTheme() {
@@ -4486,15 +4517,42 @@ function yassenCard() {
   </section>`;
 }
 
-/* Tenues, chapeaux et compagnons dessinés pour les chibis. */
+/* Chapeaux et compagnons dessinés pour les chibis. */
+/* Tenues des chibis. Chaque tenue a plusieurs chromas (coloris) : le premier est offert avec la tenue,
+   les autres se débloquent à part. p = [couleur principale, couleur d'accent, couleur claire]. */
+const CHROMA_PRICE = 30;
 const OUTFITS = {
-  pull: { c: "#C9576B", d: `<path d="M30 98l5 4 5-4 5 4 5-4 5 4 5-4 5 4 5-4" stroke="#F4EFE9" stroke-width="2.2" fill="none"/><path d="M30 106h40" stroke="#F4EFE9" stroke-width="1.6"/>` },
-  hoodie: { c: "#6DBE9B", d: `<path d="M38 80q12 8 24 0" stroke="#5AA886" stroke-width="5" fill="none"/><path d="M46 84v10M54 84v10" stroke="#F4EFE9" stroke-width="1.4"/><path d="M38 108h24v8h-24z" fill="#5AA886"/>` },
-  pyjama: { c: "#9FB4F0", d: `<g fill="#FFF3C9"><circle cx="38" cy="96" r="1.6"/><circle cx="58" cy="92" r="1.6"/><circle cx="46" cy="110" r="1.6"/><circle cx="64" cy="108" r="1.6"/><circle cx="52" cy="100" r="1.2"/></g><path d="M44 80l6 7 6-7" stroke="#FFFFFF" stroke-width="2" fill="none"/>` },
-  kimono: { c: "#3A5BA0", d: `<path d="M40 80L54 104M60 80L46 104" stroke="#F4EFE9" stroke-width="3"/><rect x="29" y="104" width="42" height="7" fill="#E8C35A"/>` },
-  robe: { c: "#E07A8E", robe: true, d: `<path d="M44 84l6 5 6-5-6 4z" fill="#C2335F"/><path d="M28 112q22 6 44 0" stroke="#F7A8C4" stroke-width="2" fill="none"/>` },
-  armure: { c: "#A9B4C2", d: `<path d="M30 94h40M30 106h41" stroke="#8691A0" stroke-width="1.6"/><path d="M50 90c-3-4-9-2-6 3l6 6 6-6c3-5-3-7-6-3z" fill="#C9576B"/>` }
+  pull: { chromas: [["framboise", "Framboise", ["#C9576B", "#F4EFE9"]], ["sapin", "Sapin", ["#3F7D5C", "#F4EFE9"]], ["nuit", "Nuit", ["#2F3E6B", "#F2C84B"]], ["moutarde", "Moutarde", ["#D9A23A", "#5B3A24"]]],
+    d: p => `<path d="M30 98l5 4 5-4 5 4 5-4 5 4 5-4 5 4 5-4" stroke="${p[1]}" stroke-width="2.2" fill="none"/><path d="M30 106h40" stroke="${p[1]}" stroke-width="1.6"/>` },
+  hoodie: { chromas: [["menthe", "Menthe", ["#6DBE9B", "#5AA886"]], ["lilas", "Lilas", ["#B79BE0", "#9C80CC"]], ["chine", "Gris chiné", ["#9AA0A8", "#7F858D"]], ["peche", "Pêche", ["#F2A98A", "#E08E6E"]], ["noir", "Noir", ["#3A3346", "#2A2433"]]],
+    d: p => `<path d="M38 80q12 8 24 0" stroke="${p[1]}" stroke-width="5" fill="none"/><path d="M46 84v10M54 84v10" stroke="#F4EFE9" stroke-width="1.4"/><path d="M38 108h24v8h-24z" fill="${p[1]}"/>` },
+  pyjama: { chromas: [["ciel", "Bleu étoilé", ["#9FB4F0", "#FFF3C9"]], ["bonbon", "Rose bonbon", ["#F4B6C8", "#FFFFFF"]], ["eau", "Vert d'eau", ["#A8DCC8", "#FFF3C9"]], ["minuit", "Minuit", ["#3D3470", "#F2D27A"]]],
+    d: p => `<g fill="${p[1]}"><circle cx="38" cy="96" r="1.6"/><circle cx="58" cy="92" r="1.6"/><circle cx="46" cy="110" r="1.6"/><circle cx="64" cy="108" r="1.6"/><circle cx="52" cy="100" r="1.2"/></g><path d="M44 80l6 7 6-7" stroke="#FFFFFF" stroke-width="2" fill="none"/>` },
+  kimono: { chromas: [["indigo", "Indigo", ["#3A5BA0", "#E8C35A"]], ["sakura", "Sakura", ["#F2B8C6", "#C9576B"]], ["jade", "Jade", ["#3F8F7A", "#F2C84B"]], ["pourpre", "Pourpre", ["#7A3A6B", "#E8C35A"]]],
+    d: p => `<path d="M40 80L54 104M60 80L46 104" stroke="#F4EFE9" stroke-width="3"/><rect x="29" y="104" width="42" height="7" fill="${p[1]}"/>` },
+  robe: { robe: true, chromas: [["rose", "Rose", ["#E07A8E", "#C2335F", "#F7A8C4"]], ["nuit", "Bleu nuit", ["#2F3E6B", "#F2C84B", "#9FB4F0"]], ["or", "Or", ["#E8C35A", "#B48A2A", "#FFF3C9"]], ["lavande", "Lavande", ["#B79BE0", "#7A5BB8", "#E2D6F7"]], ["rubis", "Rubis", ["#C23B4E", "#8A1F33", "#F28A9A"]]],
+    d: p => `<path d="M44 84l6 5 6-5-6 4z" fill="${p[1]}"/><path d="M28 112q22 6 44 0" stroke="${p[2]}" stroke-width="2" fill="none"/>` },
+  armure: { chromas: [["acier", "Acier", ["#A9B4C2", "#8691A0", "#C9576B"]], ["or", "Or", ["#E2C46A", "#B8973C", "#C23B4E"]], ["obsidienne", "Obsidienne", ["#4A4458", "#2F2A3A", "#9B7BD6"]], ["rose", "Quartz rose", ["#E8B4C4", "#C98EA2", "#FFFFFF"]]],
+    d: p => `<path d="M30 94h40M30 106h41" stroke="${p[1]}" stroke-width="1.6"/><path d="M50 90c-3-4-9-2-6 3l6 6 6-6c3-5-3-7-6-3z" fill="${p[2]}"/>` },
+  salopette: { chromas: [["jean", "Jean", ["#F4EFE9", "#5E7FB8", "#F2C84B"]], ["rose", "Rose", ["#FFFFFF", "#E8A0B4", "#FFFFFF"]], ["moutarde", "Moutarde", ["#F4EFE9", "#D9A23A", "#5B3A24"]], ["foret", "Forêt", ["#F4EFE9", "#5E9C7A", "#F2C84B"]]],
+    d: p => `<path d="M37 94h26v29q-13 3-26 0z" fill="${p[1]}"/><path d="M33 84l7 11M67 84l-7 11" stroke="${p[1]}" stroke-width="3.5"/><circle cx="40.5" cy="96" r="1.7" fill="${p[2]}"/><circle cx="59.5" cy="96" r="1.7" fill="${p[2]}"/><rect x="45" y="101" width="10" height="7" rx="1.5" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="1.2"/>` },
+  costume: { chromas: [["noir", "Noir et rouge", ["#2F2A3A", "#C23B4E", "#FFFFFF"]], ["marine", "Marine", ["#2F3E6B", "#E8C35A", "#FFFFFF"]], ["bordeaux", "Bordeaux", ["#6B2234", "#F2C84B", "#F4EFE9"]], ["creme", "Crème", ["#E8DCC4", "#5E8BD9", "#FFFFFF"]]],
+    d: p => `<path d="M42 80L50 99L58 80Z" fill="${p[2]}"/><path d="M48.6 83h2.8l1 4-2.4 12-2.4-12z" fill="${p[1]}"/><path d="M41 80l8 19-7-3zM59 80l-8 19 7-3z" fill="#000" opacity=".22"/><circle cx="50" cy="107" r="1.3" fill="${p[2]}" opacity=".75"/><circle cx="50" cy="114" r="1.3" fill="${p[2]}" opacity=".75"/>` },
+  sport: { chromas: [["rouge", "Rouge", ["#C23B4E", "#FFFFFF"]], ["bleu", "Bleu", ["#3A6FC4", "#FFFFFF"]], ["noir", "Noir et or", ["#2A2433", "#F2C84B"]], ["pomme", "Vert pomme", ["#7CC46A", "#FFFFFF"]]],
+    d: p => `<path d="M50 81v41" stroke="${p[1]}" stroke-width="1.4"/><path d="M33 86l-2 34M67 86l2 34" stroke="${p[1]}" stroke-width="2.4"/><path d="M43 80q7 5 14 0" stroke="${p[1]}" stroke-width="2.2" fill="none"/>` },
+  hawai: { chromas: [["corail", "Corail", ["#F28A6B", "#FFF3C9", "#3F8F7A"]], ["lagon", "Lagon", ["#3FB8B0", "#F7A8C4", "#2F6B4F"]], ["soleil", "Soleil", ["#F2C84B", "#E0566B", "#3F8F7A"]], ["nuit", "Nuit tropicale", ["#2F3E6B", "#F2B544", "#6DBE9B"]]],
+    d: p => `<g fill="${p[2]}"><ellipse cx="41" cy="100" rx="4" ry="1.8" transform="rotate(-30 41 100)"/><ellipse cx="62" cy="112" rx="4" ry="1.8" transform="rotate(25 62 112)"/><ellipse cx="55" cy="92" rx="3.5" ry="1.6" transform="rotate(40 55 92)"/></g><g fill="${p[1]}"><circle cx="37" cy="94" r="3.2"/><circle cx="60" cy="104" r="3.2"/><circle cx="44" cy="114" r="3"/><circle cx="64" cy="90" r="2.6"/></g><g fill="#F2C84B"><circle cx="37" cy="94" r="1.1"/><circle cx="60" cy="104" r="1.1"/><circle cx="44" cy="114" r="1"/><circle cx="64" cy="90" r=".9"/></g><path d="M44 80l6 6 6-6" stroke="${p[1]}" stroke-width="2" fill="none"/>` },
+  mariniere: { chromas: [["marine", "Marine", ["#F4EFE9", "#2F3E6B"]], ["rouge", "Rouge", ["#F4EFE9", "#C23B4E"]], ["rose", "Rose", ["#FFFFFF", "#E8A0B4"]], ["vert", "Vert", ["#F4EFE9", "#3F7D5C"]]],
+    d: p => `<path d="M31 89h38M30 96h40M29 103h42M29 110h42M28 117h44" stroke="${p[1]}" stroke-width="2.6"/>` },
+  cape: { chromas: [["mystere", "Mystère", ["#3A3346", "#5B3F8C", "#F2C84B"]], ["rubis", "Rubis", ["#3A3346", "#A3263B", "#F2C84B"]], ["saphir", "Saphir", ["#F4EFE9", "#2F5BA8", "#F2D27A"]], ["emeraude", "Émeraude", ["#2F2A3A", "#2F7A5C", "#E8C35A"]]],
+    d: p => `<path d="M30 83L17 130Q24 133 31 129L33 90ZM70 83L83 130Q76 133 69 129L67 90Z" fill="${p[1]}"/><path d="M30 83Q50 76 70 83" stroke="${p[1]}" stroke-width="4" fill="none"/><path d="M50 82l1.6 3.4 3.6.4-2.7 2.4.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.4 3.6-.4z" fill="${p[2]}"/>` },
+  doudoune: { chromas: [["orange", "Orange", ["#F2994A", "#D97D2E"]], ["noir", "Noir", ["#3A3346", "#2A2433"]], ["poudre", "Rose poudré", ["#F2C0CC", "#E0A2B2"]], ["glacier", "Bleu glacier", ["#A8D0F0", "#86B4DC"]]],
+    d: p => `<path d="M30 92q20 4 40 0M29 101q21 4 42 0M29 110q21 4 42 0M28 119q22 4 44 0" stroke="${p[1]}" stroke-width="1.8" fill="none"/><path d="M40 79q10 6 20 0" stroke="${p[1]}" stroke-width="5" fill="none"/><path d="M50 82v40" stroke="${p[1]}" stroke-width="1.2"/>` },
+  tablier: { chromas: [["cerise", "Cerise", ["#F4EFE9", "#C9576B", "#FFFFFF"]], ["vichy", "Bleu vichy", ["#FFFFFF", "#5E8BD9", "#F7A8C4"]], ["sauge", "Sauge", ["#F4EFE9", "#8DB596", "#F4EFE9"]], ["moka", "Moka", ["#F4EFE9", "#8A5A3C", "#F2C84B"]]],
+    d: p => `<path d="M38 89h24v33q-12 3-24 0z" fill="${p[1]}"/><path d="M38 89l-5-6M62 89l5-6" stroke="${p[1]}" stroke-width="2"/><path d="M50 104c-2-3-6-1-4 2l4 4 4-4c2-3-2-5-4-2z" fill="${p[2]}"/>` }
 };
+// La palette d'une tenue pour un chroma donné (le premier si ce chroma n'existe pas).
+const tintPal = (o, c) => { const ch = OUTFITS[o].chromas; return (ch.find(x => x[0] === c) || ch[0])[2]; };
 const HATS = {
   bonnet: () => `<path d="M23 38C23 6 77 6 77 38Z" fill="#C9576B"/><path d="M36 15v20M50 12v23M64 15v20" stroke="#B4475B" stroke-width="2"/><rect x="21" y="32" width="58" height="10" rx="5" fill="#F4EFE9"/><circle cx="50" cy="9" r="6.5" fill="#F4EFE9"/>`,
   oreilles: hc => `<path d="M27 30L29 10L42 21Z M73 30L71 10L58 21Z" fill="${hc}"/><path d="M30 26L31 15L38 21Z M70 26L69 15L62 21Z" fill="#F7A8C4"/>`,
@@ -4508,6 +4566,19 @@ const PETS = {
   petdragon: `<svg viewBox="0 0 40 32"><ellipse cx="20" cy="30" rx="12" ry="2.4" fill="#000" opacity=".15"/><path d="M31 22q9 0 8-8l-3 3" stroke="#5FB57A" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M20 15q-2-12 10-10q-5 4-3 10z" fill="#4FA06A"/><ellipse cx="21" cy="22" rx="11" ry="7.5" fill="#6CC488"/><circle cx="11" cy="14" r="7" fill="#6CC488"/><path d="M7 8l-2-5 5 3zM13 7l2-5 1 6z" fill="#F2D27A"/><circle cx="8.8" cy="14" r="1.3" fill="#2B1E2F"/><circle cx="13.4" cy="14" r="1.3" fill="#2B1E2F"/><ellipse cx="8" cy="17.5" rx="1.8" ry="1" fill="#F07A8E" opacity=".6"/><rect x="13" y="26" width="3" height="5" rx="1.5" fill="#4FA06A"/><rect x="25" y="26" width="3" height="5" rx="1.5" fill="#4FA06A"/></svg>`
 };
 
+// Une tenue de la boutique, avec ses chromas : toucher un chroma le montre sur le personnage.
+function outfitCard(it, who, owned, eq, h) {
+  const ch = OUTFITS[it.id].chromas, worn = Jeu.equipOf(who);
+  const tint = (S.prevTint || {})[it.id] || (eq ? worn.tint : ch[0][0]), name = (ch.find(x => x[0] === tint) || ch[0])[1];
+  const sw = ch.map(([cid, cn, p], i) => { const mine = Jeu.ownsTint(it.id, cid);
+    return `<button class="chroma${mine || !owned ? "" : " locked"}" style="--c1:${p[0]};--c2:${p[1]}" aria-pressed="${tint === cid}" aria-label="${esc(fr(cn))}${owned && !mine ? `, ${CHROMA_PRICE} cœurs` : ""}" data-a="shop-tint" data-o="${it.id}" data-v="${cid}"></button>`; }).join("");
+  const btn = !owned ? (h >= it.price ? `<button class="btn" data-a="shop-buy" data-v="${it.id}">Acheter · ♥︎ ${it.price}</button>` : `<button class="btn ghost" disabled>♥︎ ${it.price} · encore ${it.price - h}</button>`)
+    : !Jeu.ownsTint(it.id, tint) ? (h >= CHROMA_PRICE ? `<button class="btn" data-a="shop-tint-buy" data-o="${it.id}" data-v="${tint}">Débloquer · ♥︎ ${CHROMA_PRICE}</button>` : `<button class="btn ghost" disabled>♥︎ ${CHROMA_PRICE} · encore ${CHROMA_PRICE - h}</button>`)
+    : eq && worn.tint === tint ? `<button class="btn ghost" data-a="shop-equip" data-v="${it.id}" data-t="${tint}">Retirer</button>`
+    : `<button class="btn c" style="${cvar(1)}" data-a="shop-equip" data-v="${it.id}" data-t="${tint}">${eq ? "Porter ce chroma" : "Équiper"}</button>`;
+  return `<article class="shop-item"><div class="shop-prev">${avatarSvg(who, { outfit: it.id, tint })}</div><b>${esc(fr(it.name))}</b>
+    <div class="chromas" role="group" aria-label="Chromas">${sw}</div><span class="chroma-name">${esc(fr(name))}</span>${btn}</article>`;
+}
 /* Écran des trésors : quêtes, boutique, succès. */
 function tresorsView() {
   const seg = S.trSeg || "quetes", h = Jeu.hearts();
@@ -4526,7 +4597,8 @@ function tresorsView() {
       ${wearable ? `<div class="seg" role="group" aria-label="Pour qui">${["a", "b"].map(k => `<button aria-pressed="${who === k}" data-a="shop-who" data-v="${k}">Pour ${esc(nm(k))}</button>`).join("")}</div>` : ""}
       <div class="shop">${items.map(it => {
         const owned = Jeu.owns(it.id), eq = wearable && Jeu.equipOf(who)[it.slot] === it.id;
-        const prev = it.slot === "pet" ? PETS[it.id] : it.slot === "outfit" || it.slot === "hat" ? avatarSvg(who, { [it.slot]: it.id })
+        if (it.slot === "outfit") return outfitCard(it, who, owned, eq, h);
+        const prev = it.slot === "pet" ? PETS[it.id] : it.slot === "hat" ? avatarSvg(who, { hat: it.id })
           : it.slot === "theme" ? `<span class="theme-sw sw-${it.id}"></span>` : `<span class="emote-sw">${it.id === "disco" ? "✦ ♪ ✦" : "☁ ✧ ☁"}</span>`;
         const btn = !owned ? (h >= it.price ? `<button class="btn" data-a="shop-buy" data-v="${it.id}">Acheter · ♥︎ ${it.price}</button>` : `<button class="btn ghost" disabled>♥︎ ${it.price} · encore ${it.price - h}</button>`)
           : wearable ? `<button class="btn ${eq ? "ghost" : "c"}" style="${cvar(1)}" data-a="shop-equip" data-v="${it.id}">${eq ? "Retirer" : "Équiper"}</button>`
@@ -4534,7 +4606,7 @@ function tresorsView() {
           : `<span class="badge">Débloquée ✓</span>`;
         return `<article class="shop-item"><div class="shop-prev">${prev}</div><b>${esc(fr(it.name))}</b>${btn}</article>`;
       }).join("")}</div>
-      <p class="small muted">${esc(fr(cat === "emote" ? "Les émotes débloquées apparaissent toutes seules dans les petites scènes de vos chibis." : cat === "theme" ? "Un thème change le fond de toute l'appli, pour vous deux." : cat === "pet" ? "Le compagnon suit son chibi partout sur la barre d'onglets." : "Les articles achetés appartiennent à vous deux : chacun peut les porter."))}</p>`;
+      <p class="small muted">${esc(fr(cat === "emote" ? "Les émotes débloquées apparaissent toutes seules dans les petites scènes de vos chibis." : cat === "theme" ? "Un thème change le fond de toute l'appli, pour vous deux." : cat === "pet" ? "Le compagnon suit son chibi partout sur la barre d'onglets." : cat === "outfit" ? `Chaque tenue est livrée avec un premier chroma ; les autres coloris se débloquent pour ${CHROMA_PRICE} cœurs. Comme tout le reste, ils appartiennent à vous deux.` : "Les articles achetés appartiennent à vous deux : chacun peut les porter."))}</p>`;
   } else {
     const g = Jeu.g(), got = ACH.filter(a => (g.ach || {})[a.id]).length;
     body = `<p class="small muted">${got} succès débloqués sur ${ACH.length}</p><div class="ach">${ACH.map(a => {
@@ -4950,7 +5022,9 @@ const ACT = {
   "shop-cat"(d) { S.shopCat = d.v; },
   "shop-who"(d) { S.shopWho = d.v; },
   "shop-buy"(d) { Jeu.buy(d.v); },
-  "shop-equip"(d) { Jeu.equip(S.shopWho === "b" ? "b" : "a", d.v); },
+  "shop-equip"(d) { Jeu.equip(S.shopWho === "b" ? "b" : "a", d.v, d.t); },
+  "shop-tint"(d) { S.prevTint = { ...(S.prevTint || {}), [d.o]: d.v }; },
+  "shop-tint-buy"(d) { Jeu.buyTint(d.o, d.v); },
   "shop-theme"(d) { Jeu.setTheme(d.v); },
   "yj-poke"() {
     const el = document.querySelector(".yj-pet");
