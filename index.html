@@ -409,6 +409,18 @@ body { background: var(--bg); }
 .perso-sum { font-family: var(--f-hand); font-size: 1.35rem; line-height: 1.15; }
 .buddy.blushy .av-blush { opacity: .6; }
 .buddy.shiver .buddy-body { animation: grr .12s linear infinite; }
+.yj-bud { position: absolute; left: 0; bottom: -2px; width: 32px; z-index: 3; will-change: transform; pointer-events: auto; cursor: pointer; }
+.yj-in { transform-origin: 50% 60%; }
+.yj-in svg { display: block; width: 100%; height: auto; overflow: visible; }
+.yj-bud.hop .yj-in svg { animation: buddyhop .5s ease; }
+.yj-bud .bubble { bottom: calc(100% + 4px); }
+.yj-bud.talking .bubble { opacity: 1; transform: translateX(-50%) scale(1); }
+.yj-bud.bl .bubble { left: 0; transform: scale(.6); transform-origin: 0 100%; }
+.yj-bud.bl.talking .bubble { transform: scale(1); }
+.yj-bud.bl .bubble::after { left: 14px; }
+.yj-bud.br .bubble { left: auto; right: 0; transform: scale(.6); transform-origin: 100% 100%; }
+.yj-bud.br.talking .bubble { transform: scale(1); }
+.yj-bud.br .bubble::after { left: auto; right: 10px; }
 .pet { position: absolute; left: 0; bottom: -2px; width: 26px; will-change: transform; pointer-events: none; }
 .pet svg { display: block; width: 100%; height: auto; }
 .fx-pillow { position: absolute; bottom: 34px; width: 18px; height: 12px; border-radius: 5px; background: #F4EFE9; border: 1.5px solid #C9BFD0; opacity: 0; animation: pillow 1.2s ease-out forwards; }
@@ -3260,7 +3272,7 @@ const trait = (k, id) => avOf(k).traits[id];
 // Une réplique en accord avec la personnalité : phrase fétiche, trait marqué, ou à défaut une réplique commune.
 function lineFor(k, cat, fallback) {
   const a = avOf(k), t = a.traits, h = new Date().getHours(), part = h >= 5 && h < 11 ? "matin" : h >= 22 || h < 5 ? "nuit" : "";
-  if (a.tics.length && ["solo", "poke", "cheer"].includes(cat) && Math.random() < 0.22) return pickOne(a.tics);
+  if (a.tics.length && ["solo", "poke", "cheer"].includes(cat) && Math.random() < 0.3) return pickOne(a.tics);
   const opts = [];
   TRAIT_IDS.forEach(id => {
     const v = t[id]; if (v === 2) return;
@@ -3295,7 +3307,7 @@ function traitSummary(t) {
 }
 // L'un timide, l'autre extraverti : ils se répondent. {tic} = une phrase fétiche de celui qui parle.
 const SHY_TO_BOLD = [
-  ["Tu… tu es magnifique aujourd'hui.", "Tu peux répéter ? Je prends des notes."],
+  ["Tu… tu es magnifique aujourd'hui.", "Tu peux répéter mot pour mot ? Je prends des notes."],
   ["J'aime bien quand tu souris…", "{tic}"],
   ["Tu es mon humain préféré…", "Attends, je fais une capture d'écran de ce moment."],
   ["Je pensais à toi…", "Répète, c'était pas assez fort !"],
@@ -3317,6 +3329,32 @@ const BOLD_TO_SHY = [
 const TEASE_SQUABBLES = [["C'est moi la star du couple !", "…Non, c'est moi."], ["J'ai mangé ton dessert. Par amour.", "Pas cool…"],
   ["Je t'aime plus que toi tu m'aimes !", "Même pas vrai…"], ["J'ai renommé le chat « Sire Bisou ».", "On n'a pas de chat…"],
   ["Ce soir, film : « Mes aventures à moi ».", "Non… *boude*"]];
+// Le socle romantique : des mots doux que les deux s'échangent, quelle que soit leur personnalité.
+// {tic1} = une phrase fétiche de qui parle en premier, {tic2} = de qui répond.
+const SWEET_PAIRS = [
+  ["Tu sais quoi ? Je suis bien avec toi.", "Moi aussi. Tout le temps."],
+  ["Je t'aime.", "Je t'aime plus."],
+  ["Tu es la plus belle chose de ma journée.", "Et toi, de toute ma vie."],
+  ["On se fait un câlin ?", "Toujours oui."],
+  ["Merci d'être toi.", "Merci d'être là."],
+  ["J'ai pensé à toi toute la journée.", "Seulement la journée ?"],
+  ["Tu es mon endroit préféré.", "Et toi, mon humain préféré."],
+  ["Tu me fais sourire sans rien faire.", "C'est un talent naturel."],
+  ["Je t'aime… un peu.", "UN PEU ?! J'ai entendu « énormément », c'est validé."],
+  ["Tu es magnifique aujourd'hui.", "Tu peux répéter mot pour mot ? Je prends des notes."],
+  ["Tu sens bon…", "C'est naturel. Enfin, c'est le gel douche. Mais c'est naturel."],
+  ["On reste encore un peu ensemble ?", "Pour toujours, ou un peu plus ?"],
+  ["J'aime bien quand tu souris…", "{tic2}"],
+  ["{tic1}", "Hihi… toi alors."],
+  ["Je t'aime plus que les frites. Et j'aime BEAUCOUP les frites.", "Oh… *fond complètement*"],
+  ["Tu crois qu'on sera encore aussi niais dans cinquante ans ?", "Encore plus. C'est promis."]
+];
+const fillPair = (p, f, s) => {
+  if ((p.join("").includes("{tic1}") && !avOf(f).tics.length) || (p.join("").includes("{tic2}") && !avOf(s).tics.length)) return null;
+  return p.map(l => l.replace("{tic1}", () => pickOne(avOf(f).tics)).replace("{tic2}", () => pickOne(avOf(s).tics)));
+};
+const YJ_CARRY = ["Viens là, toi !", "Qui c'est le plus mignon ? C'est toi !", "Mon petit Yassen Jr. !", "Tu as encore grandi, toi.", "Un câlin pour notre petite flamme."];
+const YJ_POKE = ["Coucou !", "Hihi, ça chatouille !", "Câlin ?", "{a} ! {b} ! Je vous aime !", "On joue ?", "Je grandis, vous avez vu ?", "Vous êtes trop mignons, tous les deux."];
 // Remplace {tic} par une phrase fétiche ; sans phrase fétiche, la paire est écartée.
 const withTic = (pairs, k) => pairs.filter(p => !p.join("").includes("{tic}") || avOf(k).tics.length)
   .map(p => p.map(l => l.replace("{tic}", () => pickOne(avOf(k).tics))));
@@ -3356,6 +3394,10 @@ const Buddies = {
       const x = (i ? 0.68 : 0.3) * this.W();
       this.b[k] = { k, el: d, faceEl: d.querySelector(".buddy-face"), x, target: null, speed: 0, face: i ? -1 : 1, phase: 0, tilt: 0, run: false, pet: { el: pet, x: x - 30, face: 1, phase: 0 } };
     });
+    const yj = document.createElement("div"); yj.className = "yj-bud";
+    yj.innerHTML = `<div class="bubble"></div><div class="yj-in"></div>`;
+    yj.addEventListener("click", () => this.pokeYj()); el.appendChild(yj);
+    this.yj = { el: yj, body: yj.querySelector(".yj-in"), bubble: yj.querySelector(".bubble"), x: 0.5 * this.W(), mode: "follow", holder: null, face: 1, phase: 0, fly: null, target: null, run: false, sleep: false };
     this.nextAct = performance.now() + 4000;
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
@@ -3369,6 +3411,8 @@ const Buddies = {
     this.el.classList.toggle("over", editing);
     this.el.hidden = !show;
     if (!show) return;
+    const yjSig = Jeu.stage() + ":" + !Jeu.activeToday();
+    if (yjSig !== this.yjSig) { this.yjSig = yjSig; this.yj.sleep = !Jeu.activeToday(); this.yj.body.innerHTML = yassenSvg(Jeu.stage(), this.yj.sleep); }
     const sig = JSON.stringify([avOf("a"), avOf("b"), Jeu.equipOf("a"), Jeu.equipOf("b")]);
     if (sig !== this.sig) {
       this.sig = sig;
@@ -3417,7 +3461,43 @@ const Buddies = {
         p.el.style.transform = `translate3d(${(p.x - 13).toFixed(1)}px, ${(-hop).toFixed(1)}px, 0) scaleX(${-p.face})`;
       }
     }
+    this.yjStep(t, dt, still, W);
     if (!this.busy && t > this.nextAct && !still) this.act();
+  },
+  // Yassen Jr. trottine à côté de vous, ou suit la scène en cours : dans les bras, sur les épaules, en vol…
+  yjStep(t, dt, still, W) {
+    const y = this.yj, A = this.b.a, B = this.b.b;
+    let lift = 0, rot = 0;
+    if ((y.mode === "held" || y.mode === "shoulders") && y.holder) {
+      y.x = y.holder.x + (y.mode === "held" ? y.holder.face * 7 : 0); y.face = y.holder.face;
+      lift = y.mode === "held" ? 22 : 54;
+    } else if (y.mode === "fly" && y.fly) {
+      const f = y.fly, p = Math.min(1, (t - f.t0) / f.dur);
+      y.x = f.x0 + (f.x1 - f.x0) * p; lift = 22 + 4 * f.h * p * (1 - p); rot = 360 * p * f.dir;
+      if (p >= 1) { const cb = f.cb; y.fly = null; y.mode = "follow"; if (cb) cb(); }
+    } else if (y.mode === "swing") {
+      y.x = (A.x + B.x) / 2; y.phase += dt * 5; lift = 14 + Math.abs(Math.sin(y.phase)) * 20; rot = Math.sin(y.phase) * 18;
+    } else if (y.mode === "pinned") {
+      y.x = (A.x + B.x) / 2; lift = 18;
+    } else {
+      let goal = y.target;
+      if (goal == null && !y.sleep) {
+        const L = A.x <= B.x ? A : B, R = L === A ? B : A;
+        goal = y.x < (L.x + R.x) / 2 ? L.x - 28 : R.x + 28;
+        if (goal < 20) goal = R.x + 28; else if (goal > W - 20) goal = L.x - 28;
+      }
+      if (goal != null) {
+        goal = Math.max(18, Math.min(W - 18, goal));
+        const d = goal - y.x;
+        if (Math.abs(d) > (y.target != null ? 1 : 14)) {
+          y.x += Math.sign(d) * Math.min(Math.abs(d), still ? Math.abs(d) : (y.run ? 120 : 52) * dt);
+          y.face = d > 0 ? 1 : -1; y.phase += dt * (y.run ? 14 : 10); lift = still ? 0 : Math.abs(Math.sin(y.phase)) * 5;
+        } else if (y.target != null) { y.target = null; const cb = y.onArrive; y.onArrive = null; if (cb) cb(); }
+      }
+    }
+    y.el.style.transform = `translate3d(${(y.x - 16).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
+    y.body.style.transform = `scaleX(${y.face}) rotate(${rot.toFixed(0)}deg)`;
+    y.el.classList.toggle("bl", y.x < W * 0.28); y.el.classList.toggle("br", y.x > W * 0.72);
   },
   done(pause = 2500) { this.busy = false; this.nextAct = performance.now() + pause + Math.random() * 4000; },
   act() {
@@ -3427,14 +3507,23 @@ const Buddies = {
     const wander = () => { const o = Math.random() < 0.5 ? A : B; this.walkTo(o, o.x + (Math.random() - 0.5) * W * 0.6, false, () => { if (Math.random() < 0.4) this.lookAround(o); this.done(); }); };
     // Chaque scène a plus ou moins de chances d'arriver selon leurs personnalités.
     const opts = [
-      [3, wander],
-      [0.8 + avg("tender") * 0.35, () => this.hug()],
-      [0.4 + avg("tender") * 0.2, () => this.kiss()],
+      [2.2, wander],
+      // Le socle romantique ne dépend pas des personnalités : la tendresse ne fait qu'en rajouter.
+      [2.2, () => this.loveTalk()],
+      [1.6 + avg("tender") * 0.25, () => this.hug()],
+      [0.9 + avg("tender") * 0.15, () => this.kiss()],
+      [0.9, () => this.yjCarry()],
+      [0.8, () => this.yjFamilyHug()],
+      [this.yj.sleep ? 0 : 0.7, () => this.yjThrow()],
+      [this.yj.sleep ? 0 : 0.6, () => this.yjSwing()],
+      [this.yj.sleep ? 0 : 0.45, () => this.yjShoulders()],
+      [this.yj.sleep ? 0 : 0.4, () => this.yjChase()],
+      [this.yj.sleep ? 1.2 : night ? 0.4 : 0, () => this.yjTuck()],
       [0.3 + avg("tease") * 0.3 + (4 - avg("mood")) * 0.15, () => this.squabble()],
       [0.3 + avg("energy") * 0.25, () => this.chase()],
       [0.4 + avg("mood") * 0.15 + avg("energy") * 0.1, () => this.dance()],
       [1.2, () => this.faceTalk()],
-      [this.shyDuo() ? 2 : 0, () => this.banter()],
+      [this.shyDuo() ? 1.6 : 0, () => this.banter()],
       [this.most("energy", 3) ? 0.7 : 0, () => this.zoomies()],
       [this.least("soc", 1) ? 0.6 : 0, () => this.shyMoment()],
       [this.least("brave", 1) ? 0.6 : 0, () => this.scare()],
@@ -3444,6 +3533,137 @@ const Buddies = {
     let r = Math.random() * opts.reduce((n, o) => n + o[0], 0);
     for (const [w, f] of opts) { if ((r -= w) <= 0) return f(); }
     wander();
+  },
+  // Yassen Jr. se balade avec vous : on le porte, on se le lance, on le fait voler, on le borde quand il dort.
+  yjSay(text, ms = 2000) {
+    const y = this.yj; if (!y) return;
+    Object.values(this.b).forEach(o => o.el.classList.remove("talking"));
+    y.bubble.textContent = text; y.el.classList.add("talking");
+    clearTimeout(y.hush); y.hush = setTimeout(() => y.el.classList.remove("talking"), ms);
+  },
+  yjHop() { const y = this.yj; y.el.classList.remove("hop"); void y.el.offsetWidth; y.el.classList.add("hop"); },
+  pickUp(o, cb) {
+    const y = this.yj;
+    y.target = null; y.mode = "follow";
+    this.walkTo(o, y.x + (o.x < y.x ? -10 : 10), false, () => { o.face = y.x >= o.x ? 1 : -1; y.mode = "held"; y.holder = o; this.hop(o); cb(); });
+  },
+  putDown() { const y = this.yj; y.mode = "follow"; y.holder = null; y.target = null; this.yjHop(); },
+  yjCarry() {
+    const y = this.yj, o = this.most("tender", 0);
+    this.pickUp(o, () => {
+      o.el.classList.add("happy");
+      this.say(o.k, pickOne(y.sleep ? ["Chut… il dort.", "On le porte tout doucement."] : YJ_CARRY), 2200);
+      this.hearts(o.x, 3, 14);
+      setTimeout(() => { if (!y.sleep) this.yjSay(pickOne(["Hihi !", "Encore un câlin !", "Je suis bien, là."]), 1800); }, 1600);
+      setTimeout(() => this.walkTo(o, o.x + (Math.random() - 0.5) * this.W() * 0.5, false, () => {
+        setTimeout(() => { this.putDown(); o.el.classList.remove("happy"); this.done(); }, 900);
+      }), 1900);
+    });
+  },
+  yjThrow() {
+    const y = this.yj; if (y.sleep) return this.yjCarry();
+    const T = this.most("energy", 0), C = this.b[other(T.k)], W = this.W();
+    const passes = 3 + (trait("a", "energy") + trait("b", "energy") >= 6 ? 1 : 0);
+    let n = 0;
+    const pass = (from, to) => {
+      this.say(from.k, pickOne(["Attention, il arrive !", "Et hop !", "Passe !", "Vol direct pour toi !"]), 1100);
+      y.mode = "fly"; y.holder = null;
+      y.fly = { x0: y.x, x1: to.x + to.face * 7, t0: performance.now(), dur: 950, h: 46, dir: to.x > from.x ? 1 : -1, cb: () => {
+        y.mode = "held"; y.holder = to; this.hop(to);
+        this.say(to.k, trait(to.k, "brave") <= 1 ? pickOne(["Je l'ai ! …je crois.", "Ouf, attrapé !"]) : pickOne(["Attrapé !", "Je l'ai !", "Bien reçu !"]), 1200);
+        if (++n < passes) setTimeout(() => pass(to, from), 700);
+        else setTimeout(() => { this.yjSay(pickOne(["Encore ! Encore !", "Je vole !", "Vous êtes les meilleurs."]), 1800); this.hearts(to.x, 4, 16); setTimeout(() => { this.putDown(); this.done(); }, 1600); }, 600);
+      } };
+      setTimeout(() => this.yjSay("Wiiii !", 900), 150);
+    };
+    this.pickUp(T, () => {
+      this.say(T.k, pickOne(["On joue à la passe ?", "Prêt pour un petit vol ?"]), 1600);
+      const mid = Math.max(80, Math.min(W - 80, (T.x + C.x) / 2)), left = T.x <= C.x;
+      this.walkTo(T, mid + (left ? -60 : 60)); this.walkTo(C, mid + (left ? 60 : -60), false, () => { T.face = C.x > T.x ? 1 : -1; C.face = -T.face; setTimeout(() => pass(T, C), 500); });
+    });
+  },
+  yjSwing() {
+    const y = this.yj; if (y.sleep) return this.yjTuck();
+    y.target = (this.b.a.x + this.b.b.x) / 2;
+    this.meet(44, (L, R) => {
+      y.target = null; y.mode = "swing"; y.phase = 0; this.mood([L, R], "happy", true);
+      this.say(L.k, "Un, deux, trois…", 1400);
+      setTimeout(() => { this.say(R.k, "…on le fait voler !", 1500); this.yjSay("Wiiii !", 1500); }, 1300);
+      setTimeout(() => this.hearts((L.x + R.x) / 2, 4), 2000);
+      setTimeout(() => { y.mode = "follow"; this.mood([L, R], "happy", false); this.yjSay(pickOne(["Encore une fois !", "Vous êtes les meilleurs."]), 1800); this.apart(L, R, () => this.done()); }, 3600);
+    });
+  },
+  yjFamilyHug() {
+    const y = this.yj;
+    y.target = (this.b.a.x + this.b.b.x) / 2;
+    this.meet(34, (L, R) => {
+      y.target = null; y.mode = "pinned"; L.tilt = R.tilt = 8; this.mood([L, R], "happy", true);
+      const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
+      [L, R].forEach(o => o.el.classList.add("blush"));
+      const k = pickOne(["a", "b"]);
+      this.say(k, pickOne(y.sleep ? ["Câlin tout doux, il dort…", "Notre petite flamme…"] : ["Câlin à trois !", "Notre petite famille.", "Viens là, toi aussi !"]), 2200);
+      if (!y.sleep) setTimeout(() => this.yjSay(pickOne(["Je vous aime !", "Le meilleur câlin du monde !"]), 1800), 1500);
+      setTimeout(() => this.hearts(mid, 5), 1300);
+      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 3400);
+    });
+  },
+  yjShoulders() {
+    const y = this.yj; if (y.sleep) return this.yjCarry();
+    const o = this.most("brave", 0), O = this.b[other(o.k)], W = this.W();
+    this.pickUp(o, () => {
+      y.mode = "shoulders"; this.yjHop();
+      this.yjSay(pickOne(["Plus haut !", "Je vois tout d'ici !", "Je suis le roi du monde !"]), 1800);
+      setTimeout(() => this.say(O.k, pickOne(trait(O.k, "brave") <= 1 ? ["Fais attention à lui !", "Doucement…"] : ["Trop mignons, tous les deux.", "Je veux une photo !"]), 1800), 1300);
+      this.walkTo(o, o.x < W / 2 ? W * 0.75 : W * 0.25, false, () => { this.hearts(o.x, 3, 14); setTimeout(() => { this.putDown(); this.done(); }, 700); });
+    });
+  },
+  yjChase() {
+    const y = this.yj; if (y.sleep) return this.yjTuck();
+    const W = this.W(), edge = y.x < W / 2 ? W - 22 : 22, c = this.most("energy", 0);
+    this.yjSay("Attrapez-moi !", 1500);
+    y.mode = "follow"; y.run = true; y.target = edge;
+    y.onArrive = () => { y.run = false; y.target = edge; };
+    setTimeout(() => this.walkTo(c, edge + (edge > W / 2 ? -12 : 12), true, () => {
+      y.target = null; y.onArrive = null; y.mode = "held"; y.holder = c; c.face = edge > c.x ? 1 : -1;
+      this.hop(c); this.say(c.k, pickOne(["Attrapé, petit coquin !", "Je te tiens !"]), 1800); this.hearts(c.x, 4, 14);
+      setTimeout(() => this.yjSay("Hihi ! Encore !", 1500), 900);
+      setTimeout(() => { this.putDown(); this.done(); }, 2600);
+    }), 400);
+  },
+  // Quand il dort, on vient le regarder dormir, et on se fait un bisou au-dessus de lui.
+  yjTuck() {
+    const y = this.yj, W = this.W(), x = Math.max(50, Math.min(W - 50, y.x));
+    let n = 0;
+    const both = () => {
+      if (++n < 2) return;
+      this.b.a.face = this.b.b.x > this.b.a.x ? 1 : -1; this.b.b.face = -this.b.a.face;
+      this.say("a", pickOne(["Chut… il dort.", "Regarde comme il est mignon."]), 2000);
+      setTimeout(() => { this.say("b", pickOne(["Il est trop mignon quand il dort.", "Fais de beaux rêves, petite flamme."]), 2200); [this.b.a, this.b.b].forEach(o => { o.tilt = 8; o.el.classList.add("happy"); }); this.hearts(y.x, 4, 16); }, 1900);
+      setTimeout(() => { [this.b.a, this.b.b].forEach(o => { o.tilt = 0; o.el.classList.remove("happy"); }); this.done(); }, 4600);
+    };
+    const [L, R] = this.b.a.x <= this.b.b.x ? [this.b.a, this.b.b] : [this.b.b, this.b.a];
+    this.walkTo(L, x - 26, false, both); this.walkTo(R, x + 26, false, both);
+  },
+  pokeYj() {
+    const y = this.yj; if (!y || y.mode !== "follow") return;
+    this.yjHop();
+    if (y.sleep) { this.yjSay(pickOne(["Zzz…", "*sourit en dormant*", "Mmh… encore cinq minutes…"]), 1800); return; }
+    this.yjSay(pickOne(YJ_POKE).replace("{a}", nm("a")).replace("{b}", nm("b")), 2000);
+    this.hearts(y.x, 2, 10);
+  },
+  // Un échange de mots doux, quelles que soient vos personnalités.
+  loveTalk() {
+    const A = this.b.a, B = this.b.b, f = pickOne(["a", "b"]), s = other(f);
+    A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
+    const duo = this.shyDuo();
+    let pairs = SWEET_PAIRS.map(p => fillPair(p, f, s)).filter(Boolean);
+    if (duo) { const [T] = duo; pairs = pairs.concat(T.k === f ? withTic(SHY_TO_BOLD, s) : withTic(BOLD_TO_SHY, f)); }
+    let [l1, l2] = pickOne(pairs);
+    if (avOf(s).tics.length && Math.random() < 0.25) l2 = pickOne(avOf(s).tics);
+    if (trait(f, "soc") <= 1) this.b[f].el.classList.add("blush");
+    this.say(f, l1, 2600);
+    setTimeout(() => { this.say(s, l2, 2800); this.b[s].el.classList.add("happy"); this.hop(this.b[s]); this.hearts((A.x + B.x) / 2, 4, 20); }, 2700);
+    setTimeout(() => { [A, B].forEach(o => o.el.classList.remove("blush", "happy")); if (Math.random() < 0.4) this.kiss(); else this.done(); }, 5600);
   },
   hug() {
     this.meet(27, (L, R) => {
@@ -3654,7 +3874,7 @@ const Buddies = {
   cloud(x, ms) { this.spawn("fx-cloud", FX_CLOUD, x - 37, 0, ms); },
   say(k, text, ms = 4200) {
     const o = this.b[k], q = this.b[other(k)];
-    q.el.classList.remove("talking");
+    q.el.classList.remove("talking"); if (this.yj) this.yj.el.classList.remove("talking");
     o.el.querySelector(".bubble").textContent = text;
     o.el.classList.add("talking");
     clearTimeout(o.hush); o.hush = setTimeout(() => o.el.classList.remove("talking"), ms);
