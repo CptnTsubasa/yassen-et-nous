@@ -579,6 +579,9 @@ body { background: var(--bg); }
 .cx-pill.off .dot, .cx-pill.err .dot { background: #F2A0B4; box-shadow: none; }
 .cx-aifoot .cx-pill { background: var(--surface-2); color: var(--fg); box-shadow: none; }
 .cx-help { color: var(--fg); text-align: left; width: 100%; margin-top: 4px; }
+.grecaptcha-badge { visibility: hidden; }
+.cx-legal { font-size: .7rem; color: var(--muted); text-align: center; }
+.cx-legal a { color: inherit; }
 .cx-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .cx-mode { display: grid; gap: 6px; align-content: start; text-align: left; padding: 16px; border-radius: 22px; background: var(--c); color: var(--on-c); box-shadow: var(--shadow); transition: transform .15s ease; }
 .cx-mode:active { transform: scale(.97); }
@@ -5091,6 +5094,9 @@ const CX_STATS = { force: "Force", agilite: "Agilité", esprit: "Esprit", charme
 const SCENE_KEYS = Object.keys(SCENES);
 const CX_IDEAS = ["On se rencontre pour la première fois dans un train de nuit", "On doit sauver Yassen Jr., enlevé par un sorcier jaloux", "On ouvre un petit café à la montagne et tout part de travers", "Un week-end à la mer, et une bouteille avec un message", "On se réveille dans un royaume où les câlins sont interdits", "Une enquête dans un manoir, pendant notre anniversaire"];
 
+// App Check prouve à Google que les demandes viennent bien de ce site (obligatoire pour l'IA à partir du 2 novembre 2026).
+// La clé du site reCAPTCHA v3 est publique par nature ; la clé secrète reste dans la console Firebase.
+const APPCHECK_SITE_KEY = "";
 // L'IA : Gemini par Firebase AI Logic. Son SDK est chargé à part, à la demande.
 const AI = {
   ver: "12.0.0", models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"], mi: 0, state: "",
@@ -5098,6 +5104,10 @@ const AI = {
     if (this.ai) return this.ai;
     const [A, M] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-ai.js`)]);
     const app = A.getApps().find(x => x.name === "ys-ai") || A.initializeApp(FIREBASE, "ys-ai");
+    if (APPCHECK_SITE_KEY) {
+      const C = await import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app-check.js`);
+      C.initializeAppCheck(app, { provider: new C.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+    }
     this.M = M; this.ai = M.getAI(app, { backend: new M.GoogleAIBackend() });
     return this.ai;
   },
@@ -5525,7 +5535,7 @@ function cxAiPill() {
   const label = st === "ok" ? "Écrit par l'IA" : st === "appcheck" ? "IA bloquée par App Check" : st === "off" ? "Générateur intégré" : st === "err" ? "IA momentanément indisponible" : "IA Gemini";
   return `<button class="cx-pill ${st || "idle"}" data-a="cx-aihelp" aria-expanded="${!!S.cx.help}"><span class="dot" aria-hidden="true"></span>${label}</button>
   ${S.cx.help ? `<div class="panel cx-help"><p><b>${st === "ok" ? "L'IA est activée." : "Pour des histoires vraiment uniques, activez l'IA (gratuit) :"}</b></p>
-    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : st === "appcheck" ? `<p class="small">${esc(fr("L'IA est activée, mais la protection App Check de Firebase refuse les demandes de l'appli. Dans la console Firebase : App Check, onglet API, Firebase AI Logic, puis « Ne plus appliquer »."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
+    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : st === "appcheck" ? `<p class="small">${esc(fr("L'IA est activée, mais la protection App Check de Firebase refuse les demandes de l'appli : il faut enregistrer le site dans App Check avec une clé reCAPTCHA v3."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
     <p class="small muted">${esc(fr("En attendant, le générateur intégré écrit vos histoires avec vos prénoms, votre contexte et vos détails. Les textes envoyés à l'IA passent par Google."))}</p>`}</div>` : ""}`;
 }
 function cxLoader(msg) {
@@ -5563,6 +5573,7 @@ function cxLibView() {
     <button class="cx-mode" style="${cvar(8)}" data-a="cx-new" data-v="conte"><span class="icon-tile">${ico("book")}</span><b>Le conte</b><span>${esc(fr("Une histoire à choix, tendre ou drôle, avec des petites pauses pour vous deux."))}</span></button>
     <button class="cx-mode" style="${cvar(7)}" data-a="cx-new" data-v="rpg"><span class="icon-tile">${rpgIcon(SWORD)}</span><b>L'épopée</b><span>${esc(fr("Un jeu de rôle : classes, statistiques, objets, combats et boss."))}</span></button>
   </div>
+  ${APPCHECK_SITE_KEY ? `<p class="cx-legal">Ce site est protégé par reCAPTCHA : les <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">règles de confidentialité</a> et les <a href="https://policies.google.com/terms" target="_blank" rel="noopener">conditions d'utilisation</a> de Google s'appliquent.</p>` : ""}
   <section class="stack"><h2 class="sec">Vos histoires</h2>${list.length ? `<div class="cx-list">${list.map(st => { const n = cxSteps(st).length, done = st.status === "done";
     return `<article class="cx-card" style="${cvar(st.mode === "rpg" ? 7 : 8)}"><div class="cx-thumb">${sceneSvg((cxSteps(st)[n - 1] || {}).sc || CX_GENRES[st.genre].decor[0])}</div>
       <div class="cx-cinfo"><p class="cx-tags"><span>${st.mode === "rpg" ? "Épopée" : "Conte"}</span><span>${esc(CX_GENRES[st.genre].label)}</span></p><b>${esc(st.title)}</b>
