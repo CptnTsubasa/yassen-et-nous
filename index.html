@@ -4758,10 +4758,11 @@ const Buddies = {
       [has("brume") ? 1.4 : 0, () => this.nap()],
       // Le socle romantique ne dépend pas des personnalités : la tendresse ne fait qu'en rajouter.
       [2.8, () => this.loveTalk()],
-      [2 + avg("tender") * 0.25, () => this.hug()],
+      // Les câlins reviennent souvent : c'est la scène préférée.
+      [5 + avg("tender") * 0.4, () => this.hug()],
       [1.1 + avg("tender") * 0.15, () => this.kiss()],
       [0.9, () => this.yjCarry()],
-      [0.8, () => this.yjFamilyHug()],
+      [1.4, () => this.yjFamilyHug()],
       [this.yj.sleep ? 0 : 0.7, () => this.yjThrow(), 1],
       [this.yj.sleep ? 0 : 0.6, () => this.yjSwing()],
       [this.yj.sleep ? 0 : 0.45, () => this.yjShoulders(), 1],
