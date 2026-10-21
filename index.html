@@ -1699,6 +1699,8 @@ function cleanLive(v) {
     }
     return o;
   };
+  // Firebase renvoie une liste quand les clés sont 0, 1, 2… : on la remet en objet avant tout.
+  ["ans", "saved", "votes"].forEach(k => { if (Array.isArray(v[k])) v = { ...v, [k]: Object.fromEntries(v[k].map((x, i) => [String(i), x]).filter(([, x]) => x != null)) }; });
   const s = walk(v, false, 0);
   s.i = cInt(s.i, 0, 199, 0);
   ["score", "target", "round", "steps", "startAt", "updatedAt"].forEach(k => { if (k in s) s[k] = cNum(s[k], 0, 1e13, 0); });
@@ -1713,8 +1715,8 @@ function cleanLive(v) {
   if (s.kind === "story" && !(own(STORY, s.id) && own(STORY[s.id].nodes, s.node))) return null;
   if (s.deck && s.deck.length && s.i >= s.deck.length) s.i = s.deck.length - 1;
   // Réponses, accords et votes sont rangés par manche : un « suivant » arrivé en retard n'efface plus rien.
-  const r = String(liveRound(s));
-  ["ans", "saved", "votes"].forEach(k => { const v = s[k]; s[k] = isObj(v) && isObj(v[r]) ? v[r] : {}; });
+  const n = liveRound(s);
+  ["ans", "saved", "votes"].forEach(k => { const v = s[k]; s[k] = isObj(v) ? (isObj(v["r" + n]) ? v["r" + n] : isObj(v[String(n)]) ? v[String(n)] : {}) : {}; });
   return s;
 }
 const liveRound = L => L.kind === "story" ? (+L.steps || 1) : L.game === "synchro" ? (+L.round || 1) : (+L.i || 0);
@@ -4263,7 +4265,8 @@ const Live = {
     let o = this.state;
     path.split("/").forEach(p => { if (!o[p] || typeof o[p] !== "object") o[p] = {}; o = o[p]; });
     o[key] = val;
-    const [h, ...rest] = path.split("/"), remote = ["ans", "saved", "votes"].includes(h) ? [h, liveRound(this.state), ...rest].join("/") : path;
+    // Une clé « r3 » plutôt que « 3 » : Firebase ne la transforme pas en liste.
+    const [h, ...rest] = path.split("/"), remote = ["ans", "saved", "votes"].includes(h) ? [h, "r" + liveRound(this.state), ...rest].join("/") : path;
     Store.db.doc("live/game/" + remote).update({ [key]: val }).catch(e => Store.fail(e));
     Store.db.doc("live/game").update({ updatedAt: Date.now() }).catch(() => {});
   },
