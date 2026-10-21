@@ -2190,7 +2190,7 @@ const Update = {
    son abonnement dans l'espace commun (push/<a|b>/<id>). Un petit service Cloudflare (notifications/worker.js)
    envoie les notifications : l'appli lui signale ce qui vient d'arriver, il relit l'élément et prévient l'autre. */
 // Adresse du service Cloudflare (par exemple https://ys-notif.<ton-nom>.workers.dev).
-const NOTIF_URL = "";
+const NOTIF_URL = "https://ys-notif.m-steeven93190.workers.dev";
 const NOTIF_TYPES = [["mot", "Les petits mots", true], ["lettre", "Les lettres scellées et celles qui s'ouvrent", true], ["partie", "Les invitations à jouer à distance", true], ["fete", "Anniversaires et dates qui comptent", true], ["quetes", "Un rappel le soir si Yassen Jr. vous attend encore", false]];
 const unb64u = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)), c => c.charCodeAt(0));
 const notifPost = (path, body) => fetch(NOTIF_URL + path, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body) });
