@@ -311,17 +311,17 @@ body { background: var(--bg); }
 @keyframes cozy { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, 4vmax) scale(1.12); } }
 /* Les petits compagnons, debout sur la barre d'onglets. Leurs déplacements sont calculés en JS. */
 #buddies { position: fixed; left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); height: 0; z-index: 21; pointer-events: none; }
-.buddy { position: absolute; left: 0; bottom: -2px; width: 44px; will-change: transform; pointer-events: auto; cursor: pointer; }
+.buddy { position: absolute; left: 0; bottom: -2px; width: 50px; will-change: transform; pointer-events: auto; cursor: pointer; }
 .buddy-face { transform-origin: 50% 100%; }
 .buddy-body { transform-origin: 50% 100%; }
 .buddy-body svg { display: block; width: 100%; height: auto; overflow: visible; animation: bob 3.4s ease-in-out infinite; }
 .buddy.walking .buddy-body svg { animation: none; }
 .buddy.hop .buddy-body { animation: buddyhop .5s ease; }
-@keyframes buddyhop { 40% { transform: translateY(-16px); } }
+@keyframes buddyhop { 0%, 100% { transform: none; } 14% { transform: scale(1.07, .9); } 45% { transform: translateY(-16px) scale(.95, 1.06); } 78% { transform: scale(1.05, .94); } }
 .buddy.sleep .buddy-body { transform: translateY(8%) rotate(-10deg); transition: transform .5s ease; }
 .buddy.grr .buddy-body { animation: grr .16s linear infinite; }
 @keyframes grr { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(1.5px); } }
-.av-happy, .av-grr { display: none; }
+.av-happy, .av-grr, .av-sleepy, .av-cross { display: none; }
 .av-sparkle { opacity: 0; animation: avspark 4.5s ease-in-out infinite; }
 @keyframes avspark { 0%, 78%, 100% { opacity: 0; } 86% { opacity: 1; } }
 .buddy.blush .av-blush { opacity: .85; }
@@ -474,7 +474,7 @@ body { background: var(--bg); }
 .perso-sum { font-family: var(--f-hand); font-size: 1.35rem; line-height: 1.15; }
 .buddy.blushy .av-blush { opacity: .6; }
 .buddy.shiver .buddy-body { animation: grr .12s linear infinite; }
-.yj-bud { position: absolute; left: 0; bottom: -2px; width: 42px; z-index: 3; will-change: transform; pointer-events: auto; cursor: pointer; }
+.yj-bud { position: absolute; left: 0; bottom: -2px; width: 46px; z-index: 3; will-change: transform; pointer-events: auto; cursor: pointer; }
 .yj-in { transform-origin: 50% 60%; }
 .buddy.sit .buddy-body { transform: translateY(12%) scaleY(.88); transition: transform .4s ease; }
 .buddy.sneak .buddy-body { transform: translateY(8%) scaleY(.9); transition: transform .3s ease; }
@@ -929,6 +929,75 @@ body { background: var(--bg); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
+
+/* ───── Chibis articulés : marche, regard, respiration, poses ───── */
+.buddy .av-shadow { display: none; }
+.buddy-shadow { position: absolute; left: 50%; bottom: 0; width: 26px; height: 5px; margin-left: -13px; border-radius: 50%; background: rgba(0, 0, 0, .17); transform: translateY(var(--lift, 0px)) scale(var(--sh, 1)); pointer-events: none; }
+.buddy.hop .buddy-shadow { animation: shadowhop .5s ease; }
+@keyframes shadowhop { 45% { transform: scale(.62); opacity: .45; } }
+.buddy .av-leg, .buddy .av-arm, .buddy .av-head, .buddy .av-hairback, .buddy .av-torso, .buddy .av-eyes, .buddy .av-mouth, .buddy .av-cross { transform-box: view-box; }
+.buddy .av-leg { transition: transform .22s ease; }
+.buddy .av-leg-l { transform-origin: 43px 118px; transform: rotate(calc(var(--sw, 0) * var(--amp, 0) * 26deg)); }
+.buddy .av-leg-r { transform-origin: 57px 118px; transform: rotate(calc(var(--sw, 0) * var(--amp, 0) * -26deg)); }
+.buddy .av-arm { transition: transform .38s cubic-bezier(.3, 1.35, .5, 1), opacity .2s ease; }
+.buddy .av-arm-l { transform-origin: 25px 87px; transform: rotate(calc(var(--sw, 0) * var(--amp, 0) * -32deg * var(--swl, 1) + var(--al, 0deg))); }
+.buddy .av-arm-r { transform-origin: 75px 87px; transform: rotate(calc(var(--sw, 0) * var(--amp, 0) * 32deg * var(--swr, 1) + var(--ar, 0deg))); }
+.buddy.walking .av-leg, .buddy.walking .av-arm { transition: none; }
+.buddy .av-head, .buddy .av-hairback { transform-origin: 50px 76px; transform: rotate(var(--hd, 0deg)); transition: transform .5s cubic-bezier(.3, 1.2, .5, 1); }
+.buddy .av-torso { transform-origin: 50px 124px; animation: breathe var(--br, 3.2s) ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scaleY(1.028); } }
+.buddy .av-eyes { transform-origin: 50px 50px; animation: blink 5.2s infinite; animation-delay: var(--bd, 0s); }
+@keyframes blink { 0%, 93%, 97.5%, 100% { transform: none; } 95% { transform: scaleY(.08); } }
+.buddy.talking .av-mouth { transform-origin: 50px 62px; animation: talkmouth .24s ease-in-out infinite alternate; }
+@keyframes talkmouth { from { transform: scaleY(.55); } to { transform: scale(1.06, 1.55); } }
+/* Les poses */
+.buddy.p-open { --al: 58deg; --ar: -58deg; --swl: 0; --swr: 0; }
+.buddy.p-hug { --ar: -118deg; --al: -22deg; --hd: 11deg; --swl: 0; --swr: 0; }
+.buddy.p-cheer { --al: 150deg; --ar: -150deg; --swl: 0; --swr: 0; }
+.buddy.p-pump { --ar: -55deg; --swr: 0; }
+.buddy.p-poke { --ar: -84deg; --swr: 0; }
+.buddy.p-holdr { --ar: -30deg; --swr: 0; }
+.buddy.p-holdl { --al: 30deg; --swl: 0; }
+.buddy.p-tiptoe { --al: 42deg; --ar: -42deg; --swl: .3; --swr: .3; }
+.buddy.p-cross { --hd: -9deg; }
+.buddy.p-cross .av-arm { opacity: 0; }
+.buddy.p-cross .av-cross { display: inline; }
+.buddy.p-cross .av-eyes, .buddy.p-cross .av-happy { display: none; }
+.buddy.p-cross .av-sleepy { display: inline; }
+.buddy.p-rest { --hd: 17deg; --al: 12deg; --ar: -8deg; }
+.buddy.p-sit .buddy-body { transform: translateY(8%); transition: transform .45s ease; }
+.buddy.p-sit .av-leg-l, .buddy.p-sit .av-leg-r { transform: scaleY(.45); transition: transform .45s ease; }
+.buddy.p-tickle .av-arm-l { animation: tickle-l .2s ease-in-out infinite alternate; }
+.buddy.p-tickle .av-arm-r { animation: tickle-r .2s ease-in-out infinite alternate; }
+@keyframes tickle-l { from { transform: rotate(-30deg); } to { transform: rotate(-62deg); } }
+@keyframes tickle-r { from { transform: rotate(-70deg); } to { transform: rotate(-100deg); } }
+.buddy.p-kick .av-leg-l { animation: kick .22s ease-in-out infinite alternate; }
+.buddy.p-kick .av-leg-r { animation: kick .22s ease-in-out infinite alternate-reverse; }
+@keyframes kick { from { transform: rotate(-24deg); } to { transform: rotate(24deg); } }
+.buddy.lifted .buddy-face { translate: 0 -15px; transition: translate .4s cubic-bezier(.3, 1.5, .5, 1); }
+.buddy .buddy-face { transition: translate .4s ease; }
+.buddy.nap2 .av-eyes, .buddy.nap2 .av-happy { display: none; }
+.buddy.nap2 .av-sleepy { display: inline; }
+.buddy.nap2 { --br: 4.8s; }
+.buddy.sleep .av-eyes, .buddy.sleep .av-happy { display: none; }
+.buddy.sleep .av-sleepy { display: inline; }
+.buddy.whisper .bubble { font-size: .74rem; font-style: italic; }
+.yj-bud.napping { z-index: 5; }
+/* Petits effets des nouvelles scènes */
+.fx-dust { position: absolute; bottom: 0; width: 9px; height: 9px; border-radius: 50%; background: rgba(190, 178, 160, .55); animation: dust .65s ease-out forwards; }
+@keyframes dust { from { transform: scale(.4); opacity: .85; } to { transform: translateY(-5px) scale(1.7); opacity: 0; } }
+.fx-z { position: absolute; font: 700 12px/1 var(--f-display, serif); color: #9B7BD6; opacity: 0; animation: zfloat 2s ease-out forwards; }
+@keyframes zfloat { 0% { opacity: 0; transform: scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, -26px) scale(1.25); } }
+.fx-blanket { z-index: 4; animation: blanket .5s cubic-bezier(.3, 1.4, .5, 1) both; transform-origin: 50% 100%; }
+.fx-blanket svg { display: block; }
+@keyframes blanket { from { transform: scaleY(0); opacity: 0; } }
+.fx-ball { width: 12px; height: 12px; z-index: 4; animation: ballx var(--t, 900ms) linear forwards; }
+.fx-ball i { display: block; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 32%, #FFFFFF 0 16%, #FF9EB5 19% 58%, #E0457A 61%); box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); animation: bally var(--t, 900ms) forwards; }
+@keyframes ballx { to { transform: translateX(var(--dx, 0px)); } }
+@keyframes bally { 0% { transform: translateY(0) rotate(0); animation-timing-function: cubic-bezier(.25, .7, .55, 1); } 50% { transform: translateY(var(--h, -44px)) rotate(200deg); animation-timing-function: cubic-bezier(.45, 0, .75, .3); } 100% { transform: translateY(0) rotate(400deg); } }
+.fx-rps { font-size: 17px; line-height: 1; padding: 4px 5px; border-radius: 12px; background: #FFFFFF; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); animation: rpspop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes rpspop { from { transform: scale(0) translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .buddy .av-eyes, .buddy .av-torso, .buddy.talking .av-mouth, .buddy.p-tickle .av-arm, .buddy.p-kick .av-leg { animation: none !important; } }
 /* ───── Solidité de l'interface ───── */
 /* Les petits messages restent centrés pendant leur apparition, et ne bloquent jamais un doigt. */
 .toast { animation-name: toastin; pointer-events: none; }
@@ -3625,18 +3694,20 @@ function avatarSvg(k, ov) {
     beret: `<ellipse cx="45" cy="22" rx="25" ry="8" fill="#C23B4E" transform="rotate(-12 45 22)"/><circle cx="47" cy="13" r="2.4" fill="#C23B4E"/>`,
     fleur: [0, 72, 144, 216, 288].map(d => `<circle cx="${(72 + 4.5 * Math.cos(d * Math.PI / 180)).toFixed(1)}" cy="${(28 + 4.5 * Math.sin(d * Math.PI / 180)).toFixed(1)}" r="3.6" fill="#F7A8C4"/>`).join("") + `<circle cx="72" cy="28" r="2.4" fill="#F2C84B"/>`,
     oreilles: `<circle cx="24" cy="57" r="2.4" fill="#E8C35A"/><circle cx="76" cy="57" r="2.4" fill="#E8C35A"/>` }[a.acc] || "";
-  return `<svg viewBox="0 0 100 150" aria-hidden="true"><ellipse cx="50" cy="146" rx="24" ry="4" fill="#000" opacity=".18"/>${back}
-    <rect x="38" y="116" width="10" height="26" rx="5" fill="#3D3550"/><rect x="52" y="116" width="10" height="26" rx="5" fill="#3D3550"/>
-    <ellipse cx="42" cy="142" rx="8" ry="4" fill="#2A2433"/><ellipse cx="58" cy="142" rx="8" ry="4" fill="#2A2433"/>
-    <rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/>
-    <circle cx="22" cy="116" r="5" fill="${skin}"/><circle cx="78" cy="116" r="5" fill="${skin}"/>
-    ${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}<rect x="45" y="68" width="10" height="12" fill="${skin}"/>
-    <circle cx="24" cy="50" r="5" fill="${skin}"/><circle cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
+  // Chaque partie a son groupe (jambes, bras, buste, tête) : les chibis peuvent marcher, enlacer, croiser les bras…
+  return `<svg viewBox="0 0 100 150" aria-hidden="true"><ellipse class="av-shadow" cx="50" cy="146" rx="24" ry="4" fill="#000" opacity=".18"/><g class="av-hairback">${back}</g>
+    <g class="av-leg av-leg-l"><rect x="38" y="116" width="10" height="26" rx="5" fill="#3D3550"/><ellipse cx="42" cy="142" rx="8" ry="4" fill="#2A2433"/></g><g class="av-leg av-leg-r"><rect x="52" y="116" width="10" height="26" rx="5" fill="#3D3550"/><ellipse cx="58" cy="142" rx="8" ry="4" fill="#2A2433"/></g>
+    <g class="av-arm av-arm-l"><rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><circle cx="22" cy="116" r="5" fill="${skin}"/></g><g class="av-arm av-arm-r"><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/><circle cx="78" cy="116" r="5" fill="${skin}"/></g>
+    <g class="av-torso">${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}</g>
+    <g class="av-cross"><rect x="26" y="91" width="48" height="10" rx="5" fill="${top}" transform="rotate(-13 50 96)" stroke="#000" stroke-opacity=".12" stroke-width=".8"/><rect x="26" y="95" width="48" height="10" rx="5" fill="${top}" transform="rotate(11 50 100)" stroke="#000" stroke-opacity=".12" stroke-width=".8"/><circle cx="28.5" cy="102" r="4.6" fill="${skin}"/><circle cx="71.5" cy="90.5" r="4.6" fill="${skin}"/></g>
+    <rect x="45" y="68" width="10" height="12" fill="${skin}"/>
+    <g class="av-head"><circle cx="24" cy="50" r="5" fill="${skin}"/><circle cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
     <g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
     <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
+    <g class="av-sleepy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 50.5q3 2.6 6 0"/><path d="M56.5 50.5q3 2.6 6 0"/></g>
     <ellipse class="av-blush" cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse class="av-blush" cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
-    <path d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${pierce}${acc}${(h => (HATS[h] ? HATS[h](hc) : ""))(eq.hat || (ov ? "" : seasonHat(k)))}</svg>`;
+    <path class="av-mouth" d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${pierce}${acc}${(h => (HATS[h] ? HATS[h](hc) : ""))(eq.hat || (ov ? "" : seasonHat(k)))}</g></svg>`;
 }
 const castFig = k => `<figure>${avatarSvg(k)}<span class="tag">${esc(nm(k))}</span></figure>`;
 
@@ -4311,6 +4382,10 @@ function liveView() {
    une petite phrase. Un toucher les fait sauter et répondre. */
 const BUDDY_LINES = {
   all: ["Coucou {o} !", "On fait une petite partie ?", "J'ai envie d'un câlin.", "Tu sais que tu es ma personne préférée ?", "Je pense à toi. Comme d'habitude.",
+    "Tu as bien mangé aujourd'hui ?", "Tu es mon endroit préféré.", "J'aime quand tu ris. Recommence.", "Devine à qui je pensais. Indice : à toi.", "On part en voyage ? N'importe où, mais avec toi.",
+    "Tu veux un bisou ou un bisou ?", "Si tu étais un gâteau, tu serais mon préféré.", "Je crois en toi, tu sais.", "Mon cœur fait des petits bonds quand tu es là.", "Promis, je te laisse la dernière part. Peut-être.",
+    "On va faire de belles choses ensemble, {o}.", "{o}, tu es la meilleure chose qui me soit arrivée.", "Un câlin de trois heures, ça te tente ?", "Tu as un sourire qui répare tout.", "Plaid, série et toi : le programme parfait.",
+    "Je t'ai déjà dit que tu sentais bon ?", "Tu es magnifique aujourd'hui. Enfin, comme tous les jours.", "On se fait un petit resto bientôt ?", "Raconte-moi ta journée, je veux tout savoir.",
     "{o}, tu m'as manqué !", "On commande des sushis ce soir ?", "Pause câlin obligatoire.", "Raconte-moi ta journée.", "Promis, cette fois je ne triche pas.",
     "Je t'ai gardé le dernier carré de chocolat.", "On fait une super équipe, non ?", "Yassen Jr. serait fier de nous.", "Bisou volé !", "Tu as souri ? Je l'ai vu."],
   home: ["Le rendez-vous du jour nous attend !", "Un petit défi aujourd'hui ?"],
@@ -4467,7 +4542,8 @@ const fillPair = (p, f, s) => {
   return p.map(l => l.replace("{tic1}", () => pickOne(avOf(f).tics)).replace("{tic2}", () => pickOne(avOf(s).tics)));
 };
 const YJ_CARRY = ["Viens là, toi !", "Qui c'est le plus mignon ? C'est toi !", "Mon petit Yassen Jr. !", "Tu as encore grandi, toi.", "Un câlin pour notre petite flamme."];
-const YJ_POKE = ["Coucou !", "Hihi, ça chatouille !", "Câlin ?", "{a} ! {b} ! Je vous aime !", "On joue ?", "Je grandis, vous avez vu ?", "Vous êtes trop mignons, tous les deux."];
+const YJ_POKE = ["Coucou !", "Hihi, ça chatouille !", "Câlin ?", "{a} ! {b} ! Je vous aime !", "On joue ?", "Je grandis, vous avez vu ?", "Vous êtes trop mignons, tous les deux.",
+  "J'ai faim de câlins !", "Je vous ai vus vous faire un bisou !", "C'est moi le plus mignon ? Oui ?", "Je brille encore plus quand vous riez.", "On fait une course ?"];
 // Remplace {tic} par une phrase fétiche ; sans phrase fétiche, la paire est écartée.
 const withTic = (pairs, k) => pairs.filter(p => !p.join("").includes("{tic}") || avOf(k).tics.length)
   .map(p => p.map(l => l.replace("{tic}", () => pickOne(avOf(k).tics))));
@@ -4483,12 +4559,38 @@ function buddyLine(k) {
 }
 const RM_Q = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 const reduceMotion = () => !!(RM_Q && RM_Q.matches);
-const HUG_LINES = ["Câlin !", "Viens là, toi.", "Je ne te lâche plus.", "Recharge de câlins : 100 %."];
-const KISS_LINES = ["Smack !", "Un bisou, juste comme ça.", "Mmh, encore un ?"];
+const HUG_LINES = ["Câlin !", "Viens là, toi.", "Je ne te lâche plus.", "Recharge de câlins : 100 %.", "Le meilleur endroit du monde, c'est ici.", "Encore dix secondes… ou dix minutes.",
+  "Tu sens la maison.", "Je pourrais rester comme ça toute la journée.", "Câlin officiel, tamponné, validé.", "Ne bouge plus, je suis bien.", "Je te serre fort fort fort.", "Mon câlin préféré, c'est le tien."];
+const HUG_BACK = ["Moi aussi, je suis bien.", "Encore un peu…", "Tu me fais fondre.", "Je ne te lâche pas non plus.", "Mmh… parfait.", "Reste là.", "Mon cœur fait boum.", "On ne bouge plus jamais."];
+const HUG_WHISPER = ["Câlin tout doux… il dort.", "Chut… câlin silencieux.", "Pas de bruit, juste un câlin.", "Tout doucement, pour ne pas le réveiller."];
+const HUG_WHISPER_BACK = ["*câlin en chuchotant*", "Tout doux…", "Le plus doux des câlins.", "*sourit sans un bruit*"];
+const LIFT_LINES = ["Et hop, dans les airs !", "Je te soulève !", "Et hop, comme une plume !", "Viens là, toi !"];
+const LIFTED_LINES = ["Hiii ! Repose-moi ! …non, continue.", "Je vooole !", "Attention, j'ai le vertige !", "Hihihi !"];
+const BACKHUG_LINES = ["Devine qui c'est…", "Câlin surprise !", "Coucou toi, par-derrière.", "Je te tiens !"];
+const BACKHUG_REPLY = ["Je reconnais ce câlin entre mille.", "Oh, toi…", "Mmh, quelle bonne surprise.", "Reste comme ça.", "Mon câlin surprise préféré."];
+const HMPH = ["Hmph.", "Je boude.", "Je ne te parle plus. Pendant deux minutes.", "Pff.", "Même pas mal."];
+const SORRY_LINES = ["Bon… pardon.", "Pardon, j'ai exagéré.", "On fait la paix ? J'ai une fleur.", "Je t'aime plus que j'ai raison.", "Tu me manques déjà. Pardon ?", "Câlin d'excuse ?", "J'avais tort. Un peu. Beaucoup."];
+const TEASE_SORRY = ["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, c'est toi la star."];
+const FORGIVE_LINES = ["…Bon, d'accord. Viens là.", "Comment te résister ?", "C'est oublié. Câlin ?", "Je n'arrive jamais à bouder longtemps avec toi.", "Une fleur ? Bon, tu as gagné.", "Moi aussi, pardon."];
+const RUN_LINES = ["On court jusqu'au bout ?", "Main dans la main, c'est parti !", "Le dernier arrivé fait la vaisselle !", "Cours avec moi !", "On s'envole !"];
+const RUN_END = ["Encore !", "Plus vite que le vent !", "*souffle*… c'était trop bien !", "On a gagné ! …contre qui ?", "Avec toi, je courrais jusqu'au bout du monde."];
+const TIPTOE_LINES = ["Chut, on ne le réveille pas…", "Sur la pointe des pieds…", "Tout doucement…"];
+const TIPTOE_END = ["*rire étouffé*", "Mission réussie…", "Il dort toujours, hihi."];
+const TEASE_LINES = ["Poke !", "Pouet !", "Je t'embête ? Non ? Et maintenant ?", "Boop, le nez !", "Coucou, coucou, coucou !", "Tu as une miette, là. Non, là. Non, là."];
+const TEASE_BACK = ["Hé ! Arrête !", "Tu vas voir, toi…", "Grrr… trop mignon pour que je me fâche.", "Ça, tu vas le payer !"];
+const TICKLE_LINES = ["Guerre des chatouilles !", "Pas les chatouilles, pas les chatouilles !", "Hahaha, stop, je me rends !", "Pas sous les bras !"];
+const BALL_LINES = ["On se fait des passes ?", "Attrape !", "Je te lance la balle !", "Tu l'attrapes ?"];
+const BALL_END = ["Belle équipe !", "Dix sur dix !", "On est imbattables.", "Encore une partie ?"];
+const RPS_WIN = ["Gagné !", "Trop facile !", "Je lis dans tes pensées.", "Victoire !"];
+const RPS_LOSE = ["Revanche !", "J'ai glissé.", "Tu as triché, c'est sûr.", "Bon… tu choisis le film."];
+const NAP_LINES = ["Petite sieste ?", "*bâille* Je ferme les yeux deux minutes…", "Ton épaule, c'est mon oreiller préféré.", "Une sieste collée-serrée ?"];
+const NAP_WAKE = ["*s'étire* Mmh… j'ai dormi combien de temps ?", "Meilleure sieste du monde.", "Tu as ronflé. Un tout petit peu.", "Encore cinq minutes…"];
+const KISS_LINES = ["Smack !", "Un bisou, juste comme ça.", "Mmh, encore un ?", "Bisou magique : ça guérit tout.", "Un pour toi, et un autre pour toi.", "Mwah !"];
 const SQUABBLES = [["C'est moi qui ai raison !", "Même pas vrai !"], ["Le dernier cookie était à moi !", "Prouve-le !"], ["Tu ronfles.", "Et toi, tu voles la couette !"],
   ["Ce soir, c'est moi qui choisis le film.", "Dans tes rêves !"], ["Tu triches au puzzle !", "Quelle mauvaise foi !"], ["C'est ton tour de faire la vaisselle.", "Pierre-feuille-ciseaux ?"]];
-const PEACE_LINES = ["Bon… on fait la paix ?", "Je t'aime quand même.", "Égalité !"];
-const REPLIES = ["Moi aussi !", "Oh, c'est mignon.", "Arrête, tu me fais rougir.", "Évidemment.", "Hihi.", "Tu dis ça à tout le monde ?"];
+const PEACE_LINES = ["Bon… on fait la paix ?", "Je t'aime quand même.", "Égalité !", "Câlin de la paix ?", "On oublie tout ?"];
+const REPLIES = ["Moi aussi !", "Oh, c'est mignon.", "Arrête, tu me fais rougir.", "Évidemment.", "Hihi.", "Tu dis ça à tout le monde ?", "Toi aussi, tu sais.", "Arrête, je vais fondre.",
+  "Note-le quelque part, ça.", "Je garde ça précieusement.", "Mmh, redis-le ?", "Tu triches, c'est trop mignon.", "Je sais. Mais redis-le quand même.", "Toujours.", "Pareil, puissance mille.", "*rougit jusqu'aux oreilles*"];
 const FX_HEART = '<svg viewBox="0 0 16 16"><path d="M8 14 2.5 8.6A3.2 3.2 0 0 1 8 4a3.2 3.2 0 0 1 5.5 4.6Z" fill="#FF6E89"/></svg>';
 const FX_CLOUD = '<svg viewBox="0 0 74 50"><g fill="#F4EFE9" stroke="#C9BFD0" stroke-width="1.5"><circle cx="20" cy="30" r="14"/><circle cx="37" cy="22" r="17"/><circle cx="54" cy="30" r="14"/><circle cx="37" cy="36" r="13"/></g><path d="M14 10l2 4 4 1-4 1-2 4-2-4-4-1 4-1z M60 6l1.6 3 3 1.4-3 1.4L60 15l-1.6-3.2-3-1.4 3-1.4z" fill="#F2B544"/><text x="37" y="31" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="14" fill="#B0506C">!#@</text></svg>';
 // Accessoires des petites scènes.
@@ -4501,6 +4603,7 @@ const FX_STAR = '<svg viewBox="0 0 10 10" width="10"><path d="M5 0l1.3 3.4L10 5 
 const FX_ANGER = '<svg viewBox="0 0 16 16" width="16"><path d="M6 1v4H2M10 1v4h4M6 15v-4H2M10 15v-4h4" stroke="#E0457A" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>';
 const FX_APPLE = '<svg viewBox="0 0 16 18" width="14"><path d="M8 5C4 2 0 5 1 10s4 8 7 7c3 1 6-2 7-7S12 2 8 5z" fill="#E0566B"/><path d="M8 5q0-3 2-4" stroke="#5B3A24" stroke-width="1.2" fill="none"/><path d="M9 3q3-2 5 0q-3 2-5 0z" fill="#6DBE9B"/></svg>';
 const FX_FLOWER = '<svg viewBox="0 0 16 22" width="16"><path d="M8 10v11" stroke="#6DBE9B" stroke-width="1.6"/><path d="M8 17q-4-1-5-4q4 0 5 4z" fill="#6DBE9B"/><g fill="#F7A8C4"><circle cx="8" cy="3.5" r="3"/><circle cx="12.3" cy="6.6" r="3"/><circle cx="10.7" cy="11.4" r="3"/><circle cx="5.3" cy="11.4" r="3"/><circle cx="3.7" cy="6.6" r="3"/></g><circle cx="8" cy="7.6" r="2.4" fill="#F2C84B"/></svg>';
+const FX_BLANKET = '<svg viewBox="0 0 76 24" width="76"><path d="M3 22Q2 8 13 6Q38 1 63 6Q74 8 73 22Z" fill="#F7C6D4" stroke="#E293AB" stroke-width="1.2"/><path d="M8 13Q38 8 68 13" stroke="#FFFFFF" stroke-width="1.4" stroke-dasharray="3 3" fill="none" opacity=".85"/><g fill="#FFFFFF" opacity=".75"><circle cx="18" cy="17" r="1.5"/><circle cx="31" cy="15.5" r="1.5"/><circle cx="45" cy="15.5" r="1.5"/><circle cx="58" cy="17" r="1.5"/></g></svg>';
 const FX_BOLT = '<svg viewBox="0 0 16 26" width="14"><path d="M10 0L2 14h5l-3 12 10-16H9z" fill="#F2D27A" stroke="#E8B04A" stroke-width=".8"/></svg>';
 const Buddies = {
   el: null, fx: null, b: {}, sig: "", last: 0, busy: false, nextAct: 0,
@@ -4514,12 +4617,13 @@ const Buddies = {
     ["a", "b"].forEach((k, i) => {
       const d = document.createElement("div");
       d.className = "buddy";
-      d.innerHTML = `<div class="bubble"></div><span class="mood-fx"></span><div class="buddy-face"><div class="buddy-body"></div></div>`;
+      d.innerHTML = `<div class="bubble"></div><span class="mood-fx"></span><span class="buddy-shadow"></span><div class="buddy-face"><div class="buddy-body"></div></div>`;
+      d.style.setProperty("--bd", (Math.random() * 4).toFixed(2) + "s");
       d.addEventListener("click", () => this.poke(k));
       el.appendChild(d);
       const pet = document.createElement("div"); pet.className = "pet"; pet.hidden = true; el.appendChild(pet);
       const x = (i ? 0.68 : 0.3) * this.W();
-      this.b[k] = { k, el: d, faceEl: d.querySelector(".buddy-face"), x, target: null, speed: 0, face: i ? -1 : 1, phase: 0, tilt: 0, run: false, pet: { el: pet, x: x - 30, face: 1, phase: 0 } };
+      this.b[k] = { k, el: d, faceEl: d.querySelector(".buddy-face"), shadow: d.querySelector(".buddy-shadow"), x, target: null, speed: 0, face: i ? -1 : 1, phase: 0, tilt: 0, run: false, pet: { el: pet, x: x - 30, face: 1, phase: 0 } };
     });
     const yj = document.createElement("div"); yj.className = "yj-bud";
     yj.innerHTML = `<div class="bubble"></div><div class="yj-in"></div>`;
@@ -4576,9 +4680,13 @@ const Buddies = {
         if (Math.abs(o.target - o.x) < 0.5) { o.x = o.target; o.target = null; o.speed = 0; const cb = o.onArrive; o.onArrive = null; if (cb) cb(); }
       }
       const moving = o.target != null && !still, sw = Math.sin(o.phase * Math.PI);
-      const lift = moving ? Math.abs(sw) * (o.run ? 7 : 4) : 0;
+      // En marchant, le corps est au plus haut quand les jambes se croisent ; en courant, pendant l'envol.
+      const lift = moving ? (o.run ? Math.abs(sw) * 7 : (1 - Math.abs(sw)) * 3) : 0;
+      if (moving) { o.el.style.setProperty("--sw", sw.toFixed(3)); o.el.style.setProperty("--amp", o.run ? "1" : ".62"); o.swOn = true; }
+      else if (o.swOn) { o.el.style.setProperty("--sw", "0"); o.swOn = false; }
+      if (o.lastLift !== lift) { o.lastLift = lift; o.shadow.style.setProperty("--lift", lift.toFixed(1) + "px"); o.shadow.style.setProperty("--sh", (1 - lift / 30).toFixed(3)); }
       const tilt = moving ? sw * (o.run ? 6 : 4) + (o.run ? 8 : 3) : o.tilt;
-      o.el.style.transform = `translate3d(${(o.x - 22).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
+      o.el.style.transform = `translate3d(${(o.x - 25).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
       o.faceEl.style.transform = `scaleX(${o.face}) rotate(${tilt.toFixed(1)}deg)`;
       o.el.classList.toggle("walking", moving);
       o.el.classList.toggle("bl", o.x < W * 0.28);
@@ -4611,6 +4719,8 @@ const Buddies = {
       y.x = (A.x + B.x) / 2; y.phase += dt * 5; lift = 14 + Math.abs(Math.sin(y.phase)) * 20; rot = Math.sin(y.phase) * 18;
     } else if (y.mode === "pinned") {
       y.x = (A.x + B.x) / 2; lift = 22;
+    } else if (y.mode === "nap") {
+      y.x = (A.x + B.x) / 2; lift = 0;
     } else {
       let goal = y.target;
       if (goal == null && !y.sleep) {
@@ -4627,7 +4737,7 @@ const Buddies = {
         } else if (y.target != null) { y.target = null; const cb = y.onArrive; y.onArrive = null; if (cb) cb(); }
       }
     }
-    y.el.style.transform = `translate3d(${(y.x - 21).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
+    y.el.style.transform = `translate3d(${(y.x - 23).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
     y.body.style.transform = `scaleX(${y.face}) rotate(${rot.toFixed(0)}deg)`;
     y.el.classList.toggle("bl", y.x < W * 0.28); y.el.classList.toggle("br", y.x > W * 0.72);
   },
@@ -4678,6 +4788,11 @@ const Buddies = {
       [h >= 5 && h < 11 ? this.tw("chrono", "lo") + this.tw("chrono", "hi") : 0, () => this.morning()],
       [h >= 20 || h < 5 ? 0.5 + this.tw("chrono", "hi") : 0, () => this.stargaze()],
       [0.3 + avg("tease") * 0.3 + (4 - avg("mood")) * 0.15, () => this.squabble(), 1],
+      [0.9 + avg("energy") * 0.15, () => this.runTogether(), 1],
+      [0.5 + avg("tease") * 0.3, () => this.tease(), 1],
+      [0.7, () => this.playBall(), 1],
+      [0.6, () => this.chifoumi()],
+      [night ? 1.4 : 0.35 + (4 - avg("energy")) * 0.1, () => this.napTogether()],
       [0.3 + avg("energy") * 0.25, () => this.chase(), 1],
       [0.4 + avg("mood") * 0.15 + avg("energy") * 0.1, () => this.dance()],
       [1.2, () => this.faceTalk()],
@@ -4822,11 +4937,11 @@ const Buddies = {
       y.run = false; y.mode = "pinned"; this.yjHop();
       this.yjSay(pickOne(["Hé ! On se fait un câlin ?", "Pas de dispute, je vous aime tous les deux !", "Stop ! Câlin obligatoire."]), 2000);
       setTimeout(() => {
-        this.mood([L, R], "grr", false); this.mood([L, R], "happy", true); L.tilt = R.tilt = 8;
+        this.clearPoses([L, R]); L.face = 1; R.face = -1; this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true); L.tilt = R.tilt = 8;
         this.say(pickOne([L, R]).k, pickOne(["Il a raison…", "D'accord, d'accord. Câlin.", "Comment lui dire non ?"]), 2000);
         this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 6);
       }, 1700);
-      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 4200);
+      setTimeout(() => { this.clearPoses([L, R]); y.mode = "follow"; this.apart(L, R, () => this.done()); }, 4200);
     };
   },
   // Yassen Jr. imite vos phrases fétiches, en tout petit.
@@ -5137,15 +5252,19 @@ const Buddies = {
   // marqué « vu » qu'au moment où il se joue vraiment.
   deliver(sg, tries = 0) {
     if (!this.el || this.el.hidden) { this.pending = null; return; }
+    const from = sg.from === "b" ? "b" : "a", sig = own(SIGNALS, sg.kind) ? SIGNALS[sg.kind] : null;
+    if (sg.kind !== "mot" && !sig) return;
+    // Le message s'annonce tout de suite ; l'animation attend que les chibis aient fini leur scène.
+    if (!tries) {
+      if (sg.id) lsSet("entre-nous:sig", sg.id);
+      Sfx.play(sg.kind === "mot" ? "paper" : "heart");
+      gainToast(sg.kind === "mot" ? `Un petit mot de ${nm(from)} arrive !` : fr(sig.toast.replace("{f}", nm(from))), null);
+    }
     this.pending = sg.id;
     if (this.busy) { if (tries < 40) setTimeout(() => this.deliver(sg, tries + 1), 1500); else this.pending = null; return; }
     this.pending = null;
-    if (sg.id) lsSet("entre-nous:sig", sg.id);
-    const from = sg.from === "b" ? "b" : "a", F = this.b[from], T = this.b[other(from)], W = this.W(), sig = own(SIGNALS, sg.kind) ? SIGNALS[sg.kind] : null;
-    if (sg.kind !== "mot" && !sig) return;
+    const F = this.b[from], T = this.b[other(from)], W = this.W();
     this.busy = true;
-    Sfx.play(sg.kind === "mot" ? "paper" : "heart");
-    gainToast(sg.kind === "mot" ? `Un petit mot de ${nm(from)} arrive !` : fr(sig.toast.replace("{f}", nm(from))), null);
     if (sg.kind === "mot") {
       F.x = T.x < W / 2 ? W - 14 : 14; F.el.classList.add("carry");
       this.walkTo(F, T.x + (F.x > T.x ? 26 : -26), true, () => {
@@ -5190,16 +5309,257 @@ const Buddies = {
       setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 5200);
     });
   },
+  /* ───── Gestes et poses ───── */
+  pose(list, cls, on) { (Array.isArray(list) ? list : [list]).forEach(o => o.el.classList.toggle(cls, on)); },
+  POSES: ["p-open", "p-hug", "p-cheer", "p-pump", "p-poke", "p-holdr", "p-holdl", "p-tiptoe", "p-cross", "p-rest", "p-sit", "p-tickle", "p-kick", "nap2", "lifted", "whisper", "sneak", "happy", "blush", "grr"],
+  clearPoses(list) { list.forEach(o => { o.el.classList.remove(...this.POSES); o.el.style.zIndex = ""; o.tilt = 0; }); },
+  // Quand Yassen Jr. dort, on parle tout bas.
+  talk(k, text, ms) { const o = this.b[k]; o.el.classList.toggle("whisper", !!this.yj.sleep); this.say(k, text, ms); },
+  yjFree() { return !this.yj.sleep && this.yj.mode === "follow" && this.yj.target == null; },
+  dust(o, dir) { this.prop("fx-dust", "", o.x - dir * 12 - 4, 0, 700); },
+  ball(x0, x1, ms, h) { this.prop("fx-ball", "<i></i>", x0 - 6, 34, ms + 60, { "--dx": (x1 - x0).toFixed(0) + "px", "--t": ms + "ms", "--h": (h || -44) + "px" }); },
+  /* ───── Câlins ───── */
+  // On ouvre les bras, on s'avance, on s'enlace et on se berce. Variantes : porté·e, par-derrière, et Yassen Jr. qui s'invite.
   hug() {
-    this.meet(27, (L, R) => {
-      this.mood([L, R], "happy", true); L.tilt = R.tilt = 10;
-      const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
-      setTimeout(() => this.hearts(mid, 5), 1100);
-      { const k = pickOne(["a", "b"]); this.say(k, lineFor(k, "hug", HUG_LINES), 2400); }
-      [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
-      setTimeout(() => [L, R].forEach(o => o.el.classList.remove("blush")), 2700);
-      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 2700);
+    const y = this.yj, strong = this.most("energy", 3), r = Math.random();
+    if (strong && !y.sleep && r < 0.22) return this.hugLift(strong);
+    if (r < 0.42) return this.hugBack();
+    this.meet(42, (L, R) => {
+      this.pose([L, R], "p-open", true);
+      setTimeout(() => {
+        let n = 0;
+        const close = () => {
+          if (++n < 2) return;
+          L.face = 1; R.face = -1;
+          this.pose([L, R], "p-open", false); this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true);
+          const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
+          [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
+          const k = pickOne(["a", "b"]);
+          this.talk(k, y.sleep ? pickOne(HUG_WHISPER) : lineFor(k, "hug", HUG_LINES), 2400);
+          setTimeout(() => this.talk(other(k), pickOne(y.sleep ? HUG_WHISPER_BACK : HUG_BACK), 2200), 2400);
+          let t = 0; const rock = setInterval(() => { const a = t++ % 2 ? 5 : 12; L.tilt = a; R.tilt = 17 - a; }, 700);
+          if (this.yjFree() && Math.random() < 0.45) setTimeout(() => this.yjJoinHug(L, R), 1200);
+          setTimeout(() => this.hearts(mid, 5), 1700);
+          setTimeout(() => {
+            clearInterval(rock); this.clearPoses([L, R]);
+            if (y.mode === "nap") { y.mode = "follow"; this.yjHop(); }
+            this.apart(L, R, () => this.done());
+          }, 5000);
+        };
+        this.walkTo(L, L.x + 9, false, close); this.walkTo(R, R.x - 9, false, close);
+      }, 500);
     });
+  },
+  yjJoinHug(L, R) {
+    const y = this.yj; y.run = true; y.target = (L.x + R.x) / 2;
+    y.onArrive = () => { y.run = false; y.mode = "nap"; this.yjHop(); this.yjSay(pickOne(["Moi aussi ! Moi aussi !", "Câlin à trois !", "Je m'accroche à vos jambes !"]), 1800); this.hearts(y.x, 4, 12); };
+  },
+  hugLift(S) {
+    const O = this.b[other(S.k)];
+    this.meet(30, (L, R) => {
+      this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true);
+      this.say(S.k, pickOne(LIFT_LINES), 1800);
+      setTimeout(() => { O.el.classList.add("lifted", "p-kick"); this.hop(S); this.say(O.k, pickOne(LIFTED_LINES), 2200); this.hearts((L.x + R.x) / 2, 6); }, 700);
+      setTimeout(() => this.hearts((L.x + R.x) / 2, 4), 1800);
+      setTimeout(() => { O.el.classList.remove("lifted", "p-kick"); this.hop(O); }, 3000);
+      setTimeout(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 3900);
+    });
+  },
+  // Câlin surprise par-derrière, sur la pointe des pieds.
+  hugBack() {
+    const H = this.most("tender", 0), T = this.b[other(H.k)], W = this.W(), d = T.x < W / 2 ? 1 : -1;
+    T.face = d; H.el.classList.add("sneak", "p-tiptoe");
+    this.talk(H.k, pickOne(["*s'approche sur la pointe des pieds*", "Chut…"]), 1500);
+    this.walkTo(H, T.x - d * 17, false, () => {
+      H.el.classList.remove("sneak", "p-tiptoe"); H.face = d; T.face = d;
+      // Celui qui enlace passe devant : on voit ses bras autour de l'autre.
+      H.el.style.zIndex = "2"; T.el.style.zIndex = "1";
+      this.pose(H, "p-hug", true); this.pose(H, "p-rest", true); H.tilt = 7;
+      this.talk(H.k, pickOne(BACKHUG_LINES), 2000); this.hop(T);
+      setTimeout(() => { T.el.classList.add("happy", "blush"); T.tilt = -6; this.talk(T.k, pickOne(BACKHUG_REPLY), 2300); this.hearts(T.x, 5, 18); }, 1900);
+      setTimeout(() => this.hearts(T.x, 3, 14), 3300);
+      setTimeout(() => { this.clearPoses([H, T]); this.walkTo(H, H.x - d * 34, false, () => this.done()); }, 4700);
+    });
+  },
+  /* ───── Dispute et réconciliation ───── */
+  squabble() {
+    const y = this.yj;
+    this.meet(34, (L, R) => {
+      const first = trait(L.k, "tease") === trait(R.k, "tease") ? (Math.random() < 0.5 ? L : R) : trait(L.k, "tease") > trait(R.k, "tease") ? L : R, second = first === L ? R : L;
+      const teasing = trait(first.k, "tease") >= 3, pair = pickOne(teasing ? TEASE_SQUABBLES : SQUABBLES);
+      const angry = trait(L.k, "mood") + trait(R.k, "mood"), long = angry <= 2;
+      this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
+      this.talk(first.k, pair[0], 1600);
+      setTimeout(() => this.talk(second.k, pair[1], 1600), 1300);
+      if (!y.sleep) setTimeout(() => this.cloud((L.x + R.x) / 2, 1300), 2000);
+      // Bras croisés, chacun se tourne de son côté.
+      setTimeout(() => {
+        this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
+        this.pose([L, R], "p-cross", true); L.face = -1; R.face = 1;
+        [L, R].forEach((o, i) => setTimeout(() => this.prop("fx-anger", FX_ANGER, o.x - 8, 62, 1000), i * 250));
+        this.talk(pickOne([L, R]).k, y.sleep ? pickOne(["*boude en silence*", "Pff… (tout bas)"]) : pickOne(HMPH), 1700);
+      }, 3300);
+      setTimeout(() => {
+        if (this.yjFree() && Math.random() < 0.35) return this.yjPeace(L, R);
+        if (!y.sleep && Math.random() < 0.15) { this.clearPoses([L, R]); return this.chase(second, first); }
+        this.makeUp(L, R, first, second, teasing);
+      }, long ? 6000 : 5000);
+    });
+  },
+  // Le premier qui craque se retourne, s'excuse (parfois avec une fleur), l'autre fond, et câlin.
+  makeUp(L, R, first, second, teasing) {
+    const sorry = trait(first.k, "mood") <= trait(second.k, "mood") ? second : first, O = sorry === L ? R : L, mid = (L.x + R.x) / 2;
+    sorry.face = O.x > sorry.x ? 1 : -1; this.pose(sorry, "p-cross", false);
+    this.talk(sorry.k, pickOne(teasing && sorry === first ? TEASE_SORRY : SORRY_LINES), 2200);
+    if (Math.random() < 0.55) setTimeout(() => this.prop("fx-flower", FX_FLOWER, sorry.x + sorry.face * 14 - 8, 30, 2400), 500);
+    setTimeout(() => { O.el.classList.add("blush"); O.tilt = -5; }, 1500);
+    setTimeout(() => { O.face = -sorry.face; O.tilt = 0; this.pose(O, "p-cross", false); this.talk(O.k, pickOne(FORGIVE_LINES), 2200); }, 2600);
+    setTimeout(() => {
+      L.face = 1; R.face = -1; this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true); L.tilt = R.tilt = 9;
+      this.walkTo(L, L.x + 6); this.walkTo(R, R.x - 6);
+      this.bigHeart(mid); this.hearts(mid, 7);
+    }, 4600);
+    setTimeout(() => this.hearts(mid, 4), 5600);
+    setTimeout(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 7000);
+  },
+  /* ───── Courir ensemble, main dans la main ───── */
+  runTogether() {
+    const y = this.yj, W = this.W(), soft = y.sleep;
+    this.meet(30, (L, R) => {
+      const dir = (L.x + R.x) / 2 < W / 2 ? 1 : -1;
+      L.face = R.face = dir;
+      this.pose(L, dir > 0 ? "p-holdr" : "p-holdl", true); this.pose(R, dir > 0 ? "p-holdl" : "p-holdr", true);
+      this.mood([L, R], "happy", true);
+      if (soft) [L, R].forEach(o => o.el.classList.add("sneak", "p-tiptoe"));
+      this.talk(pickOne(["a", "b"]), pickOne(soft ? TIPTOE_LINES : RUN_LINES), 1800);
+      setTimeout(() => {
+        const far = dir > 0 ? W - 30 : 30, lead = dir > 0 ? R : L, back = lead === R ? L : R;
+        let n = 0, dust = null;
+        const trail = setInterval(() => this.hearts((L.x + R.x) / 2 - dir * 8, 1, 8), 650);
+        const end = () => {
+          if (++n < 2) return;
+          clearInterval(dust); clearInterval(trail);
+          [L, R].forEach(o => o.el.classList.remove("sneak", "p-tiptoe", "p-holdr", "p-holdl"));
+          lead.face = -dir; back.face = dir;
+          this.pose([L, R], soft ? "p-open" : "p-cheer", true); if (!soft) { this.hop(L); setTimeout(() => this.hop(R), 120); }
+          this.talk(back.k, pickOne(soft ? TIPTOE_END : RUN_END), 2300); this.hearts((L.x + R.x) / 2, 5);
+          setTimeout(() => { this.clearPoses([L, R]); this.done(); }, 2300);
+        };
+        this.walkTo(lead, far, !soft, end); this.walkTo(back, far - dir * 30, !soft, end);
+        if (!soft) dust = setInterval(() => [L, R].forEach(o => this.dust(o, dir)), 240);
+        if (this.yjFree()) {
+          y.run = true; y.target = far - dir * 62; y.onArrive = () => { y.run = false; };
+          setTimeout(() => this.yjSay(pickOne(["Attendez-moi !", "Je cours aussi !", "Plus vite, plus vite !"]), 1500), 500);
+        }
+      }, 800);
+    });
+  },
+  /* ───── Se taquiner, puis guerre des chatouilles ───── */
+  tease() {
+    const T = this.most("tease", 0), O = this.b[other(T.k)], y = this.yj;
+    this.walkTo(T, O.x + (O.x > T.x ? -25 : 25), false, () => {
+      T.face = O.x > T.x ? 1 : -1;
+      this.talk(T.k, pickOne(TEASE_LINES), 1800);
+      [0, 420, 840].forEach(ms => setTimeout(() => { this.pose(T, "p-poke", true); this.hop(O); setTimeout(() => this.pose(T, "p-poke", false), 200); }, ms));
+      setTimeout(() => { O.face = -T.face; O.el.classList.add("blush", "grr"); this.talk(O.k, pickOne(TEASE_BACK), 1800); }, 1400);
+      setTimeout(() => {
+        O.el.classList.remove("grr");
+        this.pose([T, O], "p-tickle", true); this.mood([T, O], "happy", true); T.tilt = -6; O.tilt = -8;
+        this.talk(pickOne([T, O]).k, pickOne(TICKLE_LINES), 2000);
+        this.hearts((T.x + O.x) / 2, 5);
+        if (this.yjFree() && Math.random() < 0.5) { y.target = (T.x + O.x) / 2 + (T.x < O.x ? 30 : -30); y.onArrive = () => { this.yjHop(); this.yjSay(pickOne(["Moi aussi, des chatouilles !", "Hihihi !", "Je veux jouer aussi !"]), 1700); }; }
+      }, 3200);
+      setTimeout(() => { this.clearPoses([T, O]); this.apart(T.x < O.x ? T : O, T.x < O.x ? O : T, () => this.done()); }, 5800);
+    });
+  },
+  /* ───── Jouer : la balle, pierre-feuille-ciseaux ───── */
+  playBall() {
+    const y = this.yj, W = this.W(), A = this.b.a, B = this.b.b, soft = y.sleep;
+    const mid = Math.max(90, Math.min(W - 90, (A.x + B.x) / 2)), L = A.x <= B.x ? A : B, R = L === A ? B : A;
+    let n = 0;
+    const go = () => {
+      if (++n < 2) return;
+      L.face = 1; R.face = -1;
+      this.talk(L.k, soft ? "On joue tout doucement…" : pickOne(BALL_LINES), 1500);
+      const total = 4 + (Math.random() < 0.5 ? 1 : 0); let p = 0;
+      const steal = !soft && this.yjFree() && Math.random() < 0.5;
+      const pass = (from, to) => {
+        this.pose(from, "p-pump", true); setTimeout(() => this.pose(from, "p-pump", false), 260);
+        if (++p === total && steal) {
+          y.run = true; y.target = (from.x + to.x) / 2;
+          this.ball(from.x, (from.x + to.x) / 2, 520, -30);
+          setTimeout(() => { y.run = false; this.yjHop(); this.yjSay(pickOne(["Attrapée ! Elle est à moi !", "Interception !", "Hihi, je la garde !"]), 1800); }, 560);
+          setTimeout(() => { this.mood([L, R], "happy", true); this.talk(to.k, pickOne(["Hé, petit voleur !", "Bien joué, toi !", "Il est trop fort !"]), 2000); this.hearts(y.x, 4, 14); }, 1700);
+          return setTimeout(() => { this.clearPoses([L, R]); this.done(); }, 3800);
+        }
+        this.ball(from.x, to.x, soft ? 1100 : 900, soft ? -8 : -44);
+        setTimeout(() => {
+          this.pose(to, "p-open", true); this.hop(to); setTimeout(() => this.pose(to, "p-open", false), 320);
+          if (p < total) setTimeout(() => pass(to, from), 450);
+          else { this.mood([L, R], "happy", true); this.talk(to.k, pickOne(BALL_END), 2000); this.hearts((L.x + R.x) / 2, 4); setTimeout(() => { this.clearPoses([L, R]); this.done(); }, 2200); }
+        }, soft ? 1100 : 900);
+      };
+      setTimeout(() => pass(L, R), 700);
+    };
+    this.walkTo(L, mid - 56, false, go); this.walkTo(R, mid + 56, false, go);
+  },
+  chifoumi() {
+    const y = this.yj;
+    this.meet(44, (L, R) => {
+      this.talk(L.k, "Pierre… feuille… ciseaux !", 1900);
+      [0, 330, 660].forEach(ms => setTimeout(() => { this.pose([L, R], "p-pump", true); setTimeout(() => this.pose([L, R], "p-pump", false), 160); }, ms));
+      setTimeout(() => {
+        const H = ["✊", "✋", "✌️"], a = Math.floor(Math.random() * 3), b = Math.floor(Math.random() * 3);
+        [[L, a], [R, b]].forEach(([o, h]) => this.prop("fx-rps", H[h], o.x + o.face * 10 - 12, 64, 2600));
+        const win = a === b ? null : (a - b + 3) % 3 === 1 ? L : R;
+        setTimeout(() => {
+          if (!win) { this.talk(pickOne([L, R]).k, pickOne(["Égalité !", "On pense pareil, évidemment."]), 1800); if (this.yjFree()) setTimeout(() => this.yjSay("On recommence ! On recommence !", 1600), 900); this.hearts((L.x + R.x) / 2, 3); return; }
+          const lo = win === L ? R : L;
+          this.pose(win, "p-cheer", true); this.hop(win); this.talk(win.k, pickOne(RPS_WIN), 1700);
+          lo.el.classList.add("grr");
+          setTimeout(() => { lo.el.classList.remove("grr"); this.talk(lo.k, pickOne(RPS_LOSE), 1800); this.pose(win, "p-cheer", false); }, 1500);
+          if (y.sleep) setTimeout(() => this.hearts(y.x, 2, 10), 1200);
+        }, 700);
+      }, 1100);
+      setTimeout(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 5200);
+    });
+  },
+  /* ───── Sieste à deux ───── */
+  // Assis côte à côte, la tête sur l'épaule de l'autre, sous un plaid. Yassen Jr. réveillé vient se blottir ;
+  // endormi, on vient faire la sieste à côté de lui.
+  napTogether() {
+    const y = this.yj, W = this.W(), A = this.b.a, B = this.b.b;
+    const go = (L, R) => {
+      L.face = 1; R.face = -1;
+      this.pose([L, R], "p-sit", true);
+      this.talk(pickOne([L, R]).k, pickOne(NAP_LINES), 2000);
+      let zz = null, blanket = null;
+      setTimeout(() => {
+        this.pose([L, R], "p-rest", true); this.pose([L, R], "nap2", true); L.tilt = 4; R.tilt = 4;
+        blanket = this.prop("fx-blanket", FX_BLANKET, (L.x + R.x) / 2 - 38, -2, 0);
+        zz = setInterval(() => [L, R].forEach((o, i) => setTimeout(() => this.prop("fx-z", "z", o.x + o.face * 6 - 3, 60, 2000), i * 800)), 1900);
+        if (this.yjFree()) {
+          y.target = (L.x + R.x) / 2;
+          y.onArrive = () => { y.mode = "nap"; y.el.classList.add("napping"); this.yjSay("*bâille* Je peux venir ?", 1600); setTimeout(() => { y.body.innerHTML = yassenSvg(Jeu.stage(), true); }, 1700); };
+        }
+      }, 1300);
+      setTimeout(() => {
+        clearInterval(zz); if (blanket) blanket.remove();
+        this.pose([L, R], "nap2", false); this.pose([L, R], "p-rest", false); L.tilt = R.tilt = 0;
+        this.pose([L, R], "p-cheer", true); [L, R].forEach(o => o.el.classList.add("stretch"));
+        this.talk(pickOne([L, R]).k, pickOne(NAP_WAKE), 2400);
+        if (y.mode === "nap") { y.mode = "follow"; y.el.classList.remove("napping"); y.body.innerHTML = yassenSvg(Jeu.stage(), y.sleep); setTimeout(() => this.yjSay(pickOne(["Bien dormi !", "Encore une sieste demain ?"]), 1600), 900); }
+      }, 9800);
+      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("stretch")); this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 11600);
+    };
+    // Yassen Jr. dort déjà : on s'installe à côté de lui.
+    if (y.sleep && y.mode === "follow") {
+      const mid = Math.max(70, Math.min(W - 70, y.x + (y.x < W / 2 ? 46 : -46))), L = A.x <= B.x ? A : B, R = L === A ? B : A;
+      let n = 0; const both = () => { if (++n === 2) go(L, R); };
+      this.walkTo(L, mid - 13, false, both); this.walkTo(R, mid + 13, false, both);
+      return;
+    }
+    this.meet(26, go);
   },
   kiss() {
     this.meet(29, (L, R) => {
@@ -5207,29 +5567,6 @@ const Buddies = {
       this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); { const k = pickOne(["a", "b"]); this.say(k, lineFor(k, "kiss", KISS_LINES), 1800); }
       [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
       setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
-    });
-  },
-  // Le plus taquin lance la chamaillerie ; plus ils sont soupe au lait, plus la réconciliation se fait attendre.
-  squabble() {
-    this.meet(30, (L, R) => {
-      const first = trait(L.k, "tease") === trait(R.k, "tease") ? (Math.random() < 0.5 ? L : R) : trait(L.k, "tease") > trait(R.k, "tease") ? L : R, second = first === L ? R : L;
-      const teasing = trait(first.k, "tease") >= 3, pair = pickOne(teasing ? TEASE_SQUABBLES : SQUABBLES);
-      const angry = trait(L.k, "mood") + trait(R.k, "mood"), long = angry <= 2;
-      this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
-      this.say(first.k, pair[0], 1500);
-      setTimeout(() => this.say(second.k, pair[1], 1500), 1100);
-      setTimeout(() => this.cloud((L.x + R.x) / 2, long ? 2600 : 1500), 1900);
-      setTimeout(() => {
-        if (!this.yj.sleep && this.yj.mode === "follow" && Math.random() < 0.4) return this.yjPeace(L, R);
-        this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
-        if (Math.random() < 0.3 + angry * 0.06) {
-          const peace = trait(first.k, "mood") <= trait(second.k, "mood") ? second : first;
-          this.mood([L, R], "happy", true);
-          this.say(peace.k, pickOne(teasing && peace === first ? ["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, c'est toi la star."] : PEACE_LINES), 2200);
-          this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 4);
-          setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 1800);
-        } else this.chase(second, first);
-      }, long ? 4600 : 3500);
     });
   },
   // Le personnage le plus marqué sur un trait (au moins min), ou le moins marqué (au plus max).
@@ -5323,9 +5660,13 @@ const Buddies = {
     this.say(k, lineFor(k, "solo", null) || pickOne(BUDDY_LINES.all).replace(/\{o\}/g, nm(other(k))), 2800);
   },
   nap() {
+    if (Math.random() < 0.6) return this.napTogether();
     const o = this.least("energy", 4);
-    o.el.classList.add("sleep", "happy"); this.say(o.k, "Zzz…", 4200);
-    setTimeout(() => { o.el.classList.remove("sleep", "happy"); this.done(); }, 4600);
+    this.pose(o, "p-sit", true); this.say(o.k, pickOne(["*bâille*", "Petite pause…", "Je ferme les yeux deux secondes."]), 1600);
+    setTimeout(() => { this.pose(o, "nap2", true); o.tilt = 8; }, 1300);
+    const zz = setInterval(() => this.prop("fx-z", "z", o.x + o.face * 6 - 3, 58, 2000), 1500);
+    setTimeout(() => { clearInterval(zz); this.pose(o, "nap2", false); o.tilt = 0; o.el.classList.add("stretch"); this.say(o.k, pickOne(NAP_WAKE), 2000); }, 6200);
+    setTimeout(() => { o.el.classList.remove("stretch"); this.clearPoses([o]); this.done(); }, 7800);
   },
   // Les deux se rejoignent au milieu, face à face.
   meet(gap, cb) {
@@ -6776,6 +7117,7 @@ const Sfx = {
   tap(el) {
     if (!this.taps()) return;
     const a = el.dataset.a || "", p = el.getAttribute("aria-pressed");
+    this.note = Math.max(0, ["home", "play", "capsule", "aventures", "lettres"].indexOf(el.dataset.tab || "")) || ((el.dataset.seg || el.dataset.v || "").length % 5);
     this.play(a === "tab" || a === "cap-seg" || a === "tr-seg" ? "tab" : /close|quit|flee|cancel|stay|uncheck|-no$|hide/.test(a) || el.dataset.v === "no" ? "close" : p === "true" ? "off" : p === "false" ? "on" : "tap");
   },
   play(name) {
@@ -6801,7 +7143,8 @@ const Sfx = {
       case "whoosh": this.noise(t, 0.3, 0.3, 800, "bandpass"); break;
       // Bruitages des boutons : très courts et très doux.
       case "tap": this.tone(1250, t, 0.045, "sine", 0.22, 900); break;
-      case "tab": this.tone(720, t, 0.06, "triangle", 0.2, 560); break;
+      // Onglets : une note de boîte à musique, différente pour chaque onglet (gamme douce).
+      case "tab": { const f = [784, 880, 988, 1175, 1319][this.note || 0]; this.tone(f, t, 0.32, "sine", 0.14); this.tone(f * 2, t, 0.14, "sine", 0.035); break; }
       case "close": this.tone(560, t, 0.08, "sine", 0.2, 340); break;
       case "on": this.tone(880, t, 0.05, "sine", 0.18); this.tone(1320, t + 0.05, 0.07, "sine", 0.15); break;
       case "off": this.tone(1100, t, 0.05, "sine", 0.15); this.tone(740, t + 0.05, 0.07, "sine", 0.13); break;
@@ -6834,7 +7177,7 @@ const SIGNALS = {
 };
 const SIG_FOR = { nuage: ["calin", "courage"], orage: ["courage", "calin"], calin: ["calin"], brume: ["pense", "calin"], calme: ["espace"] };
 // La météo du cœur est en pause : passer à true pour la remettre (carte d'accueil et effets sur les chibis).
-const HEART_WEATHER = false;
+const HEART_WEATHER = true;
 // La météo de quelqu'un ne vaut que pour la journée.
 const moodOf = k => { if (!HEART_WEATHER) return null; const v = ((Store.meta.mood || {})[k]) || null; return v && v.day === todayStr() && MOOD_BY_ID[v.m] ? v : null; };
 function weatherSvg(m) {
