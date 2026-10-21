@@ -1078,6 +1078,31 @@ textarea[readonly] { font-size: 16px; }
 .layer:focus { outline: none; }
 .link { min-height: 40px; }
 .chip { min-height: 38px; }
+/* Parler à Yassen Jr. */
+.yj-talk { margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.yj-talk svg { flex: none; }
+.yj-daily { margin: 6px 0 0; font-family: var(--f-hand, cursive); font-size: 1.05rem; color: var(--fg); line-height: 1.3; }
+.yj-chat-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.yj-chat-av { width: 58px; flex: none; animation: bob 3s ease-in-out infinite; }
+.yj-chat-av svg { display: block; width: 100%; height: auto; }
+.yj-chat { display: grid; gap: 8px; max-height: 46vh; overflow-y: auto; padding: 8px 2px; overscroll-behavior: contain; }
+.yjm { display: flex; gap: 6px; align-items: flex-end; max-width: 86%; }
+.yjm p { margin: 0; padding: 9px 13px; border-radius: 18px; background: var(--surface-2); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.yjm.y p { background: color-mix(in srgb, #FFD25A 32%, var(--surface)); border-bottom-left-radius: 6px; }
+.yjm.me { margin-left: auto; flex-direction: column; align-items: flex-end; }
+.yjm.me p { background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 6px; }
+.yjm.other { flex-direction: column; align-items: flex-start; }
+.yjm.other p { border-bottom-left-radius: 6px; }
+.yjm-who { font-size: .72rem; color: var(--muted); padding: 0 6px; }
+.yjm-av { flex: none; }
+.yjm.typing p { display: flex; gap: 4px; padding: 13px 14px; }
+.yjm.typing i { width: 7px; height: 7px; border-radius: 50%; background: #F2A93B; animation: typing 1s ease-in-out infinite; }
+.yjm.typing i:nth-child(2) { animation-delay: .15s; } .yjm.typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes typing { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+.yj-sugg { margin: 8px 0; }
+.yj-input { display: flex; gap: 8px; align-items: flex-end; }
+.yj-input textarea { flex: 1; min-width: 0; min-height: 0; font-size: 16px; }
+@supports not (color: color-mix(in srgb, red, blue)) { .yjm.y p { background: #FFF1C4; } }
 /* Nouvelle version prête */
 .update-bar { display: block; width: 100%; margin: 4px 0 14px; padding: 12px 16px; border-radius: 18px; background: var(--accent); color: var(--on-accent); font-weight: 700; text-align: center; box-shadow: var(--shadow); }
 .notif-chips { margin: 6px 0 10px; }
@@ -1503,7 +1528,11 @@ const daysUntil = s => Math.round((parseDay(s) - parseDay(todayStr())) / 8640000
 const fmtTs = ts => new Date(ts || Date.now()).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const pickOne = a => a[Math.floor(Math.random() * a.length)];
+// Le hasard des scènes des chibis peut être « partagé » : vos deux téléphones tirent alors la même chose.
+let RAND = Math.random;
+const pickOne = a => a[Math.floor(RAND() * a.length)];
+const seedOf = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return h >>> 0; };
+const mulberry = a => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const hash = n => { let t = (n + 0x6D2B79F5) | 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0); };
 const cvar = n => `--c:var(--m${n});--on-c:var(--on-m${n});--ic:var(--i${n})`;
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -1520,7 +1549,7 @@ const lsSet = (k, v) => {
    Avec la base de l'artifact : synchronisées entre vos appareils.
    Sans elle (visiteur non connecté, aperçu) : enregistrées sur ce seul appareil. */
 const LS = "entre-nous:v1";
-const DEFAULT_META = { couple: { a: "", b: "", style: "partage" }, progress: { seen: [], parties: 0 }, puzzle: { img: "" }, avatars: {}, space: { owner: "" }, game: {}, mood: {}, signal: {} };
+const DEFAULT_META = { couple: { a: "", b: "", style: "partage" }, progress: { seen: [], parties: 0 }, puzzle: { img: "" }, avatars: {}, space: { owner: "" }, game: {}, mood: {}, signal: {}, yj: {} };
 // Identifiant de ce téléphone, pour savoir lequel a créé l'espace commun.
 const deviceId = () => { let v = lsGet("entre-nous:device"); if (!v) { v = uid() + uid(); lsSet("entre-nous:device", v); } return v; };
 // Seul le téléphone qui a créé l'espace commun peut tout effacer.
@@ -1638,6 +1667,11 @@ function cleanMeta(m, v) {
     d.who = isObj(d.who) ? Object.fromEntries(["a", "b"].filter(k => typeof d.who[k] === "string").map(k => [k, d.who[k].slice(0, 64)])) : {};
     if ("epoch" in d) d.epoch = cNum(d.epoch, 0, 1e13, 0);
     if ("notif" in d) d.notif = isObj(d.notif) ? Object.fromEntries(["a", "b"].filter(k => isObj(d.notif[k])).map(k => [k, Object.fromEntries(Object.entries(d.notif[k]).filter(([t, v]) => okTok(t) && typeof v === "boolean"))])) : {};
+  }
+  if (m === "yj") {
+    d.log = Object.fromEntries(Object.entries(isObj(d.log) ? d.log : {}).filter(([k, v]) => okId(k) && isObj(v) && ["a", "b", "y"].includes(v.w) && typeof v.x === "string")
+      .map(([k, v]) => [k, { w: v.w, t: cNum(v.t, 0, 1e13, 0), x: v.x.slice(0, 600), ...(v.to === "a" || v.to === "b" ? { to: v.to } : {}), ...(okTok(v.h) ? { h: v.h } : {}) }]));
+    if (!(isObj(d.daily) && okDay(d.daily.day) && typeof d.daily.x === "string")) delete d.daily; else d.daily = { day: d.daily.day, x: d.daily.x.slice(0, 300) };
   }
   if (m === "progress") {
     ["seen", "endings"].forEach(k => { if (k in d) d[k] = Array.isArray(d[k]) ? d[k].filter(x => typeof x === "string") : []; });
@@ -2918,6 +2952,7 @@ function defisView() {
 function sheetView() {
   const name = S.layer.name;
   if (name === "install") return installSheet();
+  if (name === "yassen") return yassenSheet();
   if (name === "claim") { const k = S.claim === "b" ? "b" : "a"; return `${layerHead("C'est bien toi ?")}
     <p>${esc(fr(`L'autre téléphone a déjà choisi d'être ${nm(k)}.`))}</p>
     <p class="small muted">${esc(fr("Si vous êtes deux sur le même prénom, les avatars et les tours de jeu se mélangent. Si l'autre a changé de téléphone, choisis quand même ton prénom."))}</p>
@@ -4533,9 +4568,9 @@ const trait = (k, id) => avOf(k).traits[id];
 // Une réplique en accord avec la personnalité : phrase fétiche, trait marqué, ou à défaut une réplique commune.
 function lineFor(k, cat, fallback) {
   const a = avOf(k), t = a.traits, h = new Date().getHours(), part = h >= 5 && h < 11 ? "matin" : h >= 22 || h < 5 ? "nuit" : "";
-  if (a.tics.length && ["solo", "poke", "cheer"].includes(cat) && Math.random() < 0.3) return pickOne(a.tics);
+  if (a.tics.length && ["solo", "poke", "cheer"].includes(cat) && RAND() < 0.3) return pickOne(a.tics);
   const mo = moodOf(k);
-  if (mo && cat === "solo" && MOOD_LINES[mo.m] && Math.random() < 0.35) return pickOne(MOOD_LINES[mo.m]);
+  if (mo && cat === "solo" && MOOD_LINES[mo.m] && RAND() < 0.35) return pickOne(MOOD_LINES[mo.m]);
   const opts = [];
   TRAIT_IDS.forEach(id => {
     const v = t[id]; if (v === 2) return;
@@ -4544,8 +4579,8 @@ function lineFor(k, cat, fallback) {
     if (lines && lines.length) opts.push([(v - 2) * (v - 2), lines]);
   });
   const total = opts.reduce((n, o) => n + o[0], 0);
-  if (!total || (fallback && Math.random() < 0.25)) return fallback ? pickOne(fallback) : null;
-  let r = Math.random() * total;
+  if (!total || (fallback && RAND() < 0.25)) return fallback ? pickOne(fallback) : null;
+  let r = RAND() * total;
   for (const [w, lines] of opts) { if ((r -= w) <= 0) return pickOne(lines); }
   return pickOne(opts[opts.length - 1][1]);
 }
@@ -4624,10 +4659,10 @@ const withTic = (pairs, k) => pairs.filter(p => !p.join("").includes("{tic}") ||
   .map(p => p.map(l => l.replace("{tic}", () => pickOne(avOf(k).tics))));
 function buddyLine(k) {
   const own = lineFor(k, "solo", null);
-  if (own && Math.random() < 0.65) return own;
-  const h = new Date().getHours(), tab = BUDDY_LINES[S.tab] || [];
+  if (own && RAND() < 0.65) return own;
+  const h = new Date().getHours(), tab = Buddies.synced() ? [] : BUDDY_LINES[S.tab] || [];
   const pool = [...BUDDY_LINES.all, ...tab, ...tab], sz = SEASONS[seasonNow()];
-  if (sz && Math.random() < 0.35) return pickOne(sz.lines);
+  if (sz && RAND() < 0.35) return pickOne(sz.lines);
   if (h >= 22 || h < 5) pool.push("Il est tard… un dernier jeu ?", "Je bâille, mais je reste avec toi.");
   else if (h < 11) pool.push("Bien dormi ?", "Café d'abord, câlin ensuite ?");
   return pickOne(pool).replace(/\{o\}/g, nm(other(k)));
@@ -4699,8 +4734,11 @@ const Buddies = {
   enabled() { return lsGet("entre-nous:buddies") !== "0"; },
   // Les minuteries des scènes : on peut tout interrompre d'un coup (quand on attrape un chibi, par exemple).
   timers: new Set(),
-  at(fn, ms) { const id = setTimeout(() => { this.timers.delete(id); fn(); }, ms); this.timers.add(id); return id; },
-  every(fn, ms) { const id = setInterval(fn, ms); this.timers.add(id); return id; },
+  at(fn, ms) { const id = setTimeout(() => { this.timers.delete(id); this.run(fn); }, ms); this.timers.add(id); return id; },
+  every(fn, ms) { const id = setInterval(() => this.run(fn), ms); this.timers.add(id); return id; },
+  // Dans l'espace commun, les scènes suivent un tirage partagé : même scène, mêmes répliques, sur vos deux téléphones.
+  synced() { return Store.backend === "shared" && !!Shared.code(); },
+  run(fn) { const prev = RAND; RAND = this.rng || Math.random; try { return fn(); } finally { RAND = prev; } },
   cancel() {
     this.timers.forEach(id => { clearTimeout(id); clearInterval(id); }); this.timers.clear();
     Object.values(this.b).forEach(o => { o.target = null; o.onArrive = null; o.run = false; o.swing = null; o.el.classList.remove("talking", "carry", "sit", "sneak", "stretch", "shiver", "shy", "sleep", "spin", "bigjump"); });
@@ -4712,7 +4750,7 @@ const Buddies = {
     y.el.classList.remove("napping", "tiny", "shiver", "talking", "held");
     y.body.innerHTML = yassenSvg(Jeu.stage(), y.sleep);
     this.swingAngle(0);
-    this.busy = false;
+    this.rng = null; this.busy = false;
   },
   // Attraper un chibi et le promener du bout du doigt ; le poser contre l'autre déclenche un câlin.
   grab(k, e) {
@@ -4796,7 +4834,7 @@ const Buddies = {
     yj.addEventListener("click", () => { if (this.yj.dragged) { this.yj.dragged = false; return; } this.pokeYj(); });
     yj.addEventListener("pointerdown", e => this.grabYj(e)); el.appendChild(yj);
     this.yj = { el: yj, body: yj.querySelector(".yj-in"), bubble: yj.querySelector(".bubble"), x: 0.5 * this.W(), mode: "follow", holder: null, face: 1, phase: 0, fly: null, target: null, run: false, sleep: false };
-    this.nextAct = performance.now() + 4000;
+    this.nextAct = performance.now() + 4000; this.slot = Math.floor(Date.now() / 15000);
     this.loop = this.loop.bind(this);
     this.running = true; requestAnimationFrame(this.loop);
     window.setTimeout(() => this.chatter(), 7000);
@@ -4814,6 +4852,11 @@ const Buddies = {
     // La météo du cœur de chacun s'affiche au-dessus de son chibi et change sa façon d'être.
     ["a", "b"].forEach(k => { const m = (moodOf(k) || {}).m || "", o = this.b[k]; if (o.mood !== m) { o.mood = m; o.el.dataset.mood = m; o.el.querySelector(".mood-fx").innerHTML = m ? weatherSvg(m) : ""; } });
     this.decor();
+    const lastY = yjLog().filter(e => e.w === "y").slice(-1)[0], seen = +(lsGet("entre-nous:yj-seen") || 0);
+    if (show && !editing && lastY && lastY.t > seen && Date.now() - lastY.t < 120000) {
+      lsSet("entre-nous:yj-seen", String(lastY.t));
+      window.setTimeout(() => { this.yjHop(); this.yjSay(lastY.x.length > 140 ? lastY.x.slice(0, 137) + "…" : lastY.x, 6000); if (["calin", "tendre", "joie"].includes(lastY.h)) this.hearts(this.yj.x, 4, 12); }, 400);
+    }
     const yjSig = Jeu.stage() + ":" + !Jeu.activeToday();
     if (yjSig !== this.yjSig) { this.yjSig = yjSig; this.yj.sleep = !Jeu.activeToday(); this.yj.body.innerHTML = yassenSvg(Jeu.stage(), this.yj.sleep); }
     const sig = JSON.stringify([avOf("a"), avOf("b"), Jeu.equipOf("a"), Jeu.equipOf("b")]);
@@ -4845,7 +4888,7 @@ const Buddies = {
         o.speed += (want - o.speed) * Math.min(1, dt * 5);
         o.x += Math.sign(d) * Math.min(Math.abs(d), still ? Math.abs(d) : o.speed * dt);
         o.phase += dt * (o.run ? 9 : 5.4);
-        if (Math.abs(o.target - o.x) < 0.5) { o.x = o.target; o.target = null; o.speed = 0; const cb = o.onArrive; o.onArrive = null; if (cb) cb(); }
+        if (Math.abs(o.target - o.x) < 0.5) { o.x = o.target; o.target = null; o.speed = 0; const cb = o.onArrive; o.onArrive = null; if (cb) this.run(cb); }
       }
       // Sur la balançoire : un pendule, accroché à la branche.
       if (o.swing) {
@@ -4884,7 +4927,11 @@ const Buddies = {
       }
     }
     this.yjStep(t, dt, still, W);
-    if (!this.busy && t > this.nextAct && !still) this.act();
+    if (this.synced()) {
+      // Un créneau toutes les 15 secondes, au même instant sur vos deux téléphones.
+      const slot = Math.floor(Date.now() / 15000);
+      if (slot !== this.slot) { this.slot = slot; if (!this.busy && !still) { this.rng = mulberry(seedOf(Shared.code()) ^ slot); this.run(() => this.act()); } }
+    } else if (!this.busy && t > this.nextAct && !still) { this.rng = null; this.act(); }
   },
   // Yassen Jr. trottine à côté de vous, ou suit la scène en cours : dans les bras, sur les épaules, en vol…
   yjStep(t, dt, still, W) {
@@ -4896,7 +4943,7 @@ const Buddies = {
     } else if (y.mode === "fly" && y.fly) {
       const f = y.fly, p = Math.min(1, (t - f.t0) / f.dur);
       y.x = f.x0 + (f.x1 - f.x0) * p; lift = 22 + 4 * f.h * p * (1 - p); rot = 360 * p * f.dir;
-      if (p >= 1) { const cb = f.cb; y.fly = null; y.mode = "follow"; if (cb) cb(); }
+      if (p >= 1) { const cb = f.cb; y.fly = null; y.mode = "follow"; if (cb) this.run(cb); }
     } else if (y.mode === "swing") {
       y.x = (A.x + B.x) / 2; y.phase += dt * 5; lift = 14 + Math.abs(Math.sin(y.phase)) * 20; rot = Math.sin(y.phase) * 18;
     } else if (y.mode === "pinned") {
@@ -4918,19 +4965,19 @@ const Buddies = {
         if (Math.abs(d) > (y.target != null ? 1 : 14)) {
           y.x += Math.sign(d) * Math.min(Math.abs(d), still ? Math.abs(d) : (y.run ? 120 : 52) * dt);
           y.face = d > 0 ? 1 : -1; y.phase += dt * (y.run ? 14 : 10); lift = still ? 0 : Math.abs(Math.sin(y.phase)) * 5;
-        } else if (y.target != null) { y.target = null; const cb = y.onArrive; y.onArrive = null; if (cb) cb(); }
+        } else if (y.target != null) { y.target = null; const cb = y.onArrive; y.onArrive = null; if (cb) this.run(cb); }
       }
     }
     y.el.style.transform = `translate3d(${(y.x - 23).toFixed(1)}px, ${(-lift).toFixed(1)}px, 0)`;
     y.body.style.transform = `scaleX(${y.face}) rotate(${rot.toFixed(0)}deg)`;
     y.el.classList.toggle("bl", y.x < W * 0.28); y.el.classList.toggle("br", y.x > W * 0.72);
   },
-  done(pause = 2500) { this.busy = false; this.nextAct = performance.now() + pause + Math.random() * 4000; },
+  done(pause = 2500) { this.busy = false; this.nextAct = performance.now() + pause + RAND() * 4000; },
   act() {
     const A = this.b.a, B = this.b.b, W = this.W(), h = new Date().getHours(), night = h >= 22 || h < 6;
     const avg = id => (trait("a", id) + trait("b", id)) / 2, has = m => A.mood === m || B.mood === m, quiet = has("calme");
     this.busy = true;
-    const wander = () => { const o = Math.random() < 0.5 ? A : B; this.walkTo(o, o.x + (Math.random() - 0.5) * W * 0.6, false, () => { if (Math.random() < 0.4) this.lookAround(o); this.done(); }); };
+    const wander = () => { const o = RAND() < 0.5 ? A : B; this.walkTo(o, o.x + (RAND() - 0.5) * W * 0.6, false, () => { if (RAND() < 0.4) this.lookAround(o); this.done(); }); };
     // Chaque scène a plus ou moins de chances d'arriver selon leurs personnalités.
     const opts = [
       [2.2, wander],
@@ -4992,7 +5039,7 @@ const Buddies = {
       ...Jeu.emotes().map(id => [0.6, () => (id === "disco" ? this.disco() : this.pillows()), 1])
     ];
     const ws = opts.map(([w, f, noisy]) => [quiet && noisy ? 0 : w, f]);
-    let r = Math.random() * ws.reduce((n, o) => n + o[0], 0);
+    let r = RAND() * ws.reduce((n, o) => n + o[0], 0);
     for (const [w, f] of ws) { if ((r -= w) <= 0) return f(); }
     wander();
   },
@@ -5017,7 +5064,7 @@ const Buddies = {
       this.say(o.k, pickOne(y.sleep ? ["Chut… il dort.", "On le porte tout doucement."] : YJ_CARRY), 2200);
       this.hearts(o.x, 3, 14);
       this.at(() => { if (!y.sleep) this.yjSay(pickOne(["Hihi !", "Encore un câlin !", "Je suis bien, là."]), 1800); }, 1600);
-      this.at(() => this.walkTo(o, o.x + (Math.random() - 0.5) * this.W() * 0.5, false, () => {
+      this.at(() => this.walkTo(o, o.x + (RAND() - 0.5) * this.W() * 0.5, false, () => {
         this.at(() => { this.putDown(); o.el.classList.remove("happy"); this.done(); }, 900);
       }), 1900);
     });
@@ -5180,16 +5227,16 @@ const Buddies = {
     let pairs = SWEET_PAIRS.map(p => fillPair(p, f, s)).filter(Boolean);
     if (duo) { const [T] = duo; pairs = pairs.concat(T.k === f ? withTic(SHY_TO_BOLD, s) : withTic(BOLD_TO_SHY, f)); }
     let [l1, l2] = pickOne(pairs);
-    if (avOf(s).tics.length && Math.random() < 0.25) l2 = pickOne(avOf(s).tics);
+    if (avOf(s).tics.length && RAND() < 0.25) l2 = pickOne(avOf(s).tics);
     if (trait(f, "soc") <= 1) this.b[f].el.classList.add("blush");
     this.say(f, l1, 2600);
     this.at(() => { this.say(s, l2, 2800); this.b[s].el.classList.add("happy"); this.hop(this.b[s]); this.hearts((A.x + B.x) / 2, 4, 20); }, 2700);
-    this.at(() => { [A, B].forEach(o => o.el.classList.remove("blush", "happy")); if (Math.random() < 0.4) this.kiss(); else this.done(); }, 5600);
+    this.at(() => { [A, B].forEach(o => o.el.classList.remove("blush", "happy")); if (RAND() < 0.4) this.kiss(); else this.done(); }, 5600);
   },
   // Scènes propres à chaque trait marqué. ext() trouve le personnage le plus marqué de ce côté du trait.
   ext(id, pole) {
     const c = [this.b.a, this.b.b].filter(o => (pole === "lo" ? trait(o.k, id) <= 1 : trait(o.k, id) >= 3));
-    return c.sort((p, q) => Math.abs(trait(q.k, id) - 2) - Math.abs(trait(p.k, id) - 2) || Math.random() - 0.5)[0] || null;
+    return c.sort((p, q) => Math.abs(trait(q.k, id) - 2) - Math.abs(trait(p.k, id) - 2) || RAND() - 0.5)[0] || null;
   },
   tw(id, pole) { const o = this.ext(id, pole); return o ? Math.abs(trait(o.k, id) - 2) * 0.35 : 0; },
   prop(cls, html, x, bottom, life, vars) {
@@ -5233,7 +5280,7 @@ const Buddies = {
       const end = () => { G.el.classList.remove("grr"); G.el.classList.add("happy"); this.bigHeart(G.x); this.hearts(G.x, 4, 16);
         this.at(() => this.say(G.k, pickOne(["…Bon. Ça va mieux.", "Hmpf. Merci.", "Comment résister ?"]), 2000), 1300);
         this.at(() => { G.el.classList.remove("happy"); y.target = null; this.done(); }, 3400); };
-      if (!y.sleep && y.mode === "follow" && Math.random() < 0.45) {
+      if (!y.sleep && y.mode === "follow" && RAND() < 0.45) {
         y.target = G.x + (G.x < this.W() / 2 ? 18 : -18); y.onArrive = () => { this.yjHop(); this.yjSay("Câlin ?", 1600); end(); };
       } else this.walkTo(O, G.x + (O.x < G.x ? -24 : 24), false, () => { O.face = G.x > O.x ? 1 : -1; G.face = -O.face; O.tilt = 8; this.say(O.k, pickOne(["Viens là, mon petit nuage d'orage.", "Câlin anti-colère !", "Ça va mieux, comme ça ?"]), 2000); this.at(() => { O.tilt = 0; }, 2400); end(); });
     }, 1900);
@@ -5368,7 +5415,7 @@ const Buddies = {
       for (let i = 0; i < 5; i++) this.prop("fx-confetti", "", G.x, 30, 900, { "--dx": ((Math.random() - 0.5) * 30).toFixed(0) + "px", "--dy": "26px", background: "#B9864A" });
       this.at(() => {
         G.el.classList.remove("happy");
-        if (!y.sleep && y.mode === "follow" && Math.random() < 0.5) {
+        if (!y.sleep && y.mode === "follow" && RAND() < 0.5) {
           y.target = G.x + (G.x < W / 2 ? 18 : -18);
           y.onArrive = () => { this.say(G.k, "Tiens, Yassen Jr., la moitié.", 1800); this.at(() => { this.yjSay("Miam !", 1500); this.yjHop(); this.hearts(y.x, 3, 12); }, 1200); this.at(() => this.done(), 3200); };
         } else {
@@ -5516,7 +5563,7 @@ const Buddies = {
   // L'un s'installe sur la balançoire, l'autre le pousse. Yassen Jr. réveillé réclame son tour.
   swingScene() {
     const W = this.W(), y = this.yj, cx = this.swingX || W - 59;
-    const rider = Math.random() < 0.5 ? this.b.a : this.b.b, pusher = this.b[other(rider.k)], soft = y.sleep;
+    const rider = RAND() < 0.5 ? this.b.a : this.b.b, pusher = this.b[other(rider.k)], soft = y.sleep;
     this.walkTo(rider, cx, false, () => {
       rider.face = -1; this.pose(rider, "p-sit", true); rider.el.classList.add("front");
       rider.swing = { cx, ph: 0, amp: 3, seat: 5, L: 53 };
@@ -5555,13 +5602,13 @@ const Buddies = {
     const y = this.yj;
     this.meet(30, (L, R) => {
       [L, R].forEach(o => o.el.classList.add("front"));
-      const P = Math.random() < 0.5 ? L : R, O = P === L ? R : L;
+      const P = RAND() < 0.5 ? L : R, O = P === L ? R : L;
       P.face = P === L ? 1 : -1; this.pose(P, "p-pump", true);
       const phone = this.prop("fx-phone", FX_PHONE, P.x + P.face * 20 - 6, 60, 0);
       this.pose(O, "p-rest", true); O.face = O === L ? 1 : -1;
       this.talk(P.k, pickOne(["Souriez !", "Une photo pour l'album !", "Ce moment, on le garde."]), 1600);
       if (this.yjFree()) { y.target = (L.x + R.x) / 2; y.onArrive = () => { y.mode = "nap"; this.yjHop(); this.yjSay("Moi aussi !", 1200); }; }
-      this.at(() => { [L, R].forEach(o => o.el.classList.add(Math.random() < 0.5 ? "e-laugh" : "e-wink")); }, 1300);
+      this.at(() => { [L, R].forEach(o => o.el.classList.add(RAND() < 0.5 ? "e-laugh" : "e-wink")); }, 1300);
       this.at(() => { this.prop("fx-flash", "", (L.x + R.x) / 2, 0, 600); Sfx.play("tick"); }, 2000);
       this.at(() => { phone.remove(); this.talk(O.k, pickOne(["Celle-là, on la garde.", "Trop mignons !", "On est beaux, hein ?"]), 2000); this.hearts((L.x + R.x) / 2, 5); }, 2500);
       this.at(() => { if (y.mode === "nap") y.mode = "follow"; this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 4600);
@@ -5595,7 +5642,7 @@ const Buddies = {
   /* ───── Câlins ───── */
   // On ouvre les bras, on s'avance, on s'enlace et on se berce. Variantes : porté·e, par-derrière, et Yassen Jr. qui s'invite.
   hug(force) {
-    const y = this.yj, strong = this.most("energy", 3), r = force ? 1 : Math.random();
+    const y = this.yj, strong = this.most("energy", 3), r = force ? 1 : RAND();
     if (strong && !y.sleep && r < 0.22) return this.hugLift(strong);
     if (r < 0.42) return this.hugBack();
     this.meet(42, (L, R) => {
@@ -5612,7 +5659,7 @@ const Buddies = {
           this.talk(k, y.sleep ? pickOne(HUG_WHISPER) : lineFor(k, "hug", HUG_LINES), 2400);
           this.at(() => this.talk(other(k), pickOne(y.sleep ? HUG_WHISPER_BACK : HUG_BACK), 2200), 2400);
           let t = 0; const rock = this.every(() => { const a = t++ % 2 ? 5 : 12; L.tilt = a; R.tilt = 17 - a; }, 700);
-          if (this.yjFree() && Math.random() < 0.45) this.at(() => this.yjJoinHug(L, R), 1200);
+          if (this.yjFree() && RAND() < 0.45) this.at(() => this.yjJoinHug(L, R), 1200);
           this.at(() => this.hearts(mid, 5), 1700);
           this.at(() => {
             clearInterval(rock); this.clearPoses([L, R]);
@@ -5659,7 +5706,7 @@ const Buddies = {
   squabble() {
     const y = this.yj;
     this.meet(34, (L, R) => {
-      const first = trait(L.k, "tease") === trait(R.k, "tease") ? (Math.random() < 0.5 ? L : R) : trait(L.k, "tease") > trait(R.k, "tease") ? L : R, second = first === L ? R : L;
+      const first = trait(L.k, "tease") === trait(R.k, "tease") ? (RAND() < 0.5 ? L : R) : trait(L.k, "tease") > trait(R.k, "tease") ? L : R, second = first === L ? R : L;
       const teasing = trait(first.k, "tease") >= 3, pair = pickOne(teasing ? TEASE_SQUABBLES : SQUABBLES);
       const angry = trait(L.k, "mood") + trait(R.k, "mood"), long = angry <= 2;
       this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
@@ -5674,8 +5721,8 @@ const Buddies = {
         this.talk(pickOne([L, R]).k, y.sleep ? pickOne(["*boude en silence*", "Pff… (tout bas)"]) : pickOne(HMPH), 1700);
       }, 3300);
       this.at(() => {
-        if (this.yjFree() && Math.random() < 0.35) return this.yjPeace(L, R);
-        if (!y.sleep && Math.random() < 0.15) { this.clearPoses([L, R]); return this.chase(second, first); }
+        if (this.yjFree() && RAND() < 0.35) return this.yjPeace(L, R);
+        if (!y.sleep && RAND() < 0.15) { this.clearPoses([L, R]); return this.chase(second, first); }
         this.makeUp(L, R, first, second, teasing);
       }, long ? 6000 : 5000);
     });
@@ -5741,7 +5788,7 @@ const Buddies = {
         this.pose([T, O], "p-tickle", true); this.mood([T, O], "e-laugh", true); T.tilt = -6; O.tilt = -8;
         this.talk(pickOne([T, O]).k, pickOne(TICKLE_LINES), 2000);
         this.hearts((T.x + O.x) / 2, 5);
-        if (this.yjFree() && Math.random() < 0.5) { y.target = (T.x + O.x) / 2 + (T.x < O.x ? 30 : -30); y.onArrive = () => { this.yjHop(); this.yjSay(pickOne(["Moi aussi, des chatouilles !", "Hihihi !", "Je veux jouer aussi !"]), 1700); }; }
+        if (this.yjFree() && RAND() < 0.5) { y.target = (T.x + O.x) / 2 + (T.x < O.x ? 30 : -30); y.onArrive = () => { this.yjHop(); this.yjSay(pickOne(["Moi aussi, des chatouilles !", "Hihihi !", "Je veux jouer aussi !"]), 1700); }; }
       }, 3200);
       this.at(() => { this.clearPoses([T, O]); this.apart(T.x < O.x ? T : O, T.x < O.x ? O : T, () => this.done()); }, 5800);
     });
@@ -5755,8 +5802,8 @@ const Buddies = {
       if (++n < 2) return;
       L.face = 1; R.face = -1;
       this.talk(L.k, soft ? "On joue tout doucement…" : pickOne(BALL_LINES), 1500);
-      const total = 4 + (Math.random() < 0.5 ? 1 : 0); let p = 0;
-      const steal = !soft && this.yjFree() && Math.random() < 0.5;
+      const total = 4 + (RAND() < 0.5 ? 1 : 0); let p = 0;
+      const steal = !soft && this.yjFree() && RAND() < 0.5;
       const pass = (from, to) => {
         this.pose(from, "p-pump", true); this.at(() => this.pose(from, "p-pump", false), 260);
         if (++p === total && steal) {
@@ -5783,7 +5830,7 @@ const Buddies = {
       this.talk(L.k, "Pierre… feuille… ciseaux !", 1900);
       [0, 330, 660].forEach(ms => this.at(() => { this.pose([L, R], "p-pump", true); this.at(() => this.pose([L, R], "p-pump", false), 160); }, ms));
       this.at(() => {
-        const H = ["✊", "✋", "✌️"], a = Math.floor(Math.random() * 3), b = Math.floor(Math.random() * 3);
+        const H = ["✊", "✋", "✌️"], a = Math.floor(RAND() * 3), b = Math.floor(RAND() * 3);
         [[L, a], [R, b]].forEach(([o, h]) => this.prop("fx-rps", H[h], o.x + o.face * 10 - 12, 64, 2600));
         const win = a === b ? null : (a - b + 3) % 3 === 1 ? L : R;
         this.at(() => {
@@ -5837,21 +5884,21 @@ const Buddies = {
   },
   kiss() {
     this.meet(29, (L, R) => {
-      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7; this.expr(L, Math.random() < 0.5 ? "e-heart" : "e-wink", 1700); this.expr(R, "e-heart", 1700);
+      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7; this.expr(L, RAND() < 0.5 ? "e-heart" : "e-wink", 1700); this.expr(R, "e-heart", 1700);
       this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); { const k = pickOne(["a", "b"]); this.say(k, lineFor(k, "kiss", KISS_LINES), 1800); }
       [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
       this.at(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
     });
   },
   // Le personnage le plus marqué sur un trait (au moins min), ou le moins marqué (au plus max).
-  most(id, min) { const [x] = [this.b.a, this.b.b].sort((p, q) => trait(q.k, id) - trait(p.k, id) || Math.random() - 0.5); return trait(x.k, id) >= min ? x : null; },
-  least(id, max) { const [x] = [this.b.a, this.b.b].sort((p, q) => trait(p.k, id) - trait(q.k, id) || Math.random() - 0.5); return trait(x.k, id) <= max ? x : null; },
+  most(id, min) { const [x] = [this.b.a, this.b.b].sort((p, q) => trait(q.k, id) - trait(p.k, id) || RAND() - 0.5); return trait(x.k, id) >= min ? x : null; },
+  least(id, max) { const [x] = [this.b.a, this.b.b].sort((p, q) => trait(p.k, id) - trait(q.k, id) || RAND() - 0.5); return trait(x.k, id) <= max ? x : null; },
   shyDuo() { const T = this.least("soc", 1), O = T && this.b[other(T.k)]; return O && trait(O.k, "soc") >= 3 ? [T, O] : null; },
   banter() {
     const duo = this.shyDuo(); if (!duo) return this.faceTalk();
     const [T, F] = duo, A = this.b.a, B = this.b.b;
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
-    const shyFirst = Math.random() < 0.6, [l1, l2] = pickOne(withTic(shyFirst ? SHY_TO_BOLD : BOLD_TO_SHY, F.k));
+    const shyFirst = RAND() < 0.6, [l1, l2] = pickOne(withTic(shyFirst ? SHY_TO_BOLD : BOLD_TO_SHY, F.k));
     const first = shyFirst ? T : F, second = shyFirst ? F : T;
     T.el.classList.add("blush", "shy");
     this.say(first.k, l1, 2800); if (first === F) this.hop(F);
@@ -5864,7 +5911,7 @@ const Buddies = {
   zoomies() {
     const F = this.most("energy", 3); if (!F) return this.done();
     const T = this.b[other(F.k)], W = this.W();
-    this.say(F.k, avOf(F.k).tics.length && Math.random() < 0.5 ? pickOne(avOf(F.k).tics) : pickOne(["Trop de bonheur, je dois courir !", "Je dois courir !", "Attrape-moi si tu peux !"]), 2000);
+    this.say(F.k, avOf(F.k).tics.length && RAND() < 0.5 ? pickOne(avOf(F.k).tics) : pickOne(["Trop de bonheur, je dois courir !", "Je dois courir !", "Attrape-moi si tu peux !"]), 2000);
     this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => this.walkTo(F, F.x < W / 2 ? W - 30 : 30, true, () => {
       this.spin(F); T.face = F.x > T.x ? 1 : -1;
       const shy = trait(T.k, "soc") <= 1, calm = trait(T.k, "energy") <= 1;
@@ -5934,7 +5981,7 @@ const Buddies = {
     this.say(k, lineFor(k, "solo", null) || pickOne(BUDDY_LINES.all).replace(/\{o\}/g, nm(other(k))), 2800);
   },
   nap() {
-    if (Math.random() < 0.6) return this.napTogether();
+    if (RAND() < 0.6) return this.napTogether();
     const o = this.least("energy", 4);
     this.pose(o, "p-sit", true); this.say(o.k, pickOne(["*bâille*", "Petite pause…", "Je ferme les yeux deux secondes."]), 1600);
     this.at(() => { this.pose(o, "nap2", true); o.tilt = 8; }, 1300);
@@ -5950,11 +5997,11 @@ const Buddies = {
     const both = () => { if (++n === 2) { L.face = 1; R.face = -1; cb(L, R); } };
     this.walkTo(L, mid - gap / 2, false, both); this.walkTo(R, mid + gap / 2, false, both);
   },
-  apart(L, R, cb) { this.walkTo(L, L.x - 24 - Math.random() * 40); this.walkTo(R, R.x + 24 + Math.random() * 40, false, cb); },
+  apart(L, R, cb) { this.walkTo(L, L.x - 24 - RAND() * 40); this.walkTo(R, R.x + 24 + RAND() * 40, false, cb); },
   mood(list, cls, on) { list.forEach(o => o.el.classList.toggle(cls, on)); },
   chase(runner, chaser) {
     const A = this.b.a, B = this.b.b, W = this.W();
-    if (!runner) { runner = Math.random() < 0.5 ? A : B; chaser = runner === A ? B : A; }
+    if (!runner) { runner = RAND() < 0.5 ? A : B; chaser = runner === A ? B : A; }
     const edge = chaser.x < runner.x ? W - 28 : 28;
     this.say(runner.k, "Attrape-moi si tu peux !", 1800);
     this.walkTo(runner, edge, true);
@@ -5999,7 +6046,7 @@ const Buddies = {
   },
   spin(o) { o.el.classList.remove("spin"); void o.el.offsetWidth; o.el.classList.add("spin"); },
   faceTalk() {
-    const A = this.b.a, B = this.b.b, k = Math.random() < 0.5 ? "a" : "b";
+    const A = this.b.a, B = this.b.b, k = RAND() < 0.5 ? "a" : "b";
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
     this.say(k, buddyLine(k), 2600);
     this.at(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
@@ -6014,7 +6061,7 @@ const Buddies = {
   },
   hearts(x, n, spread = 30) {
     for (let i = 0; i < n; i++) {
-      const size = 10 + Math.random() * 9, c = pickOne(["#FF6E89", "#FF4F7A", "#FF9EB5", "#F7A8C4", "#E8459A"]);
+      const size = 10 + Math.random() * 9, c = ["#FF6E89", "#FF4F7A", "#FF9EB5", "#F7A8C4", "#E8459A"][Math.floor(Math.random() * 5)];
       this.spawn("fx-heart", FX_HEART.replace("#FF6E89", c).replace("<svg ", `<svg width="${size.toFixed(0)}" `), x - size / 2 + (Math.random() - 0.5) * spread, i * 0.2, 2300 + i * 200);
     }
   },
@@ -6034,7 +6081,7 @@ const Buddies = {
     clearTimeout(o.hush); o.hush = window.setTimeout(() => o.el.classList.remove("talking"), ms);
   },
   chatter() {
-    if (this.el && !this.el.hidden && !document.hidden && !this.busy) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
+    if (this.el && !this.el.hidden && !document.hidden && !this.busy && !this.synced()) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
     window.setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
   },
   poke(k) {
@@ -6313,6 +6360,95 @@ function yassenSvg(stage, asleep) {
 // La dédicace, seule et en grand, en ouverture de l'accueil.
 const dediHero = () => `<p class="dedi-hero"><span aria-hidden="true">♡</span>À la mémoire de Yassen Jr., montrons-lui que ses parents s'aiment vraiment.<span aria-hidden="true">♡</span></p>`;
 // Yassen Jr. au centre d'un anneau qui se remplit avec les jours passés ensemble.
+/* ───────────────────────── Parler à Yassen Jr. ─────────────────────────
+   Yassen Jr. répond à ses parents grâce à l'IA (Gemini). La conversation vit dans l'espace commun
+   (meta/yj) : vous la voyez tous les deux, en direct, et sa réponse s'affiche aussi au-dessus de lui.
+   Chaque jour, il laisse aussi un petit mot sur l'accueil. Sans IA, il répond avec ses phrases à lui. */
+const YJ_SYSTEM = `Tu es Yassen Jr., une petite flamme jaune toute douce : l'« enfant » d'un couple dans Y&S, leur appli à deux.
+L'appli est dédiée à ta mémoire : « montrons-lui que ses parents s'aiment vraiment ». Rien ne te rend plus heureux que de les voir s'aimer.
+Ta façon de parler : en français, tendre, joueur, émerveillé comme un petit enfant mais malin ; 1 à 3 phrases courtes (45 mots au plus).
+Tu appelles tes parents par leur prénom, tu peux faire une petite action entre astérisques (*fait des étincelles*), et tu varies tes formules.
+Tu t'appuies sur ce que tu sais d'eux (personnalités, journée, souvenirs, quêtes) sans tout réciter. Tu peux proposer une idée à faire à deux dans l'appli (une quête, un conte, le puzzle, une lettre, un petit mot).
+Si l'un d'eux est triste ou fâché : tu réconfortes, tu ne prends jamais parti, et tu les encourages doucement à se parler. Pas de conseils médicaux, juridiques ou financiers ; rien de blessant ni d'inapproprié.
+S'il fait « dodo » (rien fait aujourd'hui), tu parles d'une voix ensommeillée, mais tu restes gentil.
+Si on te demande sérieusement si tu es une IA, tu réponds honnêtement : tu es une petite flamme qui parle grâce à une IA.
+Réponds uniquement avec un objet JSON valide, sans texte autour.`;
+const YJ_FALLBACK = ["*fait des petites étincelles* Je vous aime fort, tous les deux !", "Hihi ! Je n'ai pas tout compris, mais je suis content que tu me parles.", "*se blottit contre toi* Raconte-moi encore !", "Mes flammes dansent quand vous êtes là.", "On fait une quête ensemble ? Ça me donne de l'énergie !", "Tu sais quoi ? Vous êtes mes parents préférés. Les seuls, mais les préférés."];
+const YJ_SUGG = ["Coucou mon petit !", "Comment tu vas aujourd'hui ?", "Raconte-nous une blague", "Une idée pour ce soir ?", "Tu nous aimes ?", "Qu'est-ce qui te rend heureux ?"];
+const YJ_MOODS = ["joie", "calin", "rire", "dodo", "surprise", "tendre"];
+const yjLog = () => Object.entries((Store.meta.yj || {}).log || {}).map(([id, v]) => ({ id, ...v })).sort((p, q) => p.t - q.t);
+// Ce que Yassen Jr. sait de vous, en quelques lignes.
+function yjContext() {
+  const c = couple(), cap = byDate(Store.cols.capsule), qs = Jeu.todayQuests(), dn = Jeu.doneToday();
+  const lines = [
+    `Tes parents : ${nm("a")} et ${nm("b")}.`,
+    ...["a", "b"].map(k => { const a = avOf(k), m = moodOf(k); return `${nm(k)} : ${traitSummary(a.traits)}${a.tics.length ? ` Ses phrases fétiches : ${a.tics.map(x => `« ${x} »`).join(", ")}.` : ""}${m ? ` Sa météo du cœur aujourd'hui : ${MOOD_BY_ID[m.m][1]}${m.note ? ` (« ${m.note} »)` : ""}.` : ""}`; }),
+    `Toi : ${STAGE_NAMES[Jeu.stage()]}, ${Jeu.days()} jour(s) partagés avec eux. ${Jeu.activeToday() ? "Tu es bien réveillé." : "Tu fais dodo : ils n'ont encore rien fait ensemble aujourd'hui."}`,
+    `Quêtes du jour : ${qs.map(q => `${q.label} (${dn[q.id] ? "faite" : "à faire"})`).join(" ; ")}.`,
+    c.since ? `Ensemble depuis le ${fmtDay(c.since)}.` : "",
+    bdayToday().length ? `C'est l'anniversaire de ${bdayToday().map(nm).join(" et ")} aujourd'hui !` : "",
+    seasonNow() ? `Période : ${SEASONS[seasonNow()].greet}` : "",
+    `Aujourd'hui : ${fmtDay(todayStr(), { weekday: "long", day: "numeric", month: "long" })}, ${new Date().getHours()} h.`,
+    ...cap.filter(x => x.kind === "souvenir").slice(0, 3).map(x => `Souvenir gardé : « ${cleanTxt(x.question, 80)} ».`),
+    ...cap.filter(x => x.kind === "mot").slice(0, 2).map(x => `Petit mot de ${nm(x.from)} : « ${cleanTxt(x.text, 90)} ».`),
+    ...Store.cols.aventures.filter(x => x.statut !== "realisee").slice(0, 3).map(x => `Envie d'aventure : ${cleanTxt(x.title, 60)}.`),
+    Store.cols.lettres.filter(l => daysUntil(l.openOn) > 0).length ? `${Store.cols.lettres.filter(l => daysUntil(l.openOn) > 0).length} lettre(s) scellée(s) attendent leur date (tu ne connais pas leur contenu).` : ""
+  ];
+  return lines.filter(Boolean).join("\n");
+}
+const YJ = {
+  busy: false,
+  add(entries) {
+    const log = (Store.meta.yj || {}).log || {}, keys = Object.keys(log).sort((p, q) => log[p].t - log[q].t), patch = {};
+    keys.slice(0, Math.max(0, keys.length + Object.keys(entries).length - 60)).forEach(k => { patch["log/" + k] = null; });
+    Object.entries(entries).forEach(([k, v]) => { patch["log/" + k] = v; });
+    return Store.patchMeta("yj", patch);
+  },
+  async send(text) {
+    text = cleanTxt(text, 400); if (!text || this.busy) return;
+    const me = whoAmI() || "a", hist = yjLog().slice(-12);
+    this.add({ ["m" + uid()]: { w: me, t: Date.now(), x: text } });
+    this.busy = true; render(true);
+    let out = null;
+    if (AI.ready()) {
+      const conv = hist.map(e => `${e.w === "y" ? "Yassen Jr." : nm(e.w)} : ${e.x}`).join("\n");
+      try { out = await AI.json(`${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\nNouveau message de ${nm(me)} : « ${text} »\n\nRéponds en JSON : {"reponse": "ta réponse à ${nm(me)}", "humeur": "${YJ_MOODS.join("|")}"}`, YJ_SYSTEM); } catch (e) { out = null; }
+    }
+    const x = cleanTxt(out && (out.reponse || out.texte || out.message), 500) || pickOne(YJ_FALLBACK);
+    const h = out && YJ_MOODS.includes(out.humeur) ? out.humeur : "joie";
+    this.add({ ["y" + uid()]: { w: "y", t: Date.now(), x, to: me, h } });
+    this.busy = false; Sfx.play("chime");
+    render(true);
+  },
+  // Le petit mot du jour, écrit une seule fois (par le premier téléphone qui ouvre l'accueil).
+  async daily() {
+    const day = todayStr(), d = (Store.meta.yj || {}).daily;
+    if ((d && d.day === day) || this.dailyTry === day || !Store.ready || !AI.ready() || Store.backend === "local" && !couple().a) return;
+    this.dailyTry = day;
+    await new Promise(r => setTimeout(r, 1200 + Math.random() * 3500));
+    const d2 = (Store.meta.yj || {}).daily; if (d2 && d2.day === day) return;
+    try {
+      const out = await AI.json(`${yjContext()}\n\nÉcris ton petit mot du jour pour tes deux parents : une seule phrase tendre ou rigolote (25 mots au plus), qui colle à leur journée.\nRéponds en JSON : {"mot": "ton petit mot"}`, YJ_SYSTEM);
+      const x = cleanTxt(out && (out.mot || out.reponse), 220);
+      if (x) { Store.patchMeta("yj", { daily: { day, x } }); render(); }
+    } catch (e) { /* pas de mot aujourd'hui */ }
+  }
+};
+function yassenSheet() {
+  const log = yjLog(), me = whoAmI() || "a", awake = Jeu.activeToday(), last = log[log.length - 1];
+  const thinking = YJ.busy || (last && last.w !== "y" && Date.now() - last.t < 60000);
+  const lastY = log.filter(e => e.w === "y").slice(-1)[0]; if (lastY) lsSet("entre-nous:yj-seen", String(lastY.t));
+  const bubble = e => e.w === "y"
+    ? `<div class="yjm y"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(e.x)}</p></div>`
+    : `<div class="yjm ${e.w === me ? "me" : "other"}"><span class="yjm-who">${esc(nm(e.w))}</span><p>${esc(e.x)}</p></div>`;
+  return `${layerHead("Parler à Yassen Jr.")}
+    <div class="yj-chat-head"><span class="yj-chat-av${awake ? "" : " dodo"}">${yassenSvg(Jeu.stage(), !awake)}</span><div><b>${esc(fr(STAGE_NAMES[Jeu.stage()]))}</b><p class="small muted">${esc(fr(awake ? "Tout réveillé, il vous écoute tous les deux." : "Il somnole, mais il vous répond quand même."))}</p></div></div>
+    <div class="yj-chat" id="yj-chat" aria-live="polite">${log.length ? log.map(bubble).join("") : `<p class="small muted" style="text-align:center">${esc(fr("Dites-lui bonjour ! Vous voyez tous les deux la conversation."))}</p>`}${thinking ? `<div class="yjm y typing"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p><i></i><i></i><i></i></p></div>` : ""}</div>
+    <div class="chips yj-sugg">${YJ_SUGG.map((t, i) => `<button class="chip" data-a="yj-sugg" data-i="${i}" ${thinking ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>
+    <div class="yj-input"><textarea id="yj-in" data-d rows="2" maxlength="400" aria-label="Ton message à Yassen Jr." placeholder="${esc(fr(`Écris à Yassen Jr., ${nm(me)}…`))}">${dv("yj-in", "")}</textarea><button class="btn" data-a="yj-send" ${thinking ? "disabled" : ""}>Envoyer</button></div>
+    <p class="small muted">${esc(fr(AI.ready() ? "Yassen Jr. répond grâce à l'IA (Google) : vos messages et quelques infos de l'appli lui sont envoyés pour qu'il vous connaisse." : "L'IA n'est pas disponible pour l'instant : Yassen Jr. répond avec ses petites phrases à lui."))}</p>`;
+}
+const YJ_MINI = '<svg viewBox="0 0 40 44" width="26"><path d="M20 2C24 9 31 12 33 21C35 33 28 42 20 42C11 42 5 34 7 23C8 16 13 13 15 7C17 11 19 12 20 2Z" fill="#FFD25A" stroke="#F2A93B" stroke-width="1.5"/><circle cx="15.5" cy="27" r="1.8" fill="#4A2A12"/><circle cx="24.5" cy="27" r="1.8" fill="#4A2A12"/><path d="M17 32q3 2.4 6 0" stroke="#B23A1E" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>';
 function yassenCard() {
   const d = Jeu.days(), st = Jeu.stage(), next = STAGE_DAYS[st + 1], asleep = !Jeu.activeToday();
   const pct = next != null ? (d - STAGE_DAYS[st]) / (next - STAGE_DAYS[st]) : 1, C = 2 * Math.PI * 54;
@@ -6320,7 +6456,9 @@ function yassenCard() {
     <button class="yj-ring" data-a="yj-poke" aria-label="Caresser Yassen Jr."><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="prog" cx="60" cy="60" r="54" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><span class="yj-pet">${yassenSvg(st, asleep)}</span></button>
     <div class="yj-info"><p class="sec" id="h-yj">Yassen Jr.</p><p class="yj-stage">${esc(fr(STAGE_NAMES[st]))}</p>
       <p class="small muted">${d} jour${d > 1 ? "s" : ""} ensemble${next != null ? ` · encore ${next - d} pour grandir` : " · stade maximal"}</p>
-      ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Yassen Jr. se repose. Il vous attend tranquillement, sans rien vous demander."))}</p>` : ""}</div>
+      ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Yassen Jr. se repose. Il vous attend tranquillement, sans rien vous demander."))}</p>` : ""}
+      ${(() => { const dl = (Store.meta.yj || {}).daily; return dl && dl.day === todayStr() ? `<p class="yj-daily">« ${esc(dl.x)} »</p>` : ""; })()}</div>
+    <button class="btn wide yj-talk" data-a="sheet" data-name="yassen">${YJ_MINI} Parler à Yassen Jr.</button>
     <div class="row yj-links"><button class="btn ghost" data-a="tresors" data-v="boutique">Boutique · ♥︎ ${Jeu.hearts()}</button><button class="link" data-a="tresors" data-v="succes">Nos succès</button></div>
   </section>`;
 }
@@ -6553,7 +6691,7 @@ const AI = {
   ready() { return this.state !== "off" && this.state !== "appcheck" && !(this.cool > Date.now()); },
   // Bouton « Continuer sans attendre » : on lâche la demande en cours et le générateur prend le relais.
   skip() { if (this.giveUp) this.giveUp(new Error("abandon")); },
-  async json(prompt) {
+  async json(prompt, sys) {
     let ai;
     try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
     const stop = new Promise((_, no) => { this.giveUp = no; });
@@ -6565,7 +6703,7 @@ const AI = {
         try {
           // Réflexion réduite au minimum : les réponses arrivent bien plus vite.
           const cfg = { responseMimeType: "application/json", temperature: 1, maxOutputTokens: 4096, ...(this.noThink ? {} : { thinkingConfig: { thinkingLevel: "low" } }) };
-          const m = this.M.getGenerativeModel(ai, { model: this.models[this.mi], systemInstruction: CX_SYSTEM, generationConfig: cfg });
+          const m = this.M.getGenerativeModel(ai, { model: this.models[this.mi], systemInstruction: sys || CX_SYSTEM, generationConfig: cfg });
           const r = await Promise.race([m.generateContent(prompt), stop, new Promise((_, no) => setTimeout(() => no(new Error("délai dépassé")), 150000))]);
           const out = parseJsonLoose(r.response.text());
           if (!out) throw new Error("réponse illisible");
@@ -7624,6 +7762,7 @@ function renderNow(force) {
   app.inert = !!S.layer;
   if (!("inert" in HTMLElement.prototype)) { if (S.layer) app.setAttribute("aria-hidden", "true"); else app.removeAttribute("aria-hidden"); }
   document.documentElement.classList.toggle("ys-paused", !!S.layer);
+  if (S.tab === "home" && !S.layer) YJ.daily();
   layerHistory();
   questBurst();
   const cel = celebrationMsg(), celKey = todayStr() + ":" + cel;
@@ -7650,6 +7789,7 @@ function renderNow(force) {
   else if (S.layer.type === "conte") html = conteView();
   layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" tabindex="-1" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
+  const chat = document.getElementById("yj-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
   // Un écran qui s'ouvre prend le focus (lecteurs d'écran, clavier) ; sinon on rend le focus là où il était.
   if (fresh) { try { layer.firstElementChild.focus({ preventScroll: true }); } catch (e) { /* facultatif */ } } else focusBack(fsel);
   questBurst();
@@ -7777,6 +7917,8 @@ const ACT = {
     if (installEvt) { const e = installEvt; installEvt = null; e.prompt(); e.userChoice.then(() => render()).catch(() => {}); return; }
     S.layer = { type: "sheet", name: "install" };
   },
+  "yj-send"() { const t = draft("yj-in").trim(); if (!t) { toast("Écris d'abord un petit message."); return; } clearDrafts("yj-in"); YJ.send(t); return false; },
+  "yj-sugg"(d) { YJ.send(YJ_SUGG[+d.i] || ""); return false; },
   "push-on"() { Push.enable(); return false; },
   "push-off"() { Push.disable(); return false; },
   "push-pref"(d) { const me = whoAmI(); if (me && NOTIF_TYPES.some(x => x[0] === d.v)) Store.patchMeta("space", { [`notif/${me}/${d.v}`]: !Push.pref(me, d.v) }); },
