@@ -941,6 +941,13 @@ textarea[readonly] { font-size: 16px; }
 .layer:focus { outline: none; }
 .link { min-height: 40px; }
 .chip { min-height: 38px; }
+/* Installer l'appli */
+.install-row { display: flex; gap: 12px; align-items: center; }
+.install-row img { border-radius: 14px; box-shadow: var(--shadow); flex: none; }
+.install-steps { list-style: none; padding: 0; margin: 4px 0 16px; display: grid; gap: 12px; }
+.install-steps li { display: flex; gap: 12px; align-items: flex-start; }
+.install-steps .num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.kbd { display: inline-grid; place-items: center; vertical-align: middle; padding: 2px 6px; border-radius: 8px; background: var(--surface-2); color: var(--accent); }
 /* Cibles plus grandes au doigt, sans changer le dessin. */
 .pz-del::before, .chroma::before { content: ""; position: absolute; inset: -10px; }
 .trait-steps button { height: 40px; }
@@ -1851,7 +1858,7 @@ function rtdbAdapter(F, fdb, base) {
 }
 // Sur iPhone, l'appli posée sur l'écran d'accueil ne partage rien avec Safari : le lien ouvert
 // dans Safari n'y arrive pas. On peut donc aussi le coller ici.
-const joinField = id => `<div class="field"><label for="${id}">Coller le lien d'invitation reçu</label><div class="row join-row"><input type="text" id="${id}" data-d autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" placeholder="https://…#c-…" value="${dv(id, "")}"><button class="btn" data-a="sh-join" data-f="${id}">Rejoindre</button></div></div>`;
+const joinField = id => `<div class="field"><label for="${id}">Coller le lien d'invitation reçu</label><div class="row join-row"><input type="text" id="${id}" data-d autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" placeholder="https://…#c-…" value="${dv(id, "")}">${navigator.clipboard && navigator.clipboard.readText && !draft(id) ? `<button class="btn ghost" data-a="sh-paste" data-f="${id}">Coller</button>` : ""}<button class="btn" data-a="sh-join" data-f="${id}">Rejoindre</button></div></div>`;
 function prevSpace() { const p = lsGet("entre-nous:prev-couple") || ""; return /^[A-Za-z0-9]{24,64}$/.test(p) && p !== Shared.code() ? p : ""; }
 function sharedPanel() {
   const back = prevSpace() ? `<button class="link" data-a="sh-back">Revenir à l'espace précédent</button>` : "";
@@ -2124,6 +2131,35 @@ const syncLine = () => (navigator.onLine === false ? "Hors ligne pour le moment 
   : Shared.available() ? "Tout est enregistré sur ce téléphone. Créez votre espace commun dans les Réglages pour partager la progression."
   : "Tout est enregistré sur ce téléphone. Pour réunir vos progressions, utilisez le code dans les Réglages.");
 
+/* ───────────────────────── Installer l'appli ─────────────────────────
+   Posée sur l'écran d'accueil, Y&S s'ouvre en plein écran, avec son icône, et fonctionne hors ligne.
+   Sur iPhone, l'appli installée a sa propre mémoire (séparée de Safari) : on y colle le lien d'invitation. */
+const isInstalled = () => navigator.standalone === true || !!(window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; render(); });
+const SHARE_ICO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
+function installCard() {
+  if (isInstalled() || lsGet("entre-nous:install-hide") === "1" || (!isIOS() && !installEvt)) return "";
+  return `<section class="panel install-card"><div class="install-row"><img src="icon-192.png" alt="" width="52" height="52"><div><h2 class="sec">Y&amp;S sur ton écran d'accueil</h2>
+    <p class="small">${esc(fr("En plein écran, avec son icône, même sans réseau. Comme une vraie appli."))}</p></div></div>
+    <div class="row"><button class="btn" data-a="install">${installEvt ? "Installer" : "Voir comment"}</button><button class="link" data-a="install-hide">Plus tard</button></div></section>`;
+}
+function installSheet() {
+  const shared = Store.backend === "shared" && Shared.code();
+  return `${layerHead("Installer Y&S")}
+    <ol class="install-steps">
+      <li><span class="num">1</span><span>${esc(fr("Dans Safari, touche le bouton Partager"))} <span class="kbd">${SHARE_ICO}</span> ${esc(fr("(en bas de l'écran, ou à côté de l'adresse)."))}</span></li>
+      <li><span class="num">2</span><span>${esc(fr("Fais défiler et choisis « Sur l'écran d'accueil »."))}</span></li>
+      <li><span class="num">3</span><span>${esc(fr("Touche « Ajouter » : l'icône Y&S apparaît avec tes applis."))}</span></li>
+      <li><span class="num">4</span><span>${esc(fr("Ouvre Y&S depuis cette icône, et plus depuis Safari."))}</span></li>
+    </ol>
+    ${shared ? `<section class="panel"><h2 class="sec">Avant d'installer</h2>
+      <p class="small">${esc(fr("Sur iPhone, l'appli installée ne voit pas ce qui est dans Safari. Copie ton lien d'invitation maintenant : à la première ouverture, tu n'auras qu'à le coller, et tu retrouveras tout."))}</p>
+      <button class="btn wide" data-a="sh-copy">Copier mon lien d'invitation</button>
+      ${S.shLink ? `<textarea readonly rows="2" style="min-height:0" aria-label="Lien d'invitation">${esc(S.shLink)}</textarea>` : ""}</section>` : ""}
+    <p class="small muted">${esc(fr("Rien n'est effacé : Safari garde sa copie, et vos souvenirs restent dans votre espace commun."))}</p>`;
+}
 function viewHome() {
   const c = couple(), named = c.a && c.b, h = new Date().getHours();
   const hello = h < 5 ? "Bonsoir" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
@@ -2134,6 +2170,7 @@ function viewHome() {
     ${sinceLine()}
     ${seasonChip()}
   </section>
+  ${installCard()}
   ${dediHero()}
   ${celebrateCard()}
   ${HEART_WEATHER ? moodCard() : ""}
@@ -2359,7 +2396,7 @@ function onboardView() {
     <div class="field"><label for="ob-b">Second prénom</label><input type="text" id="ob-b" data-d maxlength="24" autocomplete="off" value="${dv("ob-b", c.b)}" placeholder="Et l'autre"></div></div>
     <div class="field"><label for="ob-since">Ensemble depuis le (facultatif)</label><input type="date" id="ob-since" data-d max="${todayStr()}" value="${dv("ob-since", c.since || "")}"></div>
     <button class="btn wide" data-a="ob-names">Continuer</button>
-    ${Shared.available() && Store.backend !== "shared" ? `<details class="join-more"><summary class="small">${esc(fr("L'autre a déjà tout créé ? Rejoins son espace"))}</summary>${joinField("ob-inv")}</details>` : ""}`;
+    ${Shared.available() && Store.backend !== "shared" ? `<details class="join-more"${isInstalled() && !Shared.code() ? " open" : ""}><summary class="small">${esc(fr(isInstalled() ? "Tu avais déjà Y&S dans Safari, ou l'autre a tout créé ? Colle le lien d'invitation" : "L'autre a déjà tout créé ? Rejoins son espace"))}</summary>${joinField("ob-inv")}</details>` : ""}`;
   else if (st === "moi") body = `<h1 class="sheet-title">Et toi, qui es-tu ?</h1>
     <p class="muted">${esc(fr("Pour savoir quel personnage est le tien sur ce téléphone."))}</p>
     <div class="ob-who">${["a", "b"].map(k => `<button class="ob-pick" data-a="ob-me" data-v="${k}"><span class="ob-fig">${avatarSvg(k)}</span><b>${esc(nm(k))}</b></button>`).join("")}</div>`;
@@ -2625,6 +2662,7 @@ function defisView() {
 /* Formulaires */
 function sheetView() {
   const name = S.layer.name;
+  if (name === "install") return installSheet();
   if (name === "claim") { const k = S.claim === "b" ? "b" : "a"; return `${layerHead("C'est bien toi ?")}
     <p>${esc(fr(`L'autre téléphone a déjà choisi d'être ${nm(k)}.`))}</p>
     <p class="small muted">${esc(fr("Si vous êtes deux sur le même prénom, les avatars et les tours de jeu se mélangent. Si l'autre a changé de téléphone, choisis quand même ton prénom."))}</p>
@@ -2654,6 +2692,7 @@ function sheetView() {
       <button class="chip" aria-pressed="${!Sfx.on()}" data-a="sfx" data-v="0">Coupés</button></div><p class="small muted">${esc(fr("De petits sons discrets sur les moments importants : une quête cochée, une lettre ouverte, un dé lancé. Sur Android, avec une légère vibration."))}</p></div>
     <button class="btn wide" data-a="save-names">Enregistrer</button>
     <p class="small muted">${Store.backend !== "local" ? "Ces réglages, comme vos souvenirs, sont partagés avec l'autre." : "Sur ce téléphone, la progression est enregistrée ici même."}</p>
+    ${!isInstalled() ? `<div class="row"><button class="btn ghost" data-a="install">${SHARE_ICO} Installer Y&amp;S sur l'écran d'accueil</button></div>` : ""}
     ${Shared.available() ? sharedPanel() : ""}
     ${Store.backend !== "local" ? "" : `<section class="panel" aria-labelledby="h-sync">
       <h2 class="sec" id="h-sync">Rassembler nos progressions</h2>
@@ -6943,13 +6982,23 @@ const ACT = {
   "sh-copy"() {
     S.shLink = Shared.invite();
     try {
-      navigator.clipboard.writeText(S.shLink).then(() => toast("Lien copié : envoie-le à l'autre"), () => toast("Sélectionne le lien ci-dessous pour le copier"));
+      navigator.clipboard.writeText(S.shLink).then(() => toast(S.layer && S.layer.name === "install" ? "Lien copié : colle-le dans l'appli installée" : "Lien copié : envoie-le à l'autre"), () => toast("Sélectionne le lien ci-dessous pour le copier"));
     } catch (e) { toast("Sélectionne le lien ci-dessous pour le copier"); }
   },
   // Ouvre le partage du téléphone (Messages, WhatsApp…) avec le lien d'invitation.
   "sh-share"() {
     S.shLink = Shared.invite();
     navigator.share({ title: "Y&S", text: "Viens, c'est notre espace à nous deux 💕", url: S.shLink }).catch(() => {});
+  },
+  "install"() {
+    if (installEvt) { const e = installEvt; installEvt = null; e.prompt(); e.userChoice.then(() => render()).catch(() => {}); return; }
+    S.layer = { type: "sheet", name: "install" };
+  },
+  "install-hide"() { lsSet("entre-nous:install-hide", "1"); },
+  // iPhone : une bulle « Coller » apparaît, rien n'est lu sans ton accord.
+  async "sh-paste"(d) {
+    try { const t = await navigator.clipboard.readText(); if (!Shared.parse(t)) { toast("Le presse-papiers ne contient pas de lien d'invitation."); return; } S.drafts[d.f] = t; render(true); }
+    catch (e) { toast("Touche le champ, puis « Coller »."); }
   },
   "sh-join"(d) {
     const code = Shared.parse(draft(d.f));
