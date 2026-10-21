@@ -1773,7 +1773,7 @@ function viewHome() {
   </section>
   ${dediHero()}
   ${celebrateCard()}
-  ${moodCard()}
+  ${HEART_WEATHER ? moodCard() : ""}
   ${yassenCard()}
   ${questsCard()}
   ${named ? "" : `<div class="panel">
@@ -6153,8 +6153,10 @@ const SIGNALS = {
   espace: { btn: "Je suis là si besoin", sent: "Message envoyé", toast: "{f} est là si tu as besoin", line: ["Je te laisse tranquille. Je suis là.", "Prends ton temps."] }
 };
 const SIG_FOR = { nuage: ["calin", "courage"], orage: ["courage", "calin"], calin: ["calin"], brume: ["pense", "calin"], calme: ["espace"] };
+// La météo du cœur est en pause : passer à true pour la remettre (carte d'accueil et effets sur les chibis).
+const HEART_WEATHER = false;
 // La météo de quelqu'un ne vaut que pour la journée.
-const moodOf = k => { const v = ((Store.meta.mood || {})[k]) || null; return v && v.day === todayStr() && MOOD_BY_ID[v.m] ? v : null; };
+const moodOf = k => { if (!HEART_WEATHER) return null; const v = ((Store.meta.mood || {})[k]) || null; return v && v.day === todayStr() && MOOD_BY_ID[v.m] ? v : null; };
 function weatherSvg(m) {
   const g = {
     soleil: `<g class="w-spin"><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9.9 9.9l4.2 4.2M33.9 33.9l4.2 4.2M9.9 38.1l4.2-4.2M33.9 14.1l4.2-4.2" stroke="#F2B544" stroke-width="3" stroke-linecap="round"/></g><circle cx="24" cy="24" r="9" fill="#FFD45A"/>`,
