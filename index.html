@@ -6326,6 +6326,9 @@ const Jeu = {
       // Les 3 quêtes faites (même à moitié sur chaque téléphone) : le bonus du jour, une seule fois.
       const day = this.day(), dn = this.doneToday();
       if (this.todayQuests().every(q => dn[q.id]) && !(((this.g().earn) || {})[day + "_bonus"])) { Store.patchMeta("game", { [`earn/${day}_bonus`]: QUEST_BONUS }); gainToast(`Les 3 quêtes du jour sont faites : +${QUEST_BONUS} cœurs !`); }
+      // 90 cœurs rendus, une seule fois : la même clé sur les deux téléphones, jamais comptée deux fois.
+      const ge = this.g().earn || {};
+      if (Store.backend === "shared" && !ge.rendu_90 && Object.keys(ge).length && Date.now() < Date.UTC(2026, 11, 1)) { Store.patchMeta("game", { "earn/rendu_90": 90 }); gainToast("90 cœurs vous ont été rendus !"); }
       if (Store.backend === "shared" && this.rawHearts() < 0) this.refund();
       const g = this.g(), s = this.stats(), patch = {}, got = [];
       ACH.forEach(a => { if (!(g.ach || {})[a.id] && a.test(s)) { patch["ach/" + a.id] = Date.now(); patch["earn/ach_" + a.id] = a.reward; got.push(a); } });
