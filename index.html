@@ -1078,6 +1078,17 @@ textarea[readonly] { font-size: 16px; }
 .layer:focus { outline: none; }
 .link { min-height: 40px; }
 .chip { min-height: 38px; }
+/* Centre de notifications */
+.icon-btn.bell { position: relative; }
+.bell .badge { position: absolute; top: 4px; right: 3px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #E0457A; color: #FFFFFF; font-size: .66rem; font-weight: 800; line-height: 17px; text-align: center; box-shadow: 0 0 0 2px var(--surface); animation: rpspop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+.notif-list { display: grid; gap: 8px; }
+.notif { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.notif.new { box-shadow: inset 3px 0 0 var(--accent), var(--shadow); }
+.notif.live { background: var(--m7, var(--surface)); }
+.notif-ic { font-size: 1.35rem; flex: none; width: 30px; text-align: center; }
+.notif-body { flex: 1; min-width: 0; }
+.notif-body p { margin: 0 0 2px; line-height: 1.35; overflow-wrap: anywhere; }
+.notif .btn { flex: none; padding-inline: 14px; }
 /* Parler à Yassen Jr. */
 .yj-talk { margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .yj-talk svg { flex: none; }
@@ -1573,9 +1584,9 @@ const cNum = (v, a, b, d) => { v = +v; return Number.isFinite(v) ? Math.max(a, M
 const cInt = (v, a, b, d) => Math.round(cNum(v, a, b, d));
 // Champs connus de chaque collection : s = texte, n = nombre, t = mot-clé, d = date (AAAA-MM-JJ), w = a ou b.
 const FIELDS = {
-  capsule: { kind: "t", question: "s", text: "s", from: "w", cardId: "t", day: "d" },
-  aventures: { title: "s", budget: "s", duree: "s", statut: "t", date: "d", note: "s", doneAt: "n", source: "t" },
-  lettres: { title: "s", message: "s", from: "w", openOn: "d" },
+  capsule: { kind: "t", question: "s", text: "s", from: "w", cardId: "t", day: "d", by: "w" },
+  aventures: { title: "s", budget: "s", duree: "s", statut: "t", date: "d", note: "s", doneAt: "n", source: "t", by: "w" },
+  lettres: { title: "s", message: "s", from: "w", openOn: "d", by: "w" },
   favoris: { cardId: "t" },
   cartes: { cat: "t", text: "s", tone: "t", from: "w", duree: "n" },
   contes: {}
@@ -1609,6 +1620,7 @@ function cxNormalize(st) {
   o.length = own(CX_LENGTHS, st.length) ? st.length : "moyenne";
   o.max = cInt(st.max, 3, 20, CX_LENGTHS[o.length].steps);
   o.mode = st.mode === "rpg" ? "rpg" : "conte";
+  if (st.by === "a" || st.by === "b") o.by = st.by; else delete o.by;
   o.yassen = st.yassen !== false;
   o.status = st.status === "done" ? "done" : "play";
   const sd = isObj(st.seed) ? st.seed : {};
@@ -1909,7 +1921,7 @@ const Store = {
     if (S.pzRemote) pzRemoteClose();
   },
   add(col, data) {
-    data = { ...data, createdAt: Date.now() };
+    data = { ...data, createdAt: Date.now(), ...(whoAmI() ? { by: whoAmI() } : {}) };
     const id = this.lastId = this.db ? this.db.collection(col).doc().id : uid();
     const p = this.write({ p: col + "/" + id, o: "set", d: data });
     Jeu.onAdd(col, data);
@@ -2315,6 +2327,7 @@ const isInstalled = () => navigator.standalone === true || !!(window.matchMedia 
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 let installEvt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; render(); });
+const BELL = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>';
 const SHARE_ICO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg>';
 function installCard() {
   if (isInstalled() || lsGet("entre-nous:install-hide") === "1" || (!isIOS() && !installEvt)) return "";
@@ -2955,6 +2968,7 @@ function sheetView() {
   const name = S.layer.name;
   if (name === "install") return installSheet();
   if (name === "yassen") return yassenSheet();
+  if (name === "notifs") return notifSheet();
   if (name === "claim") { const k = S.claim === "b" ? "b" : "a"; return `${layerHead("C'est bien toi ?")}
     <p>${esc(fr(`L'autre téléphone a déjà choisi d'être ${nm(k)}.`))}</p>
     <p class="small muted">${esc(fr("Si vous êtes deux sur le même prénom, les avatars et les tours de jeu se mélangent. Si l'autre a changé de téléphone, choisis quand même ton prénom."))}</p>
@@ -6452,6 +6466,66 @@ function yassenSheet() {
     <p class="small muted">${esc(fr(AI.ready() ? "Yassen Jr. répond grâce à l'IA (Google) : vos messages et quelques infos de l'appli lui sont envoyés pour qu'il vous connaisse." : "L'IA n'est pas disponible pour l'instant : Yassen Jr. répond avec ses petites phrases à lui."))}</p>`;
 }
 const YJ_MINI = '<svg viewBox="0 0 40 44" width="26"><path d="M20 2C24 9 31 12 33 21C35 33 28 42 20 42C11 42 5 34 7 23C8 16 13 13 15 7C17 11 19 12 20 2Z" fill="#FFD25A" stroke="#F2A93B" stroke-width="1.5"/><circle cx="15.5" cy="27" r="1.8" fill="#4A2A12"/><circle cx="24.5" cy="27" r="1.8" fill="#4A2A12"/><path d="M17 32q3 2.4 6 0" stroke="#B23A1E" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>';
+/* ───────────────────────── Centre de notifications ─────────────────────────
+   Tout ce que l'autre a fait récemment, au même endroit : une partie lancée (qu'on rejoint d'un toucher),
+   un petit mot, une lettre scellée ou qui s'ouvre, un souvenir, une aventure, une histoire, Yassen Jr.…
+   Rien de nouveau n'est enregistré : la liste se construit à partir de votre espace commun.
+   Le « déjà vu » est propre à chaque téléphone. */
+const ago = t => {
+  const s = Math.max(0, (Date.now() - t) / 1000);
+  if (s < 60) return "à l'instant";
+  if (s < 3600) return `il y a ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `il y a ${Math.floor(s / 3600)} h`;
+  return s < 172800 ? "hier" : fmtTs(t);
+};
+function notifItems() {
+  const me = whoAmI(), o = me ? other(me) : "", by = x => x.by || x.from, mine = x => !me || by(x) === me;
+  const recent = t => +t && Date.now() - t < 14 * 86400000, out = [];
+  const add = (t, icon, text, go, label, live) => out.push({ t: +t || 0, icon, text, go, label, live });
+  const L = Live.state;
+  if (Store.backend === "shared" && L && Live.active() && L.by && L.by !== me) add(L.startAt, "🎲", `${nm(L.by)} t'invite à jouer : ${fr(liveTitle(L))}`, "live", "Rejoindre", true);
+  Store.cols.capsule.forEach(x => {
+    if (!recent(x.createdAt) || mine(x) || !by(x)) return;
+    if (x.kind === "mot") add(x.createdAt, "💌", `${nm(by(x))} t'a laissé un petit mot : « ${cleanTxt(x.text, 70)} »`, "mots", "Lire");
+    else if (x.kind === "anecdote") add(x.createdAt, "📖", `${nm(by(x))} a raconté une anecdote`, "mots", "Lire");
+    else if (x.kind === "souvenir") add(x.createdAt, "📸", `${nm(by(x))} a gardé un souvenir : « ${cleanTxt(x.question, 60)} »`, "album", "Voir");
+    else if (x.kind === "defi") add(x.createdAt, "🏁", `${nm(by(x))} a noté un défi relevé`, "album", "Voir");
+  });
+  Store.cols.lettres.forEach(l => {
+    const from = l.from === "b" ? "b" : "a";
+    if (me && from !== me) {
+      if (daysUntil(l.openOn) <= 0 && !S.openLetters[l.id]) add(parseDay(l.openOn).getTime() + 8 * 3600000, "✉️", `Une lettre de ${nm(from)} peut s'ouvrir${l.title ? ` : « ${cleanTxt(l.title, 50)} »` : ""}`, "lettres", "Ouvrir");
+      else if (recent(l.createdAt) && daysUntil(l.openOn) > 0) add(l.createdAt, "🔒", `${nm(from)} a scellé une lettre pour toi : elle s'ouvrira le ${fmtDay(l.openOn, { day: "numeric", month: "long" })}`, "lettres", "Voir");
+    }
+  });
+  Store.cols.aventures.forEach(x => { if (recent(x.createdAt) && x.by && !mine(x)) add(x.createdAt, "🧭", `${nm(x.by)} a ajouté une aventure : « ${cleanTxt(x.title, 60)} »`, "aventures", "Voir"); });
+  Store.cols.contes.forEach(x => { if (recent(x.createdAt) && x.by && !mine(x)) add(x.createdAt, x.mode === "rpg" ? "⚔️" : "📚", `${nm(x.by)} a commencé ${x.mode === "rpg" ? "une épopée" : "un conte"} : « ${cleanTxt(x.title, 50)} »`, "conte:" + x.id, "Lire"); });
+  yjLog().forEach(e => {
+    if (!recent(e.t) || !me) return;
+    if (e.w === o) add(e.t, "💬", `${nm(o)} a parlé à Yassen Jr. : « ${cleanTxt(e.x, 60)} »`, "yassen", "Voir");
+    else if (e.w === "y" && e.to === o) add(e.t, "🔥", `Yassen Jr. a répondu à ${nm(o)} : « ${cleanTxt(e.x, 60)} »`, "yassen", "Voir");
+  });
+  const dl = (Store.meta.yj || {}).daily;
+  if (dl && dl.day === todayStr()) add(parseDay(dl.day).getTime() + 7 * 3600000, "🌟", `Le petit mot du jour de Yassen Jr. : « ${cleanTxt(dl.x, 80)} »`, "home", "Voir");
+  const mo = o && moodOf(o);
+  if (mo) add(mo.t, "🌤️", `${nm(o)} a partagé sa météo du cœur : ${MOOD_BY_ID[mo.m][1]}${mo.note ? ` (« ${cleanTxt(mo.note, 50)} »)` : ""}`, "home", "Voir");
+  const sg = me && (Store.meta.signal || {})[me];
+  if (sg && sg.from !== me && recent(sg.t) && own(SIGNALS, sg.kind)) add(sg.t, "🤗", fr(SIGNALS[sg.kind].toast.replace("{f}", nm(sg.from))), "home", "");
+  bdayToday().forEach(k => add(parseDay(todayStr()).getTime() + 6 * 3600000, "🎂", k === me ? "Joyeux anniversaire !" : `C'est l'anniversaire de ${nm(k)} aujourd'hui`, "home", ""));
+  return out.sort((p, q) => (q.live ? 1 : 0) - (p.live ? 1 : 0) || q.t - p.t).slice(0, 40);
+}
+const notifSeen = () => +(lsGet("entre-nous:notif-seen") || 0);
+const notifUnread = () => notifItems().filter(n => n.live || n.t > notifSeen()).length;
+function notifSheet() {
+  const items = notifItems(), seen = notifSeen();
+  setTimeout(() => lsSet("entre-nous:notif-seen", String(Date.now())), 0);
+  return `${layerHead("Notifications")}
+    ${items.length ? `<div class="notif-list">${items.map((n, i) => `<div class="notif${n.live ? " live" : ""}${n.t > seen ? " new" : ""}"><span class="notif-ic" aria-hidden="true">${n.icon}</span>
+      <div class="notif-body"><p>${esc(n.text)}</p><span class="small muted">${n.live ? "En cours" : ago(n.t)}</span></div>
+      ${n.label ? `<button class="btn${n.live ? "" : " ghost"}" data-a="notif-go" data-i="${i}">${esc(n.label)}</button>` : ""}</div>`).join("")}</div>`
+      : empty("Rien de nouveau pour l'instant", "Les petits mots, lettres, parties et souvenirs de l'autre apparaîtront ici.", "lettres")}
+    ${Store.backend !== "shared" ? `<p class="small muted">${esc(fr("Reliez vos deux téléphones (Réglages → Notre progression commune) pour voir ici ce que fait l'autre."))}</p>` : ""}`;
+}
 function yassenCard() {
   const d = Jeu.days(), st = Jeu.stage(), next = STAGE_DAYS[st + 1], asleep = !Jeu.activeToday();
   const pct = next != null ? (d - STAGE_DAYS[st]) / (next - STAGE_DAYS[st]) : 1, C = 2 * Math.PI * 54;
@@ -7395,7 +7469,7 @@ const CX_ACT = {
   },
   "cx-choose-pitch"(d) {
     const cx = S.cx, p = (cx.pitches || [])[+d.i], o = cx.opts; if (!p || !o) return;
-    const id = uid(), st = { id, title: p.titre, pitch: p.resume, mood: p.ambiance || "", genre: o.genre, length: o.length, max: CX_LENGTHS[o.length].steps, mode: o.mode, context: o.context, details: o.details, yassen: o.yassen, seed: p.seed, steps: [], status: "play", createdAt: Date.now() };
+    const id = uid(), st = { id, title: p.titre, pitch: p.resume, mood: p.ambiance || "", genre: o.genre, length: o.length, max: CX_LENGTHS[o.length].steps, mode: o.mode, context: o.context, details: o.details, yassen: o.yassen, seed: p.seed, steps: [], status: "play", createdAt: Date.now(), ...(whoAmI() ? { by: whoAmI() } : {}) };
     cx.id = id; cxSave(st); clearDrafts("cx-ctx", "cx-det");
     if (o.mode === "rpg") { cx.heroes = { a: { cls: "", pts: {} }, b: { cls: "", pts: {} } }; cx.view = "heroes"; }
     else { cx.view = "read"; cxGenerate(null); }
@@ -7759,7 +7833,7 @@ function renderNow(force) {
   if (S.invite && (!S.layer || S.layer.type !== "game")) S.layer = { type: "sheet", name: "invite" };
   if (!S.layer && !S.obShown && onboardStep()) { S.obShown = true; S.layer = { type: "onboard" }; }
   const enter = S.tab !== render.lastTab; render.lastTab = S.tab;
-  app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><span class="row" style="gap:2px"><button class="hearts-pill" data-a="tresors" aria-label="Nos trésors : ${Jeu.hearts()} cœurs">♥︎ ${Jeu.hearts()}</button><button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
+  app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">Y<span>&amp;</span>S</span><span class="row" style="gap:2px"><button class="hearts-pill" data-a="tresors" aria-label="Nos trésors : ${Jeu.hearts()} cœurs">♥︎ ${Jeu.hearts()}</button>${(n => `<button class="icon-btn bell" data-a="sheet" data-name="notifs" aria-label="Notifications${n ? ` : ${n} nouvelle${n > 1 ? "s" : ""}` : ""}">${BELL}${n ? `<span class="badge">${n > 9 ? "9+" : n}</span>` : ""}</button>`)(notifUnread())}<button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
@@ -7919,6 +7993,15 @@ const ACT = {
   "install"() {
     if (installEvt) { const e = installEvt; installEvt = null; e.prompt(); e.userChoice.then(() => render()).catch(() => {}); return; }
     S.layer = { type: "sheet", name: "install" };
+  },
+  "notif-go"(d) {
+    const n = notifItems()[+d.i]; if (!n) return;
+    S.layer = null; window.scrollTo(0, 0);
+    if (n.go === "live") return ACT["lv-join"]();
+    if (n.go === "mots" || n.go === "album") { S.tab = "capsule"; S.capSeg = n.go; return; }
+    if (n.go === "lettres" || n.go === "aventures" || n.go === "home") { S.tab = n.go; return; }
+    if (n.go === "yassen") { S.layer = { type: "sheet", name: "yassen" }; return; }
+    if (n.go.startsWith("conte:")) { ACT["open-mode"]({ mode: "conte" }); ACT["cx-open"]({ id: n.go.slice(6) }); }
   },
   "yj-send"() { const t = draft("yj-in").trim(); if (!t) { toast("Écris d'abord un petit message."); return; } clearDrafts("yj-in"); YJ.send(t); return false; },
   "yj-sugg"(d) { YJ.send(YJ_SUGG[+d.i] || ""); return false; },
