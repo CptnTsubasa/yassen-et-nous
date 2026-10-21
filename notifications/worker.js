@@ -15,7 +15,7 @@
 const DB = "https://y-s-14d43-default-rtdb.europe-west1.firebasedatabase.app";
 const SITE = "https://cptntsubasa.github.io/yassen-et-nous/";
 const TZ = "Europe/Paris";
-const DEFAULTS = { mot: true, geste: true, lettre: true, partie: true, fete: true, quetes: false };
+const DEFAULTS = { mot: true, geste: true, lettre: true, partie: true, fete: true, quetes: false, test: true };
 const GESTES = { calin: ["🤗", "{f} t'envoie un câlin", "Un gros câlin à distance."], courage: ["💪", "{f} t'envoie plein de courage", "Tu vas y arriver."], pense: ["💭", "{f} pense à toi", "Juste comme ça, parce que."], espace: ["🌙", "{f} est là si tu as besoin", "Prends ton temps."] };
 const okCode = c => typeof c === "string" && /^[A-Za-z0-9]{24,64}$/.test(c);
 const okId = v => typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v);
@@ -193,7 +193,7 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
       if (req.method === "GET" && url.pathname === "/vapid") return json({ key: (await vapid(env)).pub });
-      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications" });
+      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 3, types: ["mot", "geste", "lettre", "partie", "test"] });
       if (req.method !== "POST") return json({ error: "inconnu" }, 404);
       const b = await req.json().catch(() => ({}));
       if (!okCode(b.code)) return json({ error: "code" }, 400);
@@ -202,7 +202,14 @@ export default {
         return json({ ok: true });
       }
       if (url.pathname === "/notify") {
-        if (!["mot", "geste", "lettre", "partie"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
+        if (!["mot", "geste", "lettre", "partie", "test"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
+        // Notification de test, envoyée à ses propres téléphones (une toutes les 20 secondes au plus).
+        if (b.type === "test") {
+          if ((b.id !== "a" && b.id !== "b") || !(await once(env, `test:${b.code}:${b.id}:${Math.floor(Date.now() / 20000)}`))) return json({ ok: true, sent: 0, test: true });
+          const subs = Object.keys((await rtdb(`couples/${b.code}/push/${b.id}`)) || {}).length;
+          const sent = await notify(env, b.code, b.id, "test", { title: "🔔 Test réussi !", body: "Les notifications de Y&S arrivent bien sur ce téléphone.", tag: "test" });
+          return json({ ok: true, sent, subs, test: true });
+        }
         return json({ ok: true, sent: await onEvent(env, b.code, b.type, b.id) });
       }
       return json({ error: "inconnu" }, 404);
