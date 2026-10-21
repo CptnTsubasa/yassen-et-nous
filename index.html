@@ -711,7 +711,7 @@ body { background: var(--bg); }
 .cx-arena.quake { animation: quake .45s ease; }
 .cx-foe { position: absolute; right: 4%; top: 5%; width: 41%; z-index: 1; display: grid; gap: 4px; }
 .cx-ftop { display: flex; gap: 6px; align-items: center; color: #fff; font-size: .82rem; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
-.cx-boss { font-size: .62rem; font-weight: 800; letter-spacing: .1em; padding: 2px 6px; border-radius: 6px; background: #E0457A; color: #fff; }
+.cx-boss { font-size: .62rem; font-weight: 800; letter-spacing: .1em; padding: 2px 6px; border-radius: 6px; background: #B42A60; color: #fff; }
 .cx-status { font-size: .68rem; font-weight: 700; color: #FFE7A0; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); }
 .cx-fart { position: relative; width: 88%; justify-self: center; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .35)); }
 .cx-fart::after, .cx-heroes::before { content: ""; position: absolute; z-index: -1; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 244, 220, .32), rgba(255, 244, 220, .08) 55%, transparent 72%); }
@@ -941,6 +941,15 @@ textarea[readonly] { font-size: 16px; }
 .layer:focus { outline: none; }
 .link { min-height: 40px; }
 .chip { min-height: 38px; }
+/* Cibles plus grandes au doigt, sans changer le dessin. */
+.pz-del::before, .chroma::before { content: ""; position: absolute; inset: -10px; }
+.trait-steps button { height: 40px; }
+/* Focus visible aussi sur les iPhone qui ne connaissent pas :focus-visible (avant iOS 15.4). */
+@supports not selector(:focus-visible) { :focus { outline: 3px solid var(--accent); outline-offset: 2px; } }
+/* Écran ouvert : tirer vers le bas ne recharge pas la page (Android). */
+html.ys-paused, html.ys-paused body { overscroll-behavior-y: contain; }
+/* Très petite largeur (zoom) : les mots longs passent à la ligne au lieu de déborder. */
+.wrap, .btn, .chip, .mode-txt, .sheet-title, .item, .panel { overflow-wrap: break-word; min-width: 0; }
 /* Un flou plus léger sous la prairie (il ne se recalcule qu'au défilement). */
 #ground { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 @media (max-height: 700px) { #ground { height: calc(168px + env(safe-area-inset-bottom, 0px)); } }
@@ -1521,8 +1530,14 @@ function cleanLive(v) {
   }
   if (s.kind === "story" && !(own(STORY, s.id) && own(STORY[s.id].nodes, s.node))) return null;
   if (s.deck && s.deck.length && s.i >= s.deck.length) s.i = s.deck.length - 1;
+  // Réponses, accords et votes sont rangés par manche : un « suivant » arrivé en retard n'efface plus rien.
+  const r = String(liveRound(s));
+  ["ans", "saved", "votes"].forEach(k => { const v = s[k]; s[k] = isObj(v) && isObj(v[r]) ? v[r] : {}; });
   return s;
 }
+const liveRound = L => L.kind === "story" ? (+L.steps || 1) : L.game === "synchro" ? (+L.round || 1) : (+L.i || 0);
+// Un tirage que les deux téléphones calculent pareil (même partie, même manche) : pas de désaccord possible.
+const liveDraw = (L, salt, n) => hash(Math.floor(+L.startAt || 0) % 1e9 + salt * 7919) % n;
 // Applique des chemins « a/b/c » à une copie d'un objet ; null retire le champ.
 function patchObj(obj, flat) {
   const cur = JSON.parse(JSON.stringify(obj || {}));
@@ -2450,7 +2465,7 @@ function gameView() {
   if (g.phase === "end") return endView();
   const c = CARDS[g.deck[g.i]];
   const single = g.deck.length === 1;
-  const head = `<div class="g-head"><button class="icon-btn" data-a="g-quit" aria-label="Quitter la partie">×</button>
+  const head = `<div class="g-head"><button class="icon-btn" data-a="g-quit-ask" aria-label="Quitter la partie">×</button>
     <div class="g-prog">${single ? "<span>Une carte, juste pour vous</span>" : `<span>Carte ${g.i + 1} sur ${g.deck.length}</span><div class="bar"><i style="width:${(g.i / g.deck.length) * 100}%"></i></div>`}</div>
     <span class="g-timer" id="g-timer">${elapsed()}</span></div>`;
   const last = g.i + 1 >= g.deck.length;
@@ -2918,7 +2933,7 @@ function arcadeView() {
       + instr("Ton indice", esc(fr(`Trouve un exemple (un objet, un film, une situation…) qui se place pile dans la zone foncée, entre « ${L} » et « ${R} ». Dis-le à voix haute, une seule fois.`)))
       + `<button class="btn wide" data-a="onde-hide">J'ai mon indice : cacher la cible</button>`;
     if (A.phase === "guess") return head + specHtml(A, false, true) + labels
-      + `<label class="lbl" for="onde-g">${esc(nm(o))}, place l'aiguille d'après l'indice de ${esc(nm(g))}</label><input type="range" id="onde-g" min="0" max="100" step="1" value="${A.guess}">`
+      + `<label class="lbl" for="onde-g">${esc(nm(o))}, place l'aiguille d'après l'indice de ${esc(nm(g))}</label><input type="range" id="onde-g" min="0" max="100" step="1" value="${A.guess}" aria-valuetext="${A.guess} sur 100">`
       + `<button class="btn wide c" style="${col}" data-a="onde-ok">Valider</button>`;
     const msg = ["Raté… mais l'indice valait le détour.", "", "Pas loin !", "Tout près !", "En plein dans le mille !"][A.pts];
     return head + specHtml(A, true, true) + labels + `<p class="verdict" style="${col}">+${A.pts} point${A.pts > 1 ? "s" : ""} · ${esc(fr(msg))}</p>`
@@ -3691,9 +3706,11 @@ function pzDropImg(id) {
 }
 // Les photos rangées à l'ancienne (dans meta/puzzle) rejoignent l'album, une seule fois.
 function pzMigrate() {
+  if (pzMigrate.done) return;
   const P = Store.meta.puzzle || {}, old = Object.entries(P.photos || {}).filter(([id, v]) => /^[a-z0-9]{1,24}$/.test(id) && okImg(v));
   if (!Store.ready || (!old.length && !okImg(P.img))) return;
   if (okImg(P.img)) old.push(["portrait", P.img]);
+  pzMigrate.done = true;
   old.forEach(([id, v]) => pzSaveImg(id, v));
   Store.patchMeta("puzzle", { photos: null, img: "" });
 }
@@ -3845,8 +3862,13 @@ const Live = {
     if (this.unsub || !Store.db || Store.backend !== "shared") return;
     this.unsub = Store.db.doc("live/game").onSnapshot(s => {
       const v = s.exists ? s.data() : null;
+      const was = this.state;
       try { this.state = cleanLive(v); } catch (e) { this.state = null; }
       const st = this.state;
+      if (was && st && was.startAt === st.startAt && liveRound(was) !== liveRound(st)) {
+        const pre = `lv-${was.i}-`, typed = Object.keys(S.drafts).some(k => (k.startsWith(pre) || k === `lv-w-${was.round}` || k === "lv-clue") && String(S.drafts[k]).trim());
+        if (typed) toast("L'autre téléphone est passé à la suite : ton texte reste en brouillon.");
+      }
       if (st && st.startAt !== this.lastStart) {
         if (this.seen && st.by && st.by !== whoAmI() && !st.ended) toast(`${nm(st.by)} a lancé une partie à distance`);
         this.lastStart = st.startAt;
@@ -3871,7 +3893,8 @@ const Live = {
     let o = this.state;
     path.split("/").forEach(p => { if (!o[p] || typeof o[p] !== "object") o[p] = {}; o = o[p]; });
     o[key] = val;
-    Store.db.doc("live/game/" + path).update({ [key]: val }).catch(e => Store.fail(e));
+    const [h, ...rest] = path.split("/"), remote = ["ans", "saved", "votes"].includes(h) ? [h, liveRound(this.state), ...rest].join("/") : path;
+    Store.db.doc("live/game/" + remote).update({ [key]: val }).catch(e => Store.fail(e));
     Store.db.doc("live/game").update({ updatedAt: Date.now() }).catch(() => {});
   },
   start(state) {
@@ -4025,7 +4048,7 @@ function liveArcadeView(L, me, head) {
     if (!ans.clue) return head + specHtml({ target: t }, false, false) + labels + `<p class="verdict" style="${col}">${esc(fr(`${nm(guide)} cherche un indice…`))}</p>` + score;
     const g = S.lvGuess == null ? 50 : S.lvGuess;
     return head + instr(`Indice de ${nm(guide)}`, `<span style="font-family:var(--f-hand);font-size:1.6rem">${esc(ans.clue)}</span>`) + specHtml({ target: t, guess: g }, false, true) + labels
-      + `<label class="lbl" for="lv-g">Place l'aiguille</label><input type="range" id="lv-g" min="0" max="100" step="1" value="${g}">
+      + `<label class="lbl" for="lv-g">Place l'aiguille</label><input type="range" id="lv-g" min="0" max="100" step="1" value="${g}" aria-valuetext="${g} sur 100">
       <button class="btn wide c" style="${col}" data-a="lv-guess">Valider</button>` + score;
   }
 
@@ -5396,7 +5419,7 @@ const Jeu = {
       const open = t => !!(S.layer && S.layer.type === t);
       if (open("game") && S.game && S.game.phase === "end") {
         if (S.game.mode === "daily") this.event("rdv");
-        else if ((S.game.seen || []).length >= 3) this.event("partie");
+        else if ((S.game.seen || []).length - (S.game.skipped || 0) >= 3) this.event("partie");
       }
       if (open("arcade") && S.arc && ["end", "win", "lost"].includes(S.arc.phase)) this.event("arcade");
       // À distance : seulement la partie affichée et récente, pas une vieille partie restée en mémoire.
@@ -5929,7 +5952,9 @@ function cxGenBoss(st) {
 }
 function cxGenStep(st, outcome) {
   const steps = st.steps || [], i = steps.length + 1, N = st.max, w = cxWords(st), rpg = st.mode === "rpg";
-  const pre = outcome ? (/réussi|gagn|victoire|apais/i.test(outcome) ? pickOne(OUTCOME_OK) : /raté|échou|défaite/i.test(outcome) ? pickOne(OUTCOME_KO) : "") : "";
+  // Seul le dernier événement compte : une victoire plus tôt ne transforme pas un jet raté en réussite.
+  const lastOut = outcome ? String(outcome).split(" ; ").pop() : "";
+  const pre = lastOut ? (/raté|échou|défaite/i.test(lastOut) ? pickOne(OUTCOME_KO) : /réussi|gagn|victoire|apais/i.test(lastOut) ? pickOne(OUTCOME_OK) : "") : "";
   let beat;
   if (i === 1) beat = CX_INTROS[(st.seed || {}).r % 2 || 0];
   else if (i === N) { const [t, end] = CX_ENDINGS[((st.seed || {}).r || 0) % 3]; return { text: cxCaps(pre + cxFill(t, w, st)), sc: w.lieu[0], end, choices: [] }; }
@@ -6514,7 +6539,7 @@ const CX_ACT = {
   "cx-fight-end"() {
     const F = S.fight; if (!F) return;
     const e = F.enemy, res = F.over;
-    if (res === "lose") rpgRise(F.st, 0.5);
+    if (res === "lose") rpgRise(F.st, 0.35);
     cxCommit((u, last) => { u.rpg = F.st.rpg; last.done = res === "lose" ? "lose" : res;
       last.outcome = res === "win" ? `victoire contre ${e.nom}` : res === "calm" ? `${e.nom} apaisé par la douceur des héros` : `défaite face à ${e.nom}, mais ils se relèvent ensemble et trouvent une autre voie`; });
     S.fight = null; S.cx.view = "read";
@@ -6702,6 +6727,10 @@ let pendingRender = false;
 // Si un écran plante, l'appli ne reste jamais figée : on ferme cet écran, puis on revient à l'accueil,
 // et en dernier recours un écran de secours propose de réessayer ou de réparer.
 function render(force) {
+  // Les mises à jour qui arrivent de l'espace commun sont regroupées : un seul dessin par image.
+  if (!force) { if (!render.q) render.q = requestAnimationFrame(() => { render.q = 0; render(1); }); return true; }
+  if (render.q) { cancelAnimationFrame(render.q); render.q = 0; }
+  if (force === 1) force = false;
   try { renderNow(force); return true; } catch (e) { console.error(e); }
   const tries = [() => { S.layer = null; S.fight = null; S.game = null; S.arc = null; S.story = null; S.pz = null; }, () => { S.tab = "home"; S.obShown = true; }];
   for (const fix of tries) {
@@ -6771,6 +6800,7 @@ function renderNow(force) {
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
+  if (!("inert" in HTMLElement.prototype)) { if (S.layer) app.setAttribute("aria-hidden", "true"); else app.removeAttribute("aria-hidden"); }
   document.documentElement.classList.toggle("ys-paused", !!S.layer);
   layerHistory();
   questBurst();
@@ -6857,7 +6887,9 @@ const ACT = {
   "daily-unskip"() { lsSet("entre-nous:daily-skip", ""); },
   "g-quit"() { quitGame(); },
   "g-stay"() { if (S.game) S.game.askQuit = false; },
-  "g-skip"() { nextCard(); },
+  // Quitter une partie commencée demande confirmation ; tout au début, on sort directement.
+  "g-quit-ask"() { const g = S.game; if (!g || g.phase === "end" || (g.i === 0 && !Object.keys(g.ans || {}).length)) return quitGame(); g.askQuit = true; },
+  "g-skip"() { if (S.game) S.game.skipped = (S.game.skipped || 0) + 1; nextCard(); },
   "g-next"() { nextCard(); },
   "g-step"(d) { S.game.phase = d.v; },
   "g-iam"() { S.game.phase = "input"; },
@@ -6965,7 +6997,7 @@ const ACT = {
   "lv-next"() {
     const L = Live.state; if (!L) return;
     if (L.i + 1 >= (L.deck || []).length) { flushSeen(L.deck || [], true); Live.write({ ended: true }); }
-    else Live.write({ i: L.i + 1, ans: null, saved: null });
+    else Live.write({ i: L.i + 1 });
   },
   "lv-album-ok"() {
     const L = Live.state, me = whoAmI(); if (!L || !me) return;
@@ -6984,7 +7016,7 @@ const ACT = {
     if (d.v === "done") defiDone(x.c); else defiAventure(x.c);
     Live.answer("saved", d.v, true);
   },
-  "lv-arc-next"() { const L = Live.state; if (!L) return; if (L.i + 1 >= (L.deck || []).length) Live.write({ ended: true }); else Live.write({ i: L.i + 1, ans: null }); },
+  "lv-arc-next"() { const L = Live.state; if (!L) return; if (L.i + 1 >= (L.deck || []).length) Live.write({ ended: true }); else Live.write({ i: L.i + 1 }); },
   "lv-clue"() {
     const v = draft("lv-clue").trim();
     if (!v) { toast("Écris ton indice avant de l'envoyer."); return; }
@@ -6999,7 +7031,7 @@ const ACT = {
     const L = Live.state; if (!L) return;
     S.lvGuess = 50;
     if (L.i + 1 >= (L.deck || []).length) Live.write({ ended: true });
-    else Live.write({ i: L.i + 1, ans: null, target: 5 + Math.floor(Math.random() * 91) });
+    else Live.write({ i: L.i + 1, target: 5 + liveDraw(L, L.i + 1, 91) });
   },
   "lv-word"() {
     const L = Live.state, me = whoAmI(); if (!L || !me) return;
@@ -7012,14 +7044,14 @@ const ACT = {
     if (d.v === "win") { Live.write({ ended: true, result: "win" }); return; }
     if (L.round >= 8) { Live.write({ ended: true, result: "lost" }); return; }
     const ans = L.ans || {}, words = Array.isArray(L.words) ? L.words : [];
-    Live.write({ round: L.round + 1, words: [...words, [String(ans.a), String(ans.b)]], ans: null });
+    Live.write({ round: L.round + 1, words: [...words, [String(ans.a), String(ans.b)]] });
   },
   "lv-st-vote"(d) { const me = whoAmI(); if (me) Live.answer("votes", me, +d.v); },
-  "lv-st-coin"() { Live.write({ coinWho: Math.random() < 0.5 ? "a" : "b" }); },
+  "lv-st-coin"() { const L = Live.state; if (L) Live.write({ coinWho: liveDraw(L, 1000 + (L.steps || 1), 2) ? "b" : "a" }); },
   "lv-st-go"(d) {
     const L = Live.state, st = L && STORY[L.id]; if (!st || !st.nodes[d.to]) return;
     storyEnding(st, d.to);
-    Live.write({ node: d.to, steps: (L.steps || 1) + 1, votes: null, coinWho: null, saved: null });
+    Live.write({ node: d.to, steps: (L.steps || 1) + 1, coinWho: null });
   },
   "lv-st-album"() {
     const L = Live.state, st = L && STORY[L.id], n = st && st.nodes[L.node]; if (!n) return;
@@ -7135,7 +7167,11 @@ const ACT = {
   },
   "g-defi-done"() { const g = S.game; defiDone(CARDS[g.deck[g.i]]); g.saved.done = true; },
   "g-defi-later"() { const g = S.game; defiAventure(CARDS[g.deck[g.i]]); g.saved.later = true; },
-  fav(d) { favToggle(d.id); },
+  fav(d, el) {
+    favToggle(d.id);
+    // Dans une partie, l'étoile change sur place : la carte ne rejoue pas son animation d'entrée.
+    if (el && el.classList.contains("fav")) { const on = isFav(d.id); el.setAttribute("aria-pressed", on); el.setAttribute("aria-label", on ? "Retirer des favoris" : "Ajouter aux favoris"); el.textContent = on ? "★" : "☆"; return false; }
+  },
   df(d) { S.df[d.k] = d.v; },
   "df-draw"() { drawDefi(); },
   "df-pick"(d) { S.dfCur = d.id; if (!S.dfSeen.includes(d.id)) S.dfSeen.push(d.id); document.querySelector(".layer") && (document.querySelector(".layer").scrollTop = 0); },
@@ -7270,6 +7306,7 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("input", e => {
   if (e.target.matches("[data-d]")) { S.drafts[e.target.id] = e.target.value; saveDrafts(); }
+  if (e.target.type === "range") e.target.setAttribute("aria-valuetext", `${e.target.value} sur 100`);
   if (e.target.id === "lv-g") {
     S.lvGuess = +e.target.value;
     const n = document.getElementById("needle"); if (n) n.style.left = S.lvGuess + "%";
