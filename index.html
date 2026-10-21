@@ -321,7 +321,7 @@ body { background: var(--bg); }
 .buddy.sleep .buddy-body { transform: translateY(8%) rotate(-10deg); transition: transform .5s ease; }
 .buddy.grr .buddy-body { animation: grr .16s linear infinite; }
 @keyframes grr { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(1.5px); } }
-.av-happy, .av-grr, .av-sleepy, .av-cross { display: none; }
+.av-happy, .av-grr, .av-sleepy, .av-cross, .av-wink, .av-hearteyes, .av-tears, .av-pout, .av-wow, .av-laugh, .av-nose { display: none; }
 .av-sparkle { opacity: 0; animation: avspark 4.5s ease-in-out infinite; }
 @keyframes avspark { 0%, 78%, 100% { opacity: 0; } 86% { opacity: 1; } }
 .buddy.blush .av-blush { opacity: .85; }
@@ -998,6 +998,74 @@ body { background: var(--bg); }
 .fx-rps { font-size: 17px; line-height: 1; padding: 4px 5px; border-radius: 12px; background: #FFFFFF; box-shadow: 0 2px 8px rgba(0, 0, 0, .12); animation: rpspop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
 @keyframes rpspop { from { transform: scale(0) translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .buddy .av-eyes, .buddy .av-torso, .buddy.talking .av-mouth, .buddy.p-tickle .av-arm, .buddy.p-kick .av-leg { animation: none !important; } }
+
+/* ───── Expressions ───── */
+.buddy.e-wink .av-eyes, .buddy.e-wink .av-happy { display: none; }
+.buddy.e-wink .av-wink { display: inline; }
+.buddy.e-heart .av-eyes, .buddy.e-heart .av-happy, .buddy.e-heart .av-sleepy { display: none !important; }
+.buddy.e-heart .av-hearteyes { display: inline; transform-box: view-box; transform-origin: 50px 50px; animation: heartbeat .7s ease-in-out infinite; }
+@keyframes heartbeat { 50% { transform: scale(1.14); } }
+.buddy.e-joy .av-eyes { display: none; }
+.buddy.e-joy .av-happy, .buddy.e-joy .av-tears { display: inline; }
+.buddy.e-joy .av-tears path { animation: tear 1.1s ease-in infinite; }
+.buddy.e-joy .av-tears path + path { animation-delay: .5s; }
+@keyframes tear { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(6px); opacity: 0; } }
+.buddy.e-pout .av-mouth, .buddy.e-wow .av-mouth, .buddy.e-laugh .av-mouth { display: none; }
+.buddy.e-pout .av-pout { display: inline; }
+.buddy.e-pout .av-blush { opacity: .75; }
+.buddy.e-wow .av-wow { display: inline; }
+.buddy.e-wow .av-eyes { transform: scale(1.22); transform-origin: 50px 50px; animation: none; }
+.buddy.e-laugh .av-laugh { display: inline; }
+.buddy.e-laugh .av-eyes { display: none; }
+.buddy.e-laugh .av-happy { display: inline; }
+.buddy.e-laugh .av-head { animation: giggle .32s ease-in-out infinite alternate; }
+@keyframes giggle { from { transform: rotate(calc(var(--hd, 0deg) - 3deg)); } to { transform: rotate(calc(var(--hd, 0deg) + 3deg)) translateY(-1px); } }
+/* ───── Trois-quarts : en marchant ou face à l'autre, le visage se tourne ───── */
+.buddy .av-face, .buddy .av-ear { transform-box: view-box; transition: transform .35s ease, opacity .25s ease; }
+.buddy.tq:not(.front) .av-face { transform: translateX(5.5px) scaleX(.93); transform-origin: 50px 50px; }
+.buddy.tq:not(.front) .av-ear-r { opacity: 0; }
+.buddy.tq:not(.front) .av-ear-l { transform: translateX(2px); }
+.buddy.tq:not(.front) .av-nose { display: inline; }
+.buddy.tq:not(.front) .av-arm-l { translate: 7px 0; }
+.buddy.tq:not(.front) .av-leg-l { translate: 3px 0; }
+.buddy.tq:not(.front) .av-leg-r { translate: -2px 0; }
+/* ───── Cheveux et vêtements qui suivent le mouvement ───── */
+.buddy .av-hairback { transform: rotate(calc(var(--hd, 0deg) + var(--sw, 0) * var(--amp, 0) * -5deg - var(--run, 0) * 7deg)); transition: transform .55s cubic-bezier(.3, 1.6, .5, 1); }
+.buddy.hop .av-hairback, .buddy.bigjump .av-hairback { animation: hairhop .65s ease; }
+@keyframes hairhop { 30% { transform: translateY(-2px) scaleY(.93); } 62% { transform: translateY(2.5px) scaleY(1.06); } }
+.buddy.hop .av-head { animation: headhop .55s ease; }
+@keyframes headhop { 40% { transform: translateY(1.6px); } 72% { transform: translateY(-1.2px); } }
+.buddy .av-sway { transform-box: view-box; transform-origin: 50px 82px; transform: skewX(calc(var(--sw, 0) * var(--amp, 0) * -4deg - var(--run, 0) * 3deg)); transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+.buddy.hop .av-sway { animation: skirt .6s ease; }
+@keyframes skirt { 35% { transform: scaleX(.95) scaleY(1.03); } 70% { transform: scaleX(1.07) scaleY(.97); } }
+/* ───── On peut les attraper ───── */
+.buddy, .yj-bud { touch-action: none; -webkit-user-select: none; user-select: none; }
+.buddy.held .buddy-face { translate: 0 -18px; }
+.buddy.held { z-index: 6; }
+.yj-bud.held .yj-in svg { animation: dangle .5s ease-in-out infinite alternate; }
+@keyframes dangle { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
+.yj-bud.petted .yj-in svg { animation: purr .45s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+@keyframes purr { from { transform: scale(1.04, .95); } to { transform: scale(.97, 1.04); } }
+/* ───── Le petit décor : un arbre, une balançoire, des fleurs qui poussent avec vos jours ───── */
+.buddy-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 0; pointer-events: none; }
+.deco-tree { position: absolute; bottom: -4px; width: 78px; }
+.deco-tree svg { display: block; width: 100%; height: auto; overflow: visible; }
+.deco-swing { transform-box: view-box; transform-origin: 23px 31px; transform: rotate(var(--sa, 0deg)); }
+.deco-flower { position: absolute; bottom: -3px; transform-origin: 50% 100%; }
+.deco-flower svg { display: block; }
+.deco-flower.grow { animation: grow 1.2s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes grow { from { transform: scale(0); } }
+.deco-flower svg { animation: flowersway 4s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+@keyframes flowersway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+:root[data-sky="nuit"] .buddy-deco { filter: brightness(.72) saturate(.85); }
+:root[data-sky="soir"] .buddy-deco { filter: sepia(.18) saturate(1.1); }
+.fx-umbrella { z-index: 4; animation: rpspop .4s cubic-bezier(.3, 1.6, .5, 1) both; }
+.fx-umbrella svg { display: block; }
+.fx-phone { z-index: 4; }
+.fx-flash { position: absolute; bottom: 0; width: 120px; height: 120px; margin-left: -60px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 65%); animation: flash .5s ease-out forwards; z-index: 5; }
+@keyframes flash { from { opacity: 1; transform: scale(.6); } to { opacity: 0; transform: scale(1.4); } }
+.ys-paused .deco-flower svg { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .deco-flower svg, .buddy .av-hairback, .buddy.e-laugh .av-head { animation: none !important; } }
 /* ───── Solidité de l'interface ───── */
 /* Les petits messages restent centrés pendant leur apparition, et ne bloquent jamais un doigt. */
 .toast { animation-name: toastin; pointer-events: none; }
@@ -3698,16 +3766,23 @@ function avatarSvg(k, ov) {
   return `<svg viewBox="0 0 100 150" aria-hidden="true"><ellipse class="av-shadow" cx="50" cy="146" rx="24" ry="4" fill="#000" opacity=".18"/><g class="av-hairback">${back}</g>
     <g class="av-leg av-leg-l"><rect x="38" y="116" width="10" height="26" rx="5" fill="#3D3550"/><ellipse cx="42" cy="142" rx="8" ry="4" fill="#2A2433"/></g><g class="av-leg av-leg-r"><rect x="52" y="116" width="10" height="26" rx="5" fill="#3D3550"/><ellipse cx="58" cy="142" rx="8" ry="4" fill="#2A2433"/></g>
     <g class="av-arm av-arm-l"><rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><circle cx="22" cy="116" r="5" fill="${skin}"/></g><g class="av-arm av-arm-r"><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/><circle cx="78" cy="116" r="5" fill="${skin}"/></g>
-    <g class="av-torso">${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}</g>
+    <g class="av-torso"><g class="av-sway">${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}</g></g>
     <g class="av-cross"><rect x="26" y="91" width="48" height="10" rx="5" fill="${top}" transform="rotate(-13 50 96)" stroke="#000" stroke-opacity=".12" stroke-width=".8"/><rect x="26" y="95" width="48" height="10" rx="5" fill="${top}" transform="rotate(11 50 100)" stroke="#000" stroke-opacity=".12" stroke-width=".8"/><circle cx="28.5" cy="102" r="4.6" fill="${skin}"/><circle cx="71.5" cy="90.5" r="4.6" fill="${skin}"/></g>
     <rect x="45" y="68" width="10" height="12" fill="${skin}"/>
-    <g class="av-head"><circle cx="24" cy="50" r="5" fill="${skin}"/><circle cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
-    <g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
+    <g class="av-head"><circle class="av-ear av-ear-l" cx="24" cy="50" r="5" fill="${skin}"/><circle class="av-ear av-ear-r" cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
+    <g class="av-face"><g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
     <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
     <g class="av-sleepy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 50.5q3 2.6 6 0"/><path d="M56.5 50.5q3 2.6 6 0"/></g>
+    <g class="av-wink"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><path d="M56.5 51q3 -3.2 6 0" stroke="#2B1E2F" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+    <g class="av-hearteyes" fill="#E8457A"><path d="M40.5 54.2l-4.3-4.2a2.6 2.6 0 0 1 4.3-3.2a2.6 2.6 0 0 1 4.3 3.2z"/><path d="M59.5 54.2l-4.3-4.2a2.6 2.6 0 0 1 4.3-3.2a2.6 2.6 0 0 1 4.3 3.2z"/></g>
+    <g class="av-tears" fill="#8EC5F0" stroke="#5FA4DC" stroke-width=".5"><path d="M36 54q-1.8 3.2 0 4.8q1.8-1.6 0-4.8z"/><path d="M64 54q-1.8 3.2 0 4.8q1.8-1.6 0-4.8z"/></g>
+    <path class="av-nose" d="M58 52.6q2.8 1.9 .3 3.5" stroke="#7A4A3A" stroke-opacity=".42" stroke-width="1.4" fill="none" stroke-linecap="round"/>
     <ellipse class="av-blush" cx="34" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/><ellipse class="av-blush" cx="66" cy="58" rx="4.5" ry="2.6" fill="#F07A8E" opacity=".35"/>
-    <path class="av-mouth" d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>${pierce}${acc}${(h => (HATS[h] ? HATS[h](hc) : ""))(eq.hat || (ov ? "" : seasonHat(k)))}</g></svg>`;
+    <path class="av-mouth" d="M44.5 60Q50 65.5 55.5 60" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path class="av-pout" d="M46.5 62.5q3.5 -2.6 7 0" stroke="#7A3644" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse class="av-wow" cx="50" cy="62" rx="2.6" ry="3.3" fill="#7A3644"/>
+    <g class="av-laugh"><path d="M43.5 59Q50 59.8 56.5 59Q56 66.6 50 66.9Q44 66.6 43.5 59Z" fill="#7A3644"/><path d="M46.5 64.5Q50 62.6 53.5 64.5Q52 66.4 50 66.5Q48 66.4 46.5 64.5Z" fill="#F27A8A"/></g>${pierce}${a.acc === "lunettes" ? acc : ""}</g>${a.acc === "lunettes" ? "" : acc}${(h => (HATS[h] ? HATS[h](hc) : ""))(eq.hat || (ov ? "" : seasonHat(k)))}</g></svg>`;
 }
 const castFig = k => `<figure>${avatarSvg(k)}<span class="tag">${esc(nm(k))}</span></figure>`;
 
@@ -4603,23 +4678,114 @@ const FX_STAR = '<svg viewBox="0 0 10 10" width="10"><path d="M5 0l1.3 3.4L10 5 
 const FX_ANGER = '<svg viewBox="0 0 16 16" width="16"><path d="M6 1v4H2M10 1v4h4M6 15v-4H2M10 15v-4h4" stroke="#E0457A" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>';
 const FX_APPLE = '<svg viewBox="0 0 16 18" width="14"><path d="M8 5C4 2 0 5 1 10s4 8 7 7c3 1 6-2 7-7S12 2 8 5z" fill="#E0566B"/><path d="M8 5q0-3 2-4" stroke="#5B3A24" stroke-width="1.2" fill="none"/><path d="M9 3q3-2 5 0q-3 2-5 0z" fill="#6DBE9B"/></svg>';
 const FX_FLOWER = '<svg viewBox="0 0 16 22" width="16"><path d="M8 10v11" stroke="#6DBE9B" stroke-width="1.6"/><path d="M8 17q-4-1-5-4q4 0 5 4z" fill="#6DBE9B"/><g fill="#F7A8C4"><circle cx="8" cy="3.5" r="3"/><circle cx="12.3" cy="6.6" r="3"/><circle cx="10.7" cy="11.4" r="3"/><circle cx="5.3" cy="11.4" r="3"/><circle cx="3.7" cy="6.6" r="3"/></g><circle cx="8" cy="7.6" r="2.4" fill="#F2C84B"/></svg>';
+const TREE_SVG = '<svg viewBox="0 0 78 100"><path d="M50 100C52 80 51 60 53 40L59 40C60 60 60 80 64 100Z" fill="#9A6A48"/><path d="M53 47C44 40 30 34 13 33L13 29C32 29 46 34 56 41Z" fill="#9A6A48"/><g fill="#7DBE8E"><circle cx="58" cy="22" r="17"/><circle cx="40" cy="21" r="13"/><circle cx="70" cy="35" r="10"/><circle cx="48" cy="34" r="12"/><circle cx="28" cy="27" r="9"/></g><g fill="#A6D9B0" opacity=".85"><circle cx="54" cy="15" r="7"/><circle cx="37" cy="16" r="5"/><circle cx="68" cy="28" r="4"/></g><g fill="#F7A8C4"><circle cx="64" cy="16" r="2"/><circle cx="44" cy="27" r="1.8"/><circle cx="70" cy="33" r="1.8"/><circle cx="31" cy="24" r="1.6"/><circle cx="52" cy="8" r="1.6"/></g><g class="deco-swing"><path d="M15 31V84M31 31V84" stroke="#8C7A6B" stroke-width="1.2"/><rect x="11" y="83" width="24" height="4.5" rx="2" fill="#C98F5E"/></g></svg>';
+const DECO_FLOWERS = [
+  '<svg viewBox="0 0 14 22" width="11"><path d="M7 22V10" stroke="#5E9C7A" stroke-width="1.4"/><path d="M7 17q-4-1-4.5-4q3.6 0 4.5 4z" fill="#6DBE9B"/><path d="M2.5 4q0 6.5 4.5 6.5T11.5 4l-2.2 1.8L7 2.2 4.7 5.8z" fill="#F7A8C4"/></svg>',
+  '<svg viewBox="0 0 16 22" width="12"><path d="M8 22V10" stroke="#5E9C7A" stroke-width="1.4"/><g fill="#FFFFFF" stroke="#E9DDE8" stroke-width=".5">' + [0, 60, 120, 180, 240, 300].map(a => `<ellipse cx="8" cy="3.2" rx="2.1" ry="3.2" transform="rotate(${a} 8 7)"/>`).join("") + '</g><circle cx="8" cy="7" r="2.3" fill="#F2C84B"/></svg>',
+  '<svg viewBox="0 0 14 22" width="10"><path d="M7 22V9" stroke="#5E9C7A" stroke-width="1.4"/><path d="M7 10L2.4 5.6a2.6 2.6 0 0 1 4.6-2.8a2.6 2.6 0 0 1 4.6 2.8z" fill="#FF8FA3"/></svg>',
+  '<svg viewBox="0 0 14 22" width="10"><path d="M7 22V9" stroke="#5E9C7A" stroke-width="1.4"/><g fill="#B79BE0"><circle cx="7" cy="4" r="2.4"/><circle cx="4.2" cy="6.4" r="2.2"/><circle cx="9.8" cy="6.4" r="2.2"/></g><circle cx="7" cy="6" r="1.3" fill="#F2D27A"/></svg>'
+];
+const FX_UMBRELLA = '<svg viewBox="0 0 60 44" width="60"><path d="M2 20Q30 -6 58 20Q51 15 44 20Q37 15 30 20Q23 15 16 20Q9 15 2 20Z" fill="#F28A9A" stroke="#D96A7E" stroke-width="1"/><path d="M30 4v-3" stroke="#8C7A6B" stroke-width="1.6" stroke-linecap="round"/><path d="M30 20V39q0 4-4 4" stroke="#8C7A6B" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M16 20Q30 4 44 20" stroke="#FFFFFF" stroke-opacity=".5" fill="none"/></svg>';
+const FX_PHONE = '<svg viewBox="0 0 12 20" width="11"><rect x=".8" y=".8" width="10.4" height="18.4" rx="2.4" fill="#3A3346"/><rect x="2.2" y="2.6" width="7.6" height="13.5" rx="1" fill="#9FB4F0"/><circle cx="6" cy="17.6" r=".9" fill="#9FB4F0"/></svg>';
+const GRAB_LINES = ["Hé ! Où tu m'emmènes ?", "Waouh, je vole !", "Pose-moi ! …doucement.", "Hihi, ça chatouille !"];
+const DROP_LINES = ["Ouf, atterrissage réussi.", "Encore une fois ?", "J'ai la tête qui tourne…", "C'était rigolo !"];
+const SWING_LINES = ["Tu me pousses ?", "Balançoire !", "Je m'installe !"];
+const PUSH_LINES = ["Accroche-toi !", "Un, deux… et hop !", "Prêt pour le décollage ?"];
+const SWING_END = ["Je touche les nuages !", "C'était magique.", "À ton tour, maintenant !"];
 const FX_BLANKET = '<svg viewBox="0 0 76 24" width="76"><path d="M3 22Q2 8 13 6Q38 1 63 6Q74 8 73 22Z" fill="#F7C6D4" stroke="#E293AB" stroke-width="1.2"/><path d="M8 13Q38 8 68 13" stroke="#FFFFFF" stroke-width="1.4" stroke-dasharray="3 3" fill="none" opacity=".85"/><g fill="#FFFFFF" opacity=".75"><circle cx="18" cy="17" r="1.5"/><circle cx="31" cy="15.5" r="1.5"/><circle cx="45" cy="15.5" r="1.5"/><circle cx="58" cy="17" r="1.5"/></g></svg>';
 const FX_BOLT = '<svg viewBox="0 0 16 26" width="14"><path d="M10 0L2 14h5l-3 12 10-16H9z" fill="#F2D27A" stroke="#E8B04A" stroke-width=".8"/></svg>';
 const Buddies = {
   el: null, fx: null, b: {}, sig: "", last: 0, busy: false, nextAct: 0,
   enabled() { return lsGet("entre-nous:buddies") !== "0"; },
+  // Les minuteries des scènes : on peut tout interrompre d'un coup (quand on attrape un chibi, par exemple).
+  timers: new Set(),
+  at(fn, ms) { const id = setTimeout(() => { this.timers.delete(id); fn(); }, ms); this.timers.add(id); return id; },
+  every(fn, ms) { const id = setInterval(fn, ms); this.timers.add(id); return id; },
+  cancel() {
+    this.timers.forEach(id => { clearTimeout(id); clearInterval(id); }); this.timers.clear();
+    Object.values(this.b).forEach(o => { o.target = null; o.onArrive = null; o.run = false; o.swing = null; o.el.classList.remove("talking", "carry", "sit", "sneak", "stretch", "shiver", "shy", "sleep", "spin", "bigjump"); });
+    this.clearPoses(Object.values(this.b));
+    if (this.fx) this.fx.innerHTML = "";
+    this.el.classList.remove("disco", "flash");
+    const y = this.yj;
+    y.mode = "follow"; y.holder = null; y.fly = null; y.target = null; y.onArrive = null; y.run = false;
+    y.el.classList.remove("napping", "tiny", "shiver", "talking", "held");
+    y.body.innerHTML = yassenSvg(Jeu.stage(), y.sleep);
+    this.swingAngle(0);
+    this.busy = false;
+  },
+  // Attraper un chibi et le promener du bout du doigt ; le poser contre l'autre déclenche un câlin.
+  grab(k, e) {
+    const o = this.b[k], x0 = e.clientX;
+    let drag = false;
+    const move = ev => {
+      if (!drag && Math.abs(ev.clientX - x0) < 8) return;
+      if (!drag) {
+        drag = true; o.dragged = true; this.cancel(); this.busy = true;
+        o.el.classList.add("held", "p-kick", "e-wow"); this.say(k, pickOne(GRAB_LINES), 1600); Sfx.play("whoosh");
+      }
+      const r = this.el.getBoundingClientRect(), nx = Math.max(24, Math.min(r.width - 24, ev.clientX - r.left));
+      if (Math.abs(nx - o.x) > 0.5) o.face = nx > o.x ? 1 : -1;
+      o.tilt = Math.max(-14, Math.min(14, (nx - o.x) * -1.5)); o.x = nx;
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      if (!drag) return;
+      o.el.classList.remove("held", "p-kick", "e-wow"); o.tilt = 0; this.hop(o);
+      const O = this.b[other(k)];
+      if (Math.abs(O.x - o.x) < 70) this.at(() => this.hug(true), 200);
+      else { this.say(k, pickOne(DROP_LINES), 1800); this.done(1800); }
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  },
+  // Yassen Jr. : un appui long pour le caresser, ou on l'emmène et on le dépose dans les bras de l'un de vous.
+  grabYj(e) {
+    const y = this.yj, x0 = e.clientX;
+    let mode = "";
+    const lp = setTimeout(() => { if (!mode) { mode = "pet"; y.dragged = true; this.petYj(true); } }, 450);
+    const move = ev => {
+      if (mode === "pet" || (!mode && Math.abs(ev.clientX - x0) < 8)) return;
+      if (!mode) { mode = "drag"; clearTimeout(lp); y.dragged = true; this.cancel(); this.busy = true; y.mode = "drag"; y.el.classList.add("held"); this.yjSay(pickOne(["Wiii !", "Je vole !", "On va où ?"]), 1400); }
+      const r = this.el.getBoundingClientRect(), nx = Math.max(20, Math.min(r.width - 20, ev.clientX - r.left));
+      if (Math.abs(nx - y.x) > 0.5) y.face = nx > y.x ? 1 : -1; y.x = nx;
+    };
+    const up = () => {
+      clearTimeout(lp);
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      if (mode === "pet") return this.petYj(false);
+      if (mode !== "drag") return;
+      y.el.classList.remove("held");
+      const near = Object.values(this.b).sort((p, q) => Math.abs(p.x - y.x) - Math.abs(q.x - y.x))[0];
+      if (near && Math.abs(near.x - y.x) < 40) {
+        y.mode = "held"; y.holder = near; near.face = y.x >= near.x ? 1 : -1; this.hop(near); near.el.classList.add("e-heart");
+        this.say(near.k, pickOne(["Attrapé !", "Je te tiens, petite flamme.", "Viens là, toi."]), 1700); this.hearts(near.x, 3, 12);
+        this.at(() => { near.el.classList.remove("e-heart"); this.putDown(); this.done(1500); }, 2600);
+      } else { y.mode = "follow"; this.yjHop(); this.done(1500); }
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  },
+  petYj(on) {
+    const y = this.yj;
+    clearInterval(y.petT); y.el.classList.toggle("petted", on);
+    if (!on) { this.yjSay(pickOne(y.sleep ? ["*sourit en dormant*"] : ["Encore !", "Hihi… merci.", "Je t'aime !"]), 1500); return; }
+    Sfx.play("heart");
+    this.yjSay(pickOne(y.sleep ? ["Mmh… *ronronne en dormant*", "*sourit dans son sommeil*"] : ["Hihi… encore !", "*ronronne comme un petit feu*", "J'adore les caresses !"]), 2200);
+    y.petT = setInterval(() => this.hearts(y.x, 1, 14), 380);
+  },
   wake() { if (this.loop && !this.running && this.el && !this.el.hidden && !document.hidden) { this.running = true; this.last = 0; requestAnimationFrame(this.loop); } },
   mount() {
     const el = this.el = document.createElement("div");
     el.id = "buddies"; el.setAttribute("aria-hidden", "true");
     document.body.appendChild(el);
+    this.deco = document.createElement("div"); this.deco.className = "buddy-deco"; el.appendChild(this.deco);
     this.fx = document.createElement("div"); this.fx.className = "buddy-fx"; el.appendChild(this.fx);
     ["a", "b"].forEach((k, i) => {
       const d = document.createElement("div");
       d.className = "buddy";
       d.innerHTML = `<div class="bubble"></div><span class="mood-fx"></span><span class="buddy-shadow"></span><div class="buddy-face"><div class="buddy-body"></div></div>`;
       d.style.setProperty("--bd", (Math.random() * 4).toFixed(2) + "s");
-      d.addEventListener("click", () => this.poke(k));
+      d.addEventListener("click", () => { if (this.b[k].dragged) { this.b[k].dragged = false; return; } this.poke(k); });
+      d.addEventListener("pointerdown", e => this.grab(k, e));
       el.appendChild(d);
       const pet = document.createElement("div"); pet.className = "pet"; pet.hidden = true; el.appendChild(pet);
       const x = (i ? 0.68 : 0.3) * this.W();
@@ -4627,12 +4793,13 @@ const Buddies = {
     });
     const yj = document.createElement("div"); yj.className = "yj-bud";
     yj.innerHTML = `<div class="bubble"></div><div class="yj-in"></div>`;
-    yj.addEventListener("click", () => this.pokeYj()); el.appendChild(yj);
+    yj.addEventListener("click", () => { if (this.yj.dragged) { this.yj.dragged = false; return; } this.pokeYj(); });
+    yj.addEventListener("pointerdown", e => this.grabYj(e)); el.appendChild(yj);
     this.yj = { el: yj, body: yj.querySelector(".yj-in"), bubble: yj.querySelector(".bubble"), x: 0.5 * this.W(), mode: "follow", holder: null, face: 1, phase: 0, fly: null, target: null, run: false, sleep: false };
     this.nextAct = performance.now() + 4000;
     this.loop = this.loop.bind(this);
     this.running = true; requestAnimationFrame(this.loop);
-    setTimeout(() => this.chatter(), 7000);
+    window.setTimeout(() => this.chatter(), 7000);
   },
   W() { return (this.el && this.el.clientWidth) || 360; },
   sync() {
@@ -4646,6 +4813,7 @@ const Buddies = {
     if (!show) return;
     // La météo du cœur de chacun s'affiche au-dessus de son chibi et change sa façon d'être.
     ["a", "b"].forEach(k => { const m = (moodOf(k) || {}).m || "", o = this.b[k]; if (o.mood !== m) { o.mood = m; o.el.dataset.mood = m; o.el.querySelector(".mood-fx").innerHTML = m ? weatherSvg(m) : ""; } });
+    this.decor();
     const yjSig = Jeu.stage() + ":" + !Jeu.activeToday();
     if (yjSig !== this.yjSig) { this.yjSig = yjSig; this.yj.sleep = !Jeu.activeToday(); this.yj.body.innerHTML = yassenSvg(Jeu.stage(), this.yj.sleep); }
     const sig = JSON.stringify([avOf("a"), avOf("b"), Jeu.equipOf("a"), Jeu.equipOf("b")]);
@@ -4679,7 +4847,21 @@ const Buddies = {
         o.phase += dt * (o.run ? 9 : 5.4);
         if (Math.abs(o.target - o.x) < 0.5) { o.x = o.target; o.target = null; o.speed = 0; const cb = o.onArrive; o.onArrive = null; if (cb) cb(); }
       }
+      // Sur la balançoire : un pendule, accroché à la branche.
+      if (o.swing) {
+        const g = o.swing; g.ph += dt * 2.6; if (g.damp) g.amp *= 1 - dt * 0.7;
+        const a = Math.sin(g.ph) * g.amp, r = a * Math.PI / 180;
+        o.x = g.cx + Math.sin(r) * g.L; o.tilt = -a * 0.5; this.swingAngle(a);
+        o.el.style.transform = `translate3d(${(o.x - 25).toFixed(1)}px, ${(-(g.seat + (1 - Math.cos(r)) * g.L)).toFixed(1)}px, 0)`;
+        o.faceEl.style.transform = `scaleX(${o.face}) rotate(${o.tilt.toFixed(1)}deg)`;
+        continue;
+      }
       const moving = o.target != null && !still, sw = Math.sin(o.phase * Math.PI);
+      // De face quand on est seul ; de trois-quarts en marchant, ou près de l'autre.
+      const near = Math.abs(o.x - this.b[other(k)].x) < 72;
+      if (o.tq !== (moving || near)) { o.tq = moving || near; o.el.classList.toggle("tq", o.tq); }
+      const running = moving && o.run ? 1 : 0;
+      if (o.lastRun !== running) { o.lastRun = running; o.el.style.setProperty("--run", running); }
       // En marchant, le corps est au plus haut quand les jambes se croisent ; en courant, pendant l'envol.
       const lift = moving ? (o.run ? Math.abs(sw) * 7 : (1 - Math.abs(sw)) * 3) : 0;
       if (moving) { o.el.style.setProperty("--sw", sw.toFixed(3)); o.el.style.setProperty("--amp", o.run ? "1" : ".62"); o.swOn = true; }
@@ -4719,6 +4901,8 @@ const Buddies = {
       y.x = (A.x + B.x) / 2; y.phase += dt * 5; lift = 14 + Math.abs(Math.sin(y.phase)) * 20; rot = Math.sin(y.phase) * 18;
     } else if (y.mode === "pinned") {
       y.x = (A.x + B.x) / 2; lift = 22;
+    } else if (y.mode === "drag") {
+      lift = 30; rot = Math.sin(t / 140) * 6;
     } else if (y.mode === "nap") {
       y.x = (A.x + B.x) / 2; lift = 0;
     } else {
@@ -4793,6 +4977,9 @@ const Buddies = {
       [0.5 + avg("tease") * 0.3, () => this.tease(), 1],
       [0.7, () => this.playBall(), 1],
       [0.6, () => this.chifoumi()],
+      [0.9, () => this.swingScene()],
+      [has("orage") || has("nuage") ? 2.6 : 0, () => this.umbrella()],
+      [0.3, () => this.selfie()],
       [night ? 1.4 : 0.35 + (4 - avg("energy")) * 0.1, () => this.napTogether()],
       [0.3 + avg("energy") * 0.25, () => this.chase(), 1],
       [0.4 + avg("mood") * 0.15 + avg("energy") * 0.1, () => this.dance()],
@@ -4814,7 +5001,7 @@ const Buddies = {
     const y = this.yj; if (!y) return;
     Object.values(this.b).forEach(o => o.el.classList.remove("talking"));
     y.bubble.textContent = text; y.el.classList.add("talking");
-    clearTimeout(y.hush); y.hush = setTimeout(() => y.el.classList.remove("talking"), ms);
+    clearTimeout(y.hush); y.hush = this.at(() => y.el.classList.remove("talking"), ms);
   },
   yjHop() { const y = this.yj; y.el.classList.remove("hop"); void y.el.offsetWidth; y.el.classList.add("hop"); },
   pickUp(o, cb) {
@@ -4829,9 +5016,9 @@ const Buddies = {
       o.el.classList.add("happy");
       this.say(o.k, pickOne(y.sleep ? ["Chut… il dort.", "On le porte tout doucement."] : YJ_CARRY), 2200);
       this.hearts(o.x, 3, 14);
-      setTimeout(() => { if (!y.sleep) this.yjSay(pickOne(["Hihi !", "Encore un câlin !", "Je suis bien, là."]), 1800); }, 1600);
-      setTimeout(() => this.walkTo(o, o.x + (Math.random() - 0.5) * this.W() * 0.5, false, () => {
-        setTimeout(() => { this.putDown(); o.el.classList.remove("happy"); this.done(); }, 900);
+      this.at(() => { if (!y.sleep) this.yjSay(pickOne(["Hihi !", "Encore un câlin !", "Je suis bien, là."]), 1800); }, 1600);
+      this.at(() => this.walkTo(o, o.x + (Math.random() - 0.5) * this.W() * 0.5, false, () => {
+        this.at(() => { this.putDown(); o.el.classList.remove("happy"); this.done(); }, 900);
       }), 1900);
     });
   },
@@ -4846,15 +5033,15 @@ const Buddies = {
       y.fly = { x0: y.x, x1: to.x + to.face * 7, t0: performance.now(), dur: 950, h: 46, dir: to.x > from.x ? 1 : -1, cb: () => {
         y.mode = "held"; y.holder = to; this.hop(to);
         this.say(to.k, trait(to.k, "brave") <= 1 ? pickOne(["Je l'ai ! …je crois.", "Ouf, attrapé !"]) : pickOne(["Attrapé !", "Je l'ai !", "Bien reçu !"]), 1200);
-        if (++n < passes) setTimeout(() => pass(to, from), 700);
-        else setTimeout(() => { this.yjSay(pickOne(["Encore ! Encore !", "Je vole !", "Vous êtes les meilleurs."]), 1800); this.hearts(to.x, 4, 16); setTimeout(() => { this.putDown(); this.done(); }, 1600); }, 600);
+        if (++n < passes) this.at(() => pass(to, from), 700);
+        else this.at(() => { this.yjSay(pickOne(["Encore ! Encore !", "Je vole !", "Vous êtes les meilleurs."]), 1800); this.hearts(to.x, 4, 16); this.at(() => { this.putDown(); this.done(); }, 1600); }, 600);
       } };
-      setTimeout(() => this.yjSay("Wiiii !", 900), 150);
+      this.at(() => this.yjSay("Wiiii !", 900), 150);
     };
     this.pickUp(T, () => {
       this.say(T.k, pickOne(["On joue à la passe ?", "Prêt pour un petit vol ?"]), 1600);
       const mid = Math.max(80, Math.min(W - 80, (T.x + C.x) / 2)), left = T.x <= C.x;
-      this.walkTo(T, mid + (left ? -60 : 60)); this.walkTo(C, mid + (left ? 60 : -60), false, () => { T.face = C.x > T.x ? 1 : -1; C.face = -T.face; setTimeout(() => pass(T, C), 500); });
+      this.walkTo(T, mid + (left ? -60 : 60)); this.walkTo(C, mid + (left ? 60 : -60), false, () => { T.face = C.x > T.x ? 1 : -1; C.face = -T.face; this.at(() => pass(T, C), 500); });
     });
   },
   yjSwing() {
@@ -4863,9 +5050,9 @@ const Buddies = {
     this.meet(44, (L, R) => {
       y.target = null; y.mode = "swing"; y.phase = 0; this.mood([L, R], "happy", true);
       this.say(L.k, "Un, deux, trois…", 1400);
-      setTimeout(() => { this.say(R.k, "…on le fait voler !", 1500); this.yjSay("Wiiii !", 1500); }, 1300);
-      setTimeout(() => this.hearts((L.x + R.x) / 2, 4), 2000);
-      setTimeout(() => { y.mode = "follow"; this.mood([L, R], "happy", false); this.yjSay(pickOne(["Encore une fois !", "Vous êtes les meilleurs."]), 1800); this.apart(L, R, () => this.done()); }, 3600);
+      this.at(() => { this.say(R.k, "…on le fait voler !", 1500); this.yjSay("Wiiii !", 1500); }, 1300);
+      this.at(() => this.hearts((L.x + R.x) / 2, 4), 2000);
+      this.at(() => { y.mode = "follow"; this.mood([L, R], "happy", false); this.yjSay(pickOne(["Encore une fois !", "Vous êtes les meilleurs."]), 1800); this.apart(L, R, () => this.done()); }, 3600);
     });
   },
   yjFamilyHug() {
@@ -4877,9 +5064,9 @@ const Buddies = {
       [L, R].forEach(o => o.el.classList.add("blush"));
       const k = pickOne(["a", "b"]);
       this.say(k, pickOne(y.sleep ? ["Câlin tout doux, il dort…", "Notre petite flamme…"] : ["Câlin à trois !", "Notre petite famille.", "Viens là, toi aussi !"]), 2200);
-      if (!y.sleep) setTimeout(() => this.yjSay(pickOne(["Je vous aime !", "Le meilleur câlin du monde !"]), 1800), 1500);
-      setTimeout(() => this.hearts(mid, 5), 1300);
-      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 3400);
+      if (!y.sleep) this.at(() => this.yjSay(pickOne(["Je vous aime !", "Le meilleur câlin du monde !"]), 1800), 1500);
+      this.at(() => this.hearts(mid, 5), 1300);
+      this.at(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 3400);
     });
   },
   yjShoulders() {
@@ -4888,8 +5075,8 @@ const Buddies = {
     this.pickUp(o, () => {
       y.mode = "shoulders"; this.yjHop();
       this.yjSay(pickOne(["Plus haut !", "Je vois tout d'ici !", "Je suis le roi du monde !"]), 1800);
-      setTimeout(() => this.say(O.k, pickOne(trait(O.k, "brave") <= 1 ? ["Fais attention à lui !", "Doucement…"] : ["Trop mignons, tous les deux.", "Je veux une photo !"]), 1800), 1300);
-      this.walkTo(o, o.x < W / 2 ? W * 0.75 : W * 0.25, false, () => { this.hearts(o.x, 3, 14); setTimeout(() => { this.putDown(); this.done(); }, 700); });
+      this.at(() => this.say(O.k, pickOne(trait(O.k, "brave") <= 1 ? ["Fais attention à lui !", "Doucement…"] : ["Trop mignons, tous les deux.", "Je veux une photo !"]), 1800), 1300);
+      this.walkTo(o, o.x < W / 2 ? W * 0.75 : W * 0.25, false, () => { this.hearts(o.x, 3, 14); this.at(() => { this.putDown(); this.done(); }, 700); });
     });
   },
   yjChase() {
@@ -4898,11 +5085,11 @@ const Buddies = {
     this.yjSay("Attrapez-moi !", 1500);
     y.mode = "follow"; y.run = true; y.target = edge;
     y.onArrive = () => { y.run = false; y.target = edge; };
-    setTimeout(() => this.walkTo(c, edge + (edge > W / 2 ? -12 : 12), true, () => {
+    this.at(() => this.walkTo(c, edge + (edge > W / 2 ? -12 : 12), true, () => {
       y.target = null; y.onArrive = null; y.mode = "held"; y.holder = c; c.face = edge > c.x ? 1 : -1;
       this.hop(c); this.say(c.k, pickOne(["Attrapé, petit coquin !", "Je te tiens !"]), 1800); this.hearts(c.x, 4, 14);
-      setTimeout(() => this.yjSay("Hihi ! Encore !", 1500), 900);
-      setTimeout(() => { this.putDown(); this.done(); }, 2600);
+      this.at(() => this.yjSay("Hihi ! Encore !", 1500), 900);
+      this.at(() => { this.putDown(); this.done(); }, 2600);
     }), 400);
   },
   // Quand il dort, on vient le regarder dormir, et on se fait un bisou au-dessus de lui.
@@ -4913,8 +5100,8 @@ const Buddies = {
       if (++n < 2) return;
       this.b.a.face = this.b.b.x > this.b.a.x ? 1 : -1; this.b.b.face = -this.b.a.face;
       this.say("a", pickOne(["Chut… il dort.", "Regarde comme il est mignon."]), 2000);
-      setTimeout(() => { this.say("b", pickOne(["Il est trop mignon quand il dort.", "Fais de beaux rêves, petite flamme."]), 2200); [this.b.a, this.b.b].forEach(o => { o.tilt = 8; o.el.classList.add("happy"); }); this.hearts(y.x, 4, 16); }, 1900);
-      setTimeout(() => { [this.b.a, this.b.b].forEach(o => { o.tilt = 0; o.el.classList.remove("happy"); }); this.done(); }, 4600);
+      this.at(() => { this.say("b", pickOne(["Il est trop mignon quand il dort.", "Fais de beaux rêves, petite flamme."]), 2200); [this.b.a, this.b.b].forEach(o => { o.tilt = 8; o.el.classList.add("happy"); }); this.hearts(y.x, 4, 16); }, 1900);
+      this.at(() => { [this.b.a, this.b.b].forEach(o => { o.tilt = 0; o.el.classList.remove("happy"); }); this.done(); }, 4600);
     };
     const [L, R] = this.b.a.x <= this.b.b.x ? [this.b.a, this.b.b] : [this.b.b, this.b.a];
     this.walkTo(L, x - 26, false, both); this.walkTo(R, x + 26, false, both);
@@ -4937,12 +5124,12 @@ const Buddies = {
     y.onArrive = () => {
       y.run = false; y.mode = "pinned"; this.yjHop();
       this.yjSay(pickOne(["Hé ! On se fait un câlin ?", "Pas de dispute, je vous aime tous les deux !", "Stop ! Câlin obligatoire."]), 2000);
-      setTimeout(() => {
+      this.at(() => {
         this.clearPoses([L, R]); L.face = 1; R.face = -1; this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true); L.tilt = R.tilt = 8;
         this.say(pickOne([L, R]).k, pickOne(["Il a raison…", "D'accord, d'accord. Câlin.", "Comment lui dire non ?"]), 2000);
         this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 6);
       }, 1700);
-      setTimeout(() => { this.clearPoses([L, R]); y.mode = "follow"; this.apart(L, R, () => this.done()); }, 4200);
+      this.at(() => { this.clearPoses([L, R]); y.mode = "follow"; this.apart(L, R, () => this.done()); }, 4200);
     };
   },
   // Yassen Jr. imite vos phrases fétiches, en tout petit.
@@ -4954,9 +5141,9 @@ const Buddies = {
     y.onArrive = () => {
       o.face = y.x > o.x ? 1 : -1;
       this.say(k, tic, 1800);
-      setTimeout(() => { y.el.classList.add("tiny"); this.yjHop(); this.yjSay(tic.charAt(0).toLowerCase() + tic.slice(1), 1800); }, 1900);
-      setTimeout(() => { y.el.classList.remove("tiny"); this.hop(o); o.el.classList.add("happy"); this.say(k, pickOne(["Il m'imite !", "Hahaha, trop mignon !", "C'est qui ton modèle ? C'est moi !"]), 2000); this.hearts(o.x, 4, 14); }, 3800);
-      setTimeout(() => { o.el.classList.remove("happy"); this.done(); }, 5900);
+      this.at(() => { y.el.classList.add("tiny"); this.yjHop(); this.yjSay(tic.charAt(0).toLowerCase() + tic.slice(1), 1800); }, 1900);
+      this.at(() => { y.el.classList.remove("tiny"); this.hop(o); o.el.classList.add("happy"); this.say(k, pickOne(["Il m'imite !", "Hahaha, trop mignon !", "C'est qui ton modèle ? C'est moi !"]), 2000); this.hearts(o.x, 4, 14); }, 3800);
+      this.at(() => { o.el.classList.remove("happy"); this.done(); }, 5900);
     };
   },
   // Le soir, l'orage : Yassen Jr. a peur, vous le rassurez à deux.
@@ -4965,17 +5152,17 @@ const Buddies = {
     const rain = () => { for (let i = 0; i < 16; i++) this.prop("fx-rain", "", Math.random() * W, 120, 1300, { "animation-delay": (Math.random() * 0.9).toFixed(2) + "s" }); };
     const bolt = () => { this.prop("fx-bolt", FX_BOLT, 30 + Math.random() * (W - 60), 104, 600); this.el.classList.remove("flash"); void this.el.offsetWidth; this.el.classList.add("flash"); };
     rain(); bolt();
-    const rainy = setInterval(rain, 1100);
+    const rainy = this.every(rain, 1100);
     y.el.classList.add("shiver"); this.yjSay(pickOne(["Ah ! L'orage !", "J'ai peur du tonnerre…"]), 1800);
     y.run = true; y.target = (this.b.a.x + this.b.b.x) / 2;
     this.meet(34, (L, R) => {
       y.run = false; y.target = null; y.mode = "pinned"; L.tilt = R.tilt = 10;
       const scared = [L, R].find(o => trait(o.k, "brave") <= 1), calm = scared ? (scared === L ? R : L) : pickOne([L, R]);
       this.say(calm.k, pickOne(["Ce n'est que l'orage, on est là.", "Rien ne peut t'arriver avec nous.", "Viens, on te serre fort."]), 2400);
-      if (scared && scared !== calm) setTimeout(() => this.say(scared.k, "…moi aussi, j'ai un peu peur.", 2000), 2500);
-      setTimeout(bolt, 2600);
-      setTimeout(() => { clearInterval(rainy); y.el.classList.remove("shiver"); this.yjSay("Je n'ai plus peur avec vous.", 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 6); this.mood([L, R], "happy", true); }, 4700);
-      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 7200);
+      if (scared && scared !== calm) this.at(() => this.say(scared.k, "…moi aussi, j'ai un peu peur.", 2000), 2500);
+      this.at(bolt, 2600);
+      this.at(() => { clearInterval(rainy); y.el.classList.remove("shiver"); this.yjSay("Je n'ai plus peur avec vous.", 2200); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 6); this.mood([L, R], "happy", true); }, 4700);
+      this.at(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; y.mode = "follow"; this.apart(L, R, () => this.done()); }, 7200);
     });
   },
   pokeYj() {
@@ -4996,8 +5183,8 @@ const Buddies = {
     if (avOf(s).tics.length && Math.random() < 0.25) l2 = pickOne(avOf(s).tics);
     if (trait(f, "soc") <= 1) this.b[f].el.classList.add("blush");
     this.say(f, l1, 2600);
-    setTimeout(() => { this.say(s, l2, 2800); this.b[s].el.classList.add("happy"); this.hop(this.b[s]); this.hearts((A.x + B.x) / 2, 4, 20); }, 2700);
-    setTimeout(() => { [A, B].forEach(o => o.el.classList.remove("blush", "happy")); if (Math.random() < 0.4) this.kiss(); else this.done(); }, 5600);
+    this.at(() => { this.say(s, l2, 2800); this.b[s].el.classList.add("happy"); this.hop(this.b[s]); this.hearts((A.x + B.x) / 2, 4, 20); }, 2700);
+    this.at(() => { [A, B].forEach(o => o.el.classList.remove("blush", "happy")); if (Math.random() < 0.4) this.kiss(); else this.done(); }, 5600);
   },
   // Scènes propres à chaque trait marqué. ext() trouve le personnage le plus marqué de ce côté du trait.
   ext(id, pole) {
@@ -5009,7 +5196,7 @@ const Buddies = {
     const s = document.createElement("span"); s.className = "fx-prop " + cls; s.innerHTML = html;
     s.style.left = x.toFixed(0) + "px"; s.style.bottom = bottom + "px";
     if (vars) Object.entries(vars).forEach(([k, v]) => s.style.setProperty(k, v));
-    this.fx.appendChild(s); if (life) setTimeout(() => s.remove(), life);
+    this.fx.appendChild(s); if (life) this.at(() => s.remove(), life);
     return s;
   },
   // Timidité : se cache derrière l'autre et passe la tête.
@@ -5019,9 +5206,9 @@ const Buddies = {
     this.walkTo(T, O.x + side * 16, false, () => {
       T.face = -side; O.face = -side; T.tilt = 12; T.el.classList.add("blush");
       this.say(T.k, pickOne(["*passe la tête*", "Coucou… c'est moi.", "Tu me vois pas, hein ?"]), 2000);
-      setTimeout(() => { O.face = side; this.hop(O); this.say(O.k, pickOne(["Je te vois !", "Trouvé !", "Mais qui se cache là ?"]), 1800); }, 2000);
-      setTimeout(() => { T.tilt = 0; this.say(T.k, pickOne(["Hihi… trouvé.", "*se cache derrière ses mains*"]), 1800); this.hearts((T.x + O.x) / 2, 4, 14); }, 3600);
-      setTimeout(() => { T.el.classList.remove("blush"); this.done(); }, 5400);
+      this.at(() => { O.face = side; this.hop(O); this.say(O.k, pickOne(["Je te vois !", "Trouvé !", "Mais qui se cache là ?"]), 1800); }, 2000);
+      this.at(() => { T.tilt = 0; this.say(T.k, pickOne(["Hihi… trouvé.", "*se cache derrière ses mains*"]), 1800); this.hearts((T.x + O.x) / 2, 4, 14); }, 3600);
+      this.at(() => { T.el.classList.remove("blush"); this.done(); }, 5400);
     });
   },
   // Extraversion : petit spectacle, l'autre applaudit.
@@ -5030,10 +5217,10 @@ const Buddies = {
     const O = this.b[other(P.k)];
     O.face = P.x > O.x ? 1 : -1;
     this.say(P.k, pickOne(["Ta-daaa !", "Mesdames et messieurs… MOI !", "Regardez-moi !"]), 1800);
-    [0, 380, 760].forEach(ms => setTimeout(() => { this.hop(P); for (let i = 0; i < 2; i++) this.spawn("fx-spark", "✦", P.x - 6 + (Math.random() - 0.5) * 40, i * 0.1, 1200); }, ms));
-    setTimeout(() => this.spin(P), 1150);
-    setTimeout(() => { this.hop(O); setTimeout(() => this.hop(O), 260); this.say(O.k, trait(O.k, "soc") <= 1 ? pickOne(["Hihi… bravo.", "*applaudit tout doucement*"]) : pickOne(["Bravo ! Une autre !", "Standing ovation !"]), 2000); this.hearts(O.x, 3, 14); if (!this.yj.sleep) { this.yjHop(); } }, 1900);
-    setTimeout(() => this.done(), 4000);
+    [0, 380, 760].forEach(ms => this.at(() => { this.hop(P); for (let i = 0; i < 2; i++) this.spawn("fx-spark", "✦", P.x - 6 + (Math.random() - 0.5) * 40, i * 0.1, 1200); }, ms));
+    this.at(() => this.spin(P), 1150);
+    this.at(() => { this.hop(O); this.at(() => this.hop(O), 260); this.say(O.k, trait(O.k, "soc") <= 1 ? pickOne(["Hihi… bravo.", "*applaudit tout doucement*"]) : pickOne(["Bravo ! Une autre !", "Standing ovation !"]), 2000); this.hearts(O.x, 3, 14); if (!this.yj.sleep) { this.yjHop(); } }, 1900);
+    this.at(() => this.done(), 4000);
   },
   // Colère : petite crise, puis l'autre (ou Yassen Jr.) vient faire un câlin.
   tantrum() {
@@ -5041,14 +5228,14 @@ const Buddies = {
     const O = this.b[other(G.k)], y = this.yj;
     G.el.classList.add("grr");
     this.say(G.k, pickOne(["GRRR !", "Tout m'énerve !", "Je boude. Officiellement.", "Pfff !"]), 1800);
-    [0, 600, 1200].forEach(ms => setTimeout(() => this.prop("fx-anger", FX_ANGER, G.x - 2 + (Math.random() - 0.5) * 16, 60, 900), ms));
-    setTimeout(() => {
+    [0, 600, 1200].forEach(ms => this.at(() => this.prop("fx-anger", FX_ANGER, G.x - 2 + (Math.random() - 0.5) * 16, 60, 900), ms));
+    this.at(() => {
       const end = () => { G.el.classList.remove("grr"); G.el.classList.add("happy"); this.bigHeart(G.x); this.hearts(G.x, 4, 16);
-        setTimeout(() => this.say(G.k, pickOne(["…Bon. Ça va mieux.", "Hmpf. Merci.", "Comment résister ?"]), 2000), 1300);
-        setTimeout(() => { G.el.classList.remove("happy"); y.target = null; this.done(); }, 3400); };
+        this.at(() => this.say(G.k, pickOne(["…Bon. Ça va mieux.", "Hmpf. Merci.", "Comment résister ?"]), 2000), 1300);
+        this.at(() => { G.el.classList.remove("happy"); y.target = null; this.done(); }, 3400); };
       if (!y.sleep && y.mode === "follow" && Math.random() < 0.45) {
         y.target = G.x + (G.x < this.W() / 2 ? 18 : -18); y.onArrive = () => { this.yjHop(); this.yjSay("Câlin ?", 1600); end(); };
-      } else this.walkTo(O, G.x + (O.x < G.x ? -24 : 24), false, () => { O.face = G.x > O.x ? 1 : -1; G.face = -O.face; O.tilt = 8; this.say(O.k, pickOne(["Viens là, mon petit nuage d'orage.", "Câlin anti-colère !", "Ça va mieux, comme ça ?"]), 2000); setTimeout(() => { O.tilt = 0; }, 2400); end(); });
+      } else this.walkTo(O, G.x + (O.x < G.x ? -24 : 24), false, () => { O.face = G.x > O.x ? 1 : -1; G.face = -O.face; O.tilt = 8; this.say(O.k, pickOne(["Viens là, mon petit nuage d'orage.", "Câlin anti-colère !", "Ça va mieux, comme ça ?"]), 2000); this.at(() => { O.tilt = 0; }, 2400); end(); });
     }, 1900);
   },
   // Joie : un grand saut et des confettis.
@@ -5059,15 +5246,15 @@ const Buddies = {
     this.say(J.k, pickOne(["Trop de bonheur !", "La vie est belle !", "Youpiii !", "Meilleure journée du monde !"]), 2000);
     const cols = ["#FF6E89", "#F2C84B", "#6DBE9B", "#5E8BD9", "#9B7BD6"];
     for (let i = 0; i < 16; i++) this.prop("fx-confetti", "", J.x - 2, 46, 1500, { "--dx": ((Math.random() - 0.5) * 120).toFixed(0) + "px", "--dy": (-30 - Math.random() * 50).toFixed(0) + "px", background: pickOne(cols) });
-    setTimeout(() => { O.el.classList.add("happy"); this.hop(O); this.say(O.k, pickOne(["Ta joie est contagieuse !", "Hihi, j'adore te voir comme ça.", "Moi aussi, moi aussi !"]), 2000); this.hearts(O.x, 3, 14); if (!this.yj.sleep) this.yjHop(); }, 1300);
-    setTimeout(() => { [J, O].forEach(o => o.el.classList.remove("happy", "bigjump")); this.done(); }, 3600);
+    this.at(() => { O.el.classList.add("happy"); this.hop(O); this.say(O.k, pickOne(["Ta joie est contagieuse !", "Hihi, j'adore te voir comme ça.", "Moi aussi, moi aussi !"]), 2000); this.hearts(O.x, 3, 14); if (!this.yj.sleep) this.yjHop(); }, 1300);
+    this.at(() => { [J, O].forEach(o => o.el.classList.remove("happy", "bigjump")); this.done(); }, 3600);
   },
   // Courage : une araignée s'approche de l'autre, le courageux la fait fuir.
   spiderHero() {
     const H = this.ext("brave", "hi"); if (!H) return this.done();
     const O = this.b[other(H.k)], W = this.W(), sx = O.x < W / 2 ? 4 : W - 22, stop = O.x + (O.x < W / 2 ? -34 : 34) - 9;
     const sp = this.prop("fx-spider", FX_SPIDER, sx, 0, 0, { "--dx": (stop - sx).toFixed(0) + "px", "--t": "1.6s" });
-    setTimeout(() => {
+    this.at(() => {
       const scared = trait(O.k, "brave") <= 1;
       if (scared) O.el.classList.add("shiver");
       this.say(O.k, scared ? pickOne(["AAAH ! Une araignée !", "Elle me regarde !!"]) : "Oh, une petite araignée.", 1800);
@@ -5076,8 +5263,8 @@ const Buddies = {
         this.say(H.k, pickOne(["Ouste ! Va jouer ailleurs.", "Pas touche à mon cœur !", "En garde, bestiole !"]), 1800);
         sp.remove();
         this.prop("fx-spider", FX_SPIDER, stop, 0, 1000, { "--dx": ((O.x < W / 2 ? -1 : 1) * 160).toFixed(0) + "px", "--t": "0.9s" });
-        setTimeout(() => { O.el.classList.remove("shiver"); O.face = H.x > O.x ? 1 : -1; this.mood([O], "happy", true); this.say(O.k, pickOne(["Merci, mon cœur…", "Ma personne préférée.", "Tu m'as sauvé la vie. Au moins."]), 2200); this.bigHeart((H.x + O.x) / 2); this.hearts(O.x, 4, 14); }, 1100);
-        setTimeout(() => { this.mood([O], "happy", false); this.done(); }, 3600);
+        this.at(() => { O.el.classList.remove("shiver"); O.face = H.x > O.x ? 1 : -1; this.mood([O], "happy", true); this.say(O.k, pickOne(["Merci, mon cœur…", "Ma personne préférée.", "Tu m'as sauvé la vie. Au moins."]), 2200); this.bigHeart((H.x + O.x) / 2); this.hearts(O.x, 4, 14); }, 1100);
+        this.at(() => { this.mood([O], "happy", false); this.done(); }, 3600);
       });
     }, 1500);
   },
@@ -5088,20 +5275,20 @@ const Buddies = {
     C.el.classList.add("sit");
     const cup = this.prop("fx-cup", FX_CUP, C.x + C.face * 16 - 7, 2, 6400);
     this.say(C.k, pickOne(["Plaid, thé… parfait.", "Ahh… on est bien.", "Pause tisane."]), 2200);
-    setTimeout(() => {
-      if (trait(O.k, "energy") <= 2) this.walkTo(O, C.x + (O.x < C.x ? -24 : 24), false, () => { O.face = C.x > O.x ? 1 : -1; C.face = -O.face; O.el.classList.add("sit"); this.say(O.k, "Je peux ?", 1500); setTimeout(() => { this.say(C.k, "Toujours.", 1800); this.hearts((C.x + O.x) / 2, 4, 14); }, 1500); });
+    this.at(() => {
+      if (trait(O.k, "energy") <= 2) this.walkTo(O, C.x + (O.x < C.x ? -24 : 24), false, () => { O.face = C.x > O.x ? 1 : -1; C.face = -O.face; O.el.classList.add("sit"); this.say(O.k, "Je peux ?", 1500); this.at(() => { this.say(C.k, "Toujours.", 1800); this.hearts((C.x + O.x) / 2, 4, 14); }, 1500); });
       else { this.say(O.k, pickOne(["Je te rejoins dans… cinq secondes.", "Trop calme pour moi ! …bon, juste une minute."]), 2000); this.hop(O); }
     }, 2000);
-    setTimeout(() => { [C, O].forEach(o => o.el.classList.remove("sit")); cup.remove(); this.done(); }, 6200);
+    this.at(() => { [C, O].forEach(o => o.el.classList.remove("sit")); cup.remove(); this.done(); }, 6200);
   },
   // Énergie : séance de sport, l'autre regarde ou suit le rythme.
   workout() {
     const E = this.ext("energy", "hi"); if (!E) return this.done();
     const O = this.b[other(E.k)], joins = trait(O.k, "energy") >= 2;
     this.say(E.k, "Séance de sport !", 1200);
-    ["Un !", "Deux !", "Trois !", "Quatre !"].forEach((n, i) => setTimeout(() => { this.hop(E); if (joins && i) this.hop(O); if (!this.yj.sleep) this.yjHop(); this.say(E.k, n, 420); }, 1200 + i * 480));
-    setTimeout(() => { this.say(O.k, joins ? pickOne(["Ouf ! On est en forme.", "On recommence demain ?"]) : pickOne(["Moi, je regarde. C'est du sport aussi.", "Bravo ! Je t'encourage depuis le canapé."]), 2200); this.hearts((E.x + O.x) / 2, 3); }, 3300);
-    setTimeout(() => this.done(), 5300);
+    ["Un !", "Deux !", "Trois !", "Quatre !"].forEach((n, i) => this.at(() => { this.hop(E); if (joins && i) this.hop(O); if (!this.yj.sleep) this.yjHop(); this.say(E.k, n, 420); }, 1200 + i * 480));
+    this.at(() => { this.say(O.k, joins ? pickOne(["Ouf ! On est en forme.", "On recommence demain ?"]) : pickOne(["Moi, je regarde. C'est du sport aussi.", "Bravo ! Je t'encourage depuis le canapé."]), 2200); this.hearts((E.x + O.x) / 2, 3); }, 3300);
+    this.at(() => this.done(), 5300);
   },
   // Pudeur : esquive le bisou… puis en donne un, en douce.
   kissDodge() {
@@ -5109,10 +5296,10 @@ const Buddies = {
     this.meet(30, (L, R) => {
       const O = L === P ? R : L;
       O.tilt = 10; this.say(O.k, pickOne(["Un bisou ?", "Bisou, bisou ?"]), 1500);
-      setTimeout(() => { P.face *= -1; P.el.classList.add("blush"); O.tilt = 0; this.say(P.k, pickOne(["Pas devant tout le monde…", "On nous regarde !"]), 1800); }, 1300);
-      setTimeout(() => { P.face *= -1; P.tilt = 9; this.say(P.k, "…Bon, juste un.", 1500); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 18); this.mood([O], "happy", true); }, 3100);
-      setTimeout(() => { this.say(O.k, pickOne(["Victoire !", "Je le savais."]), 1600); }, 4300);
-      setTimeout(() => { P.tilt = 0; P.el.classList.remove("blush"); this.mood([O], "happy", false); this.apart(L, R, () => this.done()); }, 5600);
+      this.at(() => { P.face *= -1; P.el.classList.add("blush"); O.tilt = 0; this.say(P.k, pickOne(["Pas devant tout le monde…", "On nous regarde !"]), 1800); }, 1300);
+      this.at(() => { P.face *= -1; P.tilt = 9; this.say(P.k, "…Bon, juste un.", 1500); this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 18); this.mood([O], "happy", true); }, 3100);
+      this.at(() => { this.say(O.k, pickOne(["Victoire !", "Je le savais."]), 1600); }, 4300);
+      this.at(() => { P.tilt = 0; P.el.classList.remove("blush"); this.mood([O], "happy", false); this.apart(L, R, () => this.done()); }, 5600);
     });
   },
   // Tendresse : un cœur offert, qui vole jusqu'à l'autre.
@@ -5123,8 +5310,8 @@ const Buddies = {
       this.say(G.k, pickOne(["J'ai un truc pour toi…", "Tiens, c'est pour toi.", "Mon cœur ? Il est à toi."]), 1800);
       this.hop(G);
       this.prop("fx-gift", FX_HEART, G.x - 11, 40, 1500, { "--dx": (O.x - G.x).toFixed(0) + "px" });
-      setTimeout(() => { O.el.classList.add("blush", "happy"); this.bigHeart(O.x); this.hearts(O.x, 4, 14); this.say(O.k, trait(O.k, "soc") <= 1 ? "Oh… *rougit*" : pickOne(["Pour moi ?! Je le garde pour toujours.", "Le plus beau cadeau du monde."]), 2200); }, 1500);
-      setTimeout(() => { O.el.classList.remove("blush", "happy"); this.done(); }, 3900);
+      this.at(() => { O.el.classList.add("blush", "happy"); this.bigHeart(O.x); this.hearts(O.x, 4, 14); this.say(O.k, trait(O.k, "soc") <= 1 ? "Oh… *rougit*" : pickOne(["Pour moi ?! Je le garde pour toujours.", "Le plus beau cadeau du monde."]), 2200); }, 1500);
+      this.at(() => { O.el.classList.remove("blush", "happy"); this.done(); }, 3900);
     };
     if (Math.abs(O.x - G.x) > 150 || Math.abs(O.x - G.x) < 50) this.walkTo(G, O.x + (G.x < O.x ? -90 : 90), false, go); else go();
   },
@@ -5135,9 +5322,9 @@ const Buddies = {
     R.el.classList.add("sit");
     const book = this.prop("fx-book", FX_BOOK, R.x + R.face * 12 - 10, 14, 6200);
     this.say(R.k, pickOne(["Chut, j'arrive au meilleur passage.", "Encore un chapitre."]), 2000);
-    setTimeout(() => this.walkTo(O, R.x - R.face * 18, false, () => { O.face = R.face; O.tilt = 10; this.say(O.k, "C'est quoi, l'histoire ?", 1800); }), 1600);
-    setTimeout(() => { this.say(R.k, pickOne(["Celle de deux personnes qui s'aiment très fort.", "La nôtre. Et c'est ma préférée."]), 2600); this.hearts((R.x + O.x) / 2, 4, 14); }, 4000);
-    setTimeout(() => { O.tilt = 0; R.el.classList.remove("sit"); book.remove(); this.done(); }, 6600);
+    this.at(() => this.walkTo(O, R.x - R.face * 18, false, () => { O.face = R.face; O.tilt = 10; this.say(O.k, "C'est quoi, l'histoire ?", 1800); }), 1600);
+    this.at(() => { this.say(R.k, pickOne(["Celle de deux personnes qui s'aiment très fort.", "La nôtre. Et c'est ma préférée."]), 2600); this.hearts((R.x + O.x) / 2, 4, 14); }, 4000);
+    this.at(() => { O.tilt = 0; R.el.classList.remove("sit"); book.remove(); this.done(); }, 6600);
   },
   // Fantaisie : marche à reculons façon moonwalk, l'autre éclate de rire.
   sillyWalk() {
@@ -5146,12 +5333,12 @@ const Buddies = {
     this.say(F.k, pickOne(["Regarde, je marche à reculons !", "Moonwalk !", "Démarche officielle du dimanche."]), 1800);
     this.walkTo(F, F.x < W / 2 ? F.x + W * 0.35 : F.x - W * 0.35, false, () => {
       this.spin(F);
-      O.el.classList.add("happy"); this.hop(O); setTimeout(() => this.hop(O), 300);
+      O.el.classList.add("happy"); this.hop(O); this.at(() => this.hop(O), 300);
       this.say(O.k, pickOne(["Hahaha !", "Mais qu'est-ce que tu fais ?!", "Je t'aime, même comme ça."]), 2200); this.hearts(O.x, 3, 14);
-      setTimeout(() => { O.el.classList.remove("happy"); this.done(); }, 2400);
+      this.at(() => { O.el.classList.remove("happy"); this.done(); }, 2400);
     });
     F.face *= -1;
-    [300, 900, 1500].forEach(ms => setTimeout(() => this.note(F.x), ms));
+    [300, 900, 1500].forEach(ms => this.at(() => this.note(F.x), ms));
   },
   // Taquinerie : « Bouh ! » dans le dos de l'autre, puis course-poursuite.
   prank() {
@@ -5162,11 +5349,11 @@ const Buddies = {
     this.say(T.k, "*marche sur la pointe des pieds*", 1600);
     this.walkTo(T, O.x - dir * 16, false, () => {
       T.el.classList.remove("sneak"); this.hop(T); this.say(T.k, "BOUH !", 1000);
-      setTimeout(() => {
+      this.at(() => {
         O.face = -dir; O.el.classList.remove("bigjump"); void O.el.offsetWidth; O.el.classList.add("bigjump");
         const scared = trait(O.k, "brave") <= 1;
         this.say(O.k, scared ? "AAAH ! …Tu vas voir, toi !" : "Même pas peur ! …Tu vas voir, toi !", 1800);
-        setTimeout(() => { O.el.classList.remove("bigjump"); this.chase(T, O); }, 1500);
+        this.at(() => { O.el.classList.remove("bigjump"); this.chase(T, O); }, 1500);
       }, 300);
     });
   },
@@ -5176,17 +5363,17 @@ const Buddies = {
     const W = this.W(), x = G.x < W / 2 ? Math.min(W - 30, G.x + 110) : Math.max(30, G.x - 110), y = this.yj;
     const ck = this.prop("fx-cookie", FX_COOKIE, x - 8, 0, 9000);
     this.say(G.k, pickOne(["Un cookie !!", "Je sens le chocolat…", "C'est pour moi, ça ?"]), 1500);
-    setTimeout(() => this.walkTo(G, x, true, () => {
+    this.at(() => this.walkTo(G, x, true, () => {
       ck.remove(); G.el.classList.add("happy"); this.say(G.k, "Miam.", 1200);
       for (let i = 0; i < 5; i++) this.prop("fx-confetti", "", G.x, 30, 900, { "--dx": ((Math.random() - 0.5) * 30).toFixed(0) + "px", "--dy": "26px", background: "#B9864A" });
-      setTimeout(() => {
+      this.at(() => {
         G.el.classList.remove("happy");
         if (!y.sleep && y.mode === "follow" && Math.random() < 0.5) {
           y.target = G.x + (G.x < W / 2 ? 18 : -18);
-          y.onArrive = () => { this.say(G.k, "Tiens, Yassen Jr., la moitié.", 1800); setTimeout(() => { this.yjSay("Miam !", 1500); this.yjHop(); this.hearts(y.x, 3, 12); }, 1200); setTimeout(() => this.done(), 3200); };
+          y.onArrive = () => { this.say(G.k, "Tiens, Yassen Jr., la moitié.", 1800); this.at(() => { this.yjSay("Miam !", 1500); this.yjHop(); this.hearts(y.x, 3, 12); }, 1200); this.at(() => this.done(), 3200); };
         } else {
           const O = this.b[other(G.k)];
-          this.walkTo(G, O.x + (G.x < O.x ? -24 : 24), false, () => { G.face = O.x > G.x ? 1 : -1; O.face = -G.face; this.say(G.k, "Je t'en ai gardé la moitié… enfin, un quart.", 2200); setTimeout(() => { this.say(O.k, "C'est ça, l'amour.", 2000); this.hearts((O.x + G.x) / 2, 4); }, 2200); setTimeout(() => this.done(), 4400); });
+          this.walkTo(G, O.x + (G.x < O.x ? -24 : 24), false, () => { G.face = O.x > G.x ? 1 : -1; O.face = -G.face; this.say(G.k, "Je t'en ai gardé la moitié… enfin, un quart.", 2200); this.at(() => { this.say(O.k, "C'est ça, l'amour.", 2000); this.hearts((O.x + G.x) / 2, 4); }, 2200); this.at(() => this.done(), 4400); });
         }
       }, 1400);
     }), 900);
@@ -5198,16 +5385,16 @@ const Buddies = {
       this.prop("fx-sun", FX_SUN, Math.min(W - 40, E.x + 20), 60, 3600);
       E.el.classList.remove("stretch"); void E.el.offsetWidth; E.el.classList.add("stretch");
       this.say(E.k, pickOne(["Bonjour, le soleil !", "Quelle belle matinée !"]), 2000);
-      if (N) { N.el.classList.add("sleep"); setTimeout(() => this.say(N.k, pickOne(["Mmh… café…", "Encore cinq minutes…"]), 2000), 1800); setTimeout(() => { this.say(E.k, "Debout, marmotte ! Bisou de réveil.", 2000); N.el.classList.remove("sleep"); this.hearts(N.x, 4, 14); }, 3800); }
-      setTimeout(() => { E.el.classList.remove("stretch"); this.done(); }, 5800);
+      if (N) { N.el.classList.add("sleep"); this.at(() => this.say(N.k, pickOne(["Mmh… café…", "Encore cinq minutes…"]), 2000), 1800); this.at(() => { this.say(E.k, "Debout, marmotte ! Bisou de réveil.", 2000); N.el.classList.remove("sleep"); this.hearts(N.x, 4, 14); }, 3800); }
+      this.at(() => { E.el.classList.remove("stretch"); this.done(); }, 5800);
     } else if (N) {
       const O = this.b[other(N.k)];
       N.el.classList.add("sleep"); this.say(N.k, "Pas un mot avant le café.", 2000);
-      setTimeout(() => this.walkTo(O, N.x + (O.x < N.x ? -24 : 24), false, () => {
+      this.at(() => this.walkTo(O, N.x + (O.x < N.x ? -24 : 24), false, () => {
         const cup = this.prop("fx-cup", FX_CUP, N.x + (O.x < N.x ? -14 : 6), 2, 2800);
         this.say(O.k, "Livraison spéciale.", 1600);
-        setTimeout(() => { N.el.classList.remove("sleep"); this.hop(N); this.say(N.k, "Je t'aime.", 1800); this.hearts(N.x, 4, 14); cup.remove(); }, 1800);
-        setTimeout(() => this.done(), 3800);
+        this.at(() => { N.el.classList.remove("sleep"); this.hop(N); this.say(N.k, "Je t'aime.", 1800); this.hearts(N.x, 4, 14); cup.remove(); }, 1800);
+        this.at(() => this.done(), 3800);
       }), 1800);
     } else this.done();
   },
@@ -5222,8 +5409,8 @@ const Buddies = {
       const [l1, l2] = pickOne([["Fais un vœu.", "C'est déjà exaucé : toi."], ["Tu vois l'étoile, là ? Elle est à nous.", "Alors on la garde pour toujours."], ["Il y a des milliards d'étoiles…", "Et moi, je n'en regarde qu'une."]]);
       const f = pickOne([L, R]), s = f === L ? R : L;
       this.say(f.k, l1, 2400);
-      setTimeout(() => { this.say(s.k, l2, 2600); this.hearts((L.x + R.x) / 2, 5, 20); }, 2500);
-      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("sit")); if (y.mode === "pinned") y.mode = "follow"; this.apart(L, R, () => this.done()); }, 5800);
+      this.at(() => { this.say(s.k, l2, 2600); this.hearts((L.x + R.x) / 2, 5, 20); }, 2500);
+      this.at(() => { [L, R].forEach(o => o.el.classList.remove("sit")); if (y.mode === "pinned") y.mode = "follow"; this.apart(L, R, () => this.done()); }, 5800);
     });
   },
   // Sagesse : range un peu, l'autre est reconnaissant.
@@ -5231,10 +5418,10 @@ const Buddies = {
     const T = this.ext("tease", "lo"); if (!T) return this.done();
     const O = this.b[other(T.k)], W = this.W();
     this.say(T.k, pickOne(["Je range un peu…", "Un petit coup de propre !"]), 1800);
-    [300, 900, 1500].forEach(ms => setTimeout(() => this.spawn("fx-spark", "✦", T.x - 6, 0, 1100), ms));
+    [300, 900, 1500].forEach(ms => this.at(() => this.spawn("fx-spark", "✦", T.x - 6, 0, 1100), ms));
     this.walkTo(T, T.x < W / 2 ? T.x + W * 0.3 : T.x - W * 0.3, false, () => {
       O.face = T.x > O.x ? 1 : -1; this.say(O.k, pickOne(["Qu'est-ce que je ferais sans toi ?", "Tu es un amour."]), 2200); this.hearts(O.x, 3, 14);
-      setTimeout(() => this.done(), 2400);
+      this.at(() => this.done(), 2400);
     });
   },
   // Sobriété : une pomme coupée en deux.
@@ -5242,10 +5429,10 @@ const Buddies = {
     const A = this.ext("food", "lo"); if (!A) return this.done();
     const O = this.b[other(A.k)], ap = this.prop("fx-apple", FX_APPLE, A.x + A.face * 14 - 7, 24, 5000);
     this.say(A.k, "Une pomme ? Je coupe en deux.", 1800);
-    setTimeout(() => this.walkTo(A, O.x + (A.x < O.x ? -24 : 24), false, () => {
+    this.at(() => this.walkTo(A, O.x + (A.x < O.x ? -24 : 24), false, () => {
       ap.remove(); A.face = O.x > A.x ? 1 : -1; O.face = -A.face;
       this.say(O.k, pickOne(["Toi, tu prends soin de moi.", "La moitié la plus grosse ? Trop gentil."]), 2200); this.hearts((A.x + O.x) / 2, 3);
-      setTimeout(() => this.done(), 2400);
+      this.at(() => this.done(), 2400);
     }), 1400);
   },
   // Un geste reçu de l'autre téléphone : son chibi vient le jouer en vrai.
@@ -5262,7 +5449,7 @@ const Buddies = {
       gainToast(sg.kind === "mot" ? `Un petit mot de ${nm(from)} arrive !` : fr(sig.toast.replace("{f}", nm(from))), null);
     }
     this.pending = sg.id;
-    if (this.busy) { if (tries < 40) setTimeout(() => this.deliver(sg, tries + 1), 1500); else this.pending = null; return; }
+    if (this.busy) { if (tries < 40) window.setTimeout(() => this.deliver(sg, tries + 1), 1500); else this.pending = null; return; }
     this.pending = null;
     const F = this.b[from], T = this.b[other(from)], W = this.W();
     this.busy = true;
@@ -5273,7 +5460,7 @@ const Buddies = {
         const txt = String(sg.text || "");
         this.say(F.k, txt.length > 120 ? txt.slice(0, 117) + "…" : txt, 8000);
         T.el.classList.add("blush", "happy"); this.bigHeart((F.x + T.x) / 2); this.hearts((F.x + T.x) / 2, 5, 20);
-        setTimeout(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 8200);
+        this.at(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 8200);
       });
       return;
     }
@@ -5281,16 +5468,16 @@ const Buddies = {
       this.meet(27, (L, R) => {
         this.mood([L, R], "happy", true); L.tilt = R.tilt = 10; this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 7);
         this.say(from, pickOne(sig.line), 2600);
-        setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 3000);
+        this.at(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 3000);
       });
       return;
     }
     this.walkTo(F, T.x + (F.x < T.x ? -30 : 30), false, () => {
       F.face = T.x > F.x ? 1 : -1; T.face = -F.face;
       this.say(from, pickOne(sig.line), 2800); this.hearts(T.x, 4, 16); if (sg.kind === "courage") this.hop(T);
-      setTimeout(() => {
+      this.at(() => {
         if (sg.kind !== "espace") return this.done();
-        this.walkTo(F, F.x < W / 2 ? 30 : W - 30, false, () => { F.el.classList.add("sit"); setTimeout(() => { F.el.classList.remove("sit"); this.done(); }, 4000); });
+        this.walkTo(F, F.x < W / 2 ? 30 : W - 30, false, () => { F.el.classList.add("sit"); this.at(() => { F.el.classList.remove("sit"); this.done(); }, 4000); });
       }, 3000);
     });
   },
@@ -5306,13 +5493,99 @@ const Buddies = {
     this.meet(28, (L, R) => {
       O.face = T.x > O.x ? 1 : -1; T.face = -O.face;
       this.say(O.k, pickOne(["Viens là, je suis là.", "Tu veux en parler ?", "Câlin réconfort ?", "Ça va aller, on est deux."]), 2400);
-      setTimeout(() => { this.mood([L, R], "happy", true); L.tilt = R.tilt = 9; this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5); this.say(T.k, pickOne(["Merci…", "*se blottit*", "Ça va déjà mieux."]), 2400); }, 2300);
-      setTimeout(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 5200);
+      this.at(() => { this.mood([L, R], "happy", true); L.tilt = R.tilt = 9; this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5); this.say(T.k, pickOne(["Merci…", "*se blottit*", "Ça va déjà mieux."]), 2400); }, 2300);
+      this.at(() => { this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 5200);
     });
+  },
+  /* ───── Le décor : un arbre avec sa balançoire, et des fleurs qui poussent avec vos jours ensemble ───── */
+  decor() {
+    if (!this.deco) return;
+    const W = this.W(), n = Math.min(18, 3 + Jeu.days()), key = W + ":" + n;
+    if (this.decoKey === key) return;
+    const before = +(lsGet("entre-nous:flowers") || 0);
+    this.decoKey = key; this.swingX = W - 59;
+    const fl = [];
+    for (let i = 0; i < n; i++) {
+      const x = 12 + (hash(i * 7 + 3) % 1000) / 1000 * Math.max(40, W - 112);
+      fl.push(`<span class="deco-flower${i >= before ? " grow" : ""}" style="left:${x.toFixed(0)}px;${i >= before ? `animation-delay:${((i - before) * 0.3 + 0.6).toFixed(2)}s` : ""}">${DECO_FLOWERS[i % DECO_FLOWERS.length]}</span>`);
+    }
+    this.deco.innerHTML = `<span class="deco-tree" style="left:${(W - 82).toFixed(0)}px">${TREE_SVG}</span>` + fl.join("");
+    lsSet("entre-nous:flowers", String(n));
+  },
+  swingAngle(a) { const sw = this.deco && this.deco.querySelector(".deco-swing"); if (sw) sw.style.setProperty("--sa", (-a).toFixed(1) + "deg"); },
+  // L'un s'installe sur la balançoire, l'autre le pousse. Yassen Jr. réveillé réclame son tour.
+  swingScene() {
+    const W = this.W(), y = this.yj, cx = this.swingX || W - 59;
+    const rider = Math.random() < 0.5 ? this.b.a : this.b.b, pusher = this.b[other(rider.k)], soft = y.sleep;
+    this.walkTo(rider, cx, false, () => {
+      rider.face = -1; this.pose(rider, "p-sit", true); rider.el.classList.add("front");
+      rider.swing = { cx, ph: 0, amp: 3, seat: 5, L: 53 };
+      this.talk(rider.k, pickOne(SWING_LINES), 1800);
+      this.walkTo(pusher, cx - 46, false, () => {
+        pusher.face = 1;
+        this.talk(pusher.k, pickOne(PUSH_LINES), 1800);
+        rider.el.classList.add(soft ? "happy" : "e-laugh");
+        const push = this.every(() => { this.pose(pusher, "p-open", true); this.at(() => this.pose(pusher, "p-open", false), 320); if (rider.swing) rider.swing.amp = Math.min(soft ? 12 : 26, rider.swing.amp + 6); }, 2420);
+        if (this.yjFree()) this.at(() => { y.target = cx - 78; y.onArrive = () => this.yjSay(pickOne(["Plus haut ! Plus haut !", "À moi après !", "Wouah !"]), 1800); }, 1400);
+        this.at(() => { clearInterval(push); if (rider.swing) rider.swing.damp = true; this.talk(rider.k, pickOne(SWING_END), 2200); this.hearts(rider.x, 4, 16); }, 7300);
+        this.at(() => { rider.swing = null; this.swingAngle(0); this.clearPoses([rider, pusher]); rider.el.classList.remove("front"); this.hop(rider); this.walkTo(rider, cx - 82, false, () => this.done()); }, 10200);
+      });
+    });
+  },
+  /* ───── Ils réagissent à ce que vous faites ───── */
+  // Une lettre s'ouvre : celui qui l'a écrite l'apporte à l'autre.
+  letter(fromK) {
+    if (!this.el || this.el.hidden || !this.b.a) return;
+    this.cancel(); this.busy = true;
+    const F = this.b[fromK === "b" ? "b" : "a"], T = this.b[other(F.k)];
+    F.el.classList.add("carry");
+    this.say(F.k, pickOne(["Je l'avais écrite rien que pour toi…", "Elle t'attendait, cette lettre.", "Tu peux l'ouvrir, maintenant."]), 2300);
+    this.walkTo(F, T.x + (F.x > T.x ? 30 : -30), false, () => {
+      F.face = T.x > F.x ? 1 : -1; T.face = -F.face; F.el.classList.remove("carry");
+      this.pose(F, "p-poke", true); this.expr(T, "e-wow", 1000);
+      this.at(() => { this.pose(F, "p-poke", false); T.el.classList.add("e-joy"); this.say(T.k, pickOne(["Oh… je ne m'y attendais pas.", "C'est trop beau…", "Je vais la garder pour toujours."]), 2500); this.bigHeart((F.x + T.x) / 2); this.hearts((F.x + T.x) / 2, 6); }, 1000);
+      this.at(() => { T.el.classList.remove("e-joy"); this.pose([F, T], "p-hug", true); [F, T].forEach(o => o.el.classList.add("e-heart")); this.walkTo(F, F.x + F.face * 7); }, 3500);
+      this.at(() => { this.clearPoses([F, T]); this.apart(F.x < T.x ? F : T, F.x < T.x ? T : F, () => this.done()); }, 5900);
+    });
+  },
+  // Un souvenir gardé : une photo à deux (et Yassen Jr. qui s'incruste, s'il est réveillé).
+  selfie() {
+    if (!this.el || this.el.hidden || !this.b.a) return;
+    this.cancel(); this.busy = true;
+    const y = this.yj;
+    this.meet(30, (L, R) => {
+      [L, R].forEach(o => o.el.classList.add("front"));
+      const P = Math.random() < 0.5 ? L : R, O = P === L ? R : L;
+      P.face = P === L ? 1 : -1; this.pose(P, "p-pump", true);
+      const phone = this.prop("fx-phone", FX_PHONE, P.x + P.face * 20 - 6, 60, 0);
+      this.pose(O, "p-rest", true); O.face = O === L ? 1 : -1;
+      this.talk(P.k, pickOne(["Souriez !", "Une photo pour l'album !", "Ce moment, on le garde."]), 1600);
+      if (this.yjFree()) { y.target = (L.x + R.x) / 2; y.onArrive = () => { y.mode = "nap"; this.yjHop(); this.yjSay("Moi aussi !", 1200); }; }
+      this.at(() => { [L, R].forEach(o => o.el.classList.add(Math.random() < 0.5 ? "e-laugh" : "e-wink")); }, 1300);
+      this.at(() => { this.prop("fx-flash", "", (L.x + R.x) / 2, 0, 600); Sfx.play("tick"); }, 2000);
+      this.at(() => { phone.remove(); this.talk(O.k, pickOne(["Celle-là, on la garde.", "Trop mignons !", "On est beaux, hein ?"]), 2000); this.hearts((L.x + R.x) / 2, 5); }, 2500);
+      this.at(() => { if (y.mode === "nap") y.mode = "follow"; this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 4600);
+    });
+  },
+  // Un cœur gris dans la météo : l'autre arrive avec un parapluie.
+  umbrella() {
+    const A = this.b.a, B = this.b.b, sad = [A, B].find(o => o.mood === "orage" || o.mood === "nuage") || pickOne([A, B]), H = this.b[other(sad.k)], W = this.W();
+    const rainOn = (x, spread) => { for (let i = 0; i < 5; i++) { const dx = (Math.random() - 0.5) * spread; this.prop("fx-rain", "", x + (Math.abs(dx) < 26 && spread < 100 ? Math.sign(dx || 1) * 30 : dx), 120, 1300, { "animation-delay": (Math.random() * 0.9).toFixed(2) + "s" }); } };
+    let rain = this.every(() => rainOn(sad.x, 50), 800);
+    sad.el.classList.add("e-pout"); this.say(sad.k, pickOne(["Il pleut dans mon cœur aujourd'hui…", "Petite journée grise…", "Je me sens un peu sous la pluie."]), 2300);
+    this.at(() => this.walkTo(H, sad.x + (sad.x < W / 2 ? 22 : -22), true, () => {
+      H.face = sad.x > H.x ? 1 : -1; sad.face = -H.face; this.pose(H, "p-pump", true);
+      const um = this.prop("fx-umbrella", FX_UMBRELLA, (H.x + sad.x) / 2 - 30, 64, 0);
+      clearInterval(rain); rain = this.every(() => rainOn((H.x + sad.x) / 2, 90), 800);
+      this.say(H.k, pickOne(["Je suis là. On partage le parapluie ?", "Viens dessous, avec moi.", "La pluie ne passera pas."]), 2400);
+      this.at(() => { sad.el.classList.remove("e-pout"); sad.el.classList.add("e-joy"); this.pose(sad, "p-rest", true); this.hearts((H.x + sad.x) / 2, 5); this.say(sad.k, pickOne(["Merci… ça va mieux.", "Avec toi, il fait déjà plus beau."]), 2400); }, 2700);
+      this.at(() => { clearInterval(rain); um.remove(); this.clearPoses([sad, H]); this.done(); }, 6400);
+    }), 1300);
   },
   /* ───── Gestes et poses ───── */
   pose(list, cls, on) { (Array.isArray(list) ? list : [list]).forEach(o => o.el.classList.toggle(cls, on)); },
-  POSES: ["p-open", "p-hug", "p-cheer", "p-pump", "p-poke", "p-holdr", "p-holdl", "p-tiptoe", "p-cross", "p-rest", "p-sit", "p-tickle", "p-kick", "nap2", "lifted", "whisper", "sneak", "happy", "blush", "grr"],
+  POSES: ["p-open", "p-hug", "p-cheer", "p-pump", "p-poke", "p-holdr", "p-holdl", "p-tiptoe", "p-cross", "p-rest", "p-sit", "p-tickle", "p-kick", "nap2", "lifted", "whisper", "sneak", "happy", "blush", "grr", "e-wink", "e-heart", "e-joy", "e-pout", "e-wow", "e-laugh", "front", "held", "carry"],
+  expr(o, cls, ms) { o.el.classList.add(cls); if (ms) this.at(() => o.el.classList.remove(cls), ms); },
   clearPoses(list) { list.forEach(o => { o.el.classList.remove(...this.POSES); o.el.style.zIndex = ""; o.tilt = 0; }); },
   // Quand Yassen Jr. dort, on parle tout bas.
   talk(k, text, ms) { const o = this.b[k]; o.el.classList.toggle("whisper", !!this.yj.sleep); this.say(k, text, ms); },
@@ -5321,27 +5594,27 @@ const Buddies = {
   ball(x0, x1, ms, h) { this.prop("fx-ball", "<i></i>", x0 - 6, 34, ms + 60, { "--dx": (x1 - x0).toFixed(0) + "px", "--t": ms + "ms", "--h": (h || -44) + "px" }); },
   /* ───── Câlins ───── */
   // On ouvre les bras, on s'avance, on s'enlace et on se berce. Variantes : porté·e, par-derrière, et Yassen Jr. qui s'invite.
-  hug() {
-    const y = this.yj, strong = this.most("energy", 3), r = Math.random();
+  hug(force) {
+    const y = this.yj, strong = this.most("energy", 3), r = force ? 1 : Math.random();
     if (strong && !y.sleep && r < 0.22) return this.hugLift(strong);
     if (r < 0.42) return this.hugBack();
     this.meet(42, (L, R) => {
       this.pose([L, R], "p-open", true);
-      setTimeout(() => {
+      this.at(() => {
         let n = 0;
         const close = () => {
           if (++n < 2) return;
           L.face = 1; R.face = -1;
-          this.pose([L, R], "p-open", false); this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true);
+          this.pose([L, R], "p-open", false); this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true); this.expr(pickOne([L, R]), "e-heart");
           const mid = (L.x + R.x) / 2; this.bigHeart(mid); this.hearts(mid, 6);
           [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
           const k = pickOne(["a", "b"]);
           this.talk(k, y.sleep ? pickOne(HUG_WHISPER) : lineFor(k, "hug", HUG_LINES), 2400);
-          setTimeout(() => this.talk(other(k), pickOne(y.sleep ? HUG_WHISPER_BACK : HUG_BACK), 2200), 2400);
-          let t = 0; const rock = setInterval(() => { const a = t++ % 2 ? 5 : 12; L.tilt = a; R.tilt = 17 - a; }, 700);
-          if (this.yjFree() && Math.random() < 0.45) setTimeout(() => this.yjJoinHug(L, R), 1200);
-          setTimeout(() => this.hearts(mid, 5), 1700);
-          setTimeout(() => {
+          this.at(() => this.talk(other(k), pickOne(y.sleep ? HUG_WHISPER_BACK : HUG_BACK), 2200), 2400);
+          let t = 0; const rock = this.every(() => { const a = t++ % 2 ? 5 : 12; L.tilt = a; R.tilt = 17 - a; }, 700);
+          if (this.yjFree() && Math.random() < 0.45) this.at(() => this.yjJoinHug(L, R), 1200);
+          this.at(() => this.hearts(mid, 5), 1700);
+          this.at(() => {
             clearInterval(rock); this.clearPoses([L, R]);
             if (y.mode === "nap") { y.mode = "follow"; this.yjHop(); }
             this.apart(L, R, () => this.done());
@@ -5360,10 +5633,10 @@ const Buddies = {
     this.meet(30, (L, R) => {
       this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true);
       this.say(S.k, pickOne(LIFT_LINES), 1800);
-      setTimeout(() => { O.el.classList.add("lifted", "p-kick"); this.hop(S); this.say(O.k, pickOne(LIFTED_LINES), 2200); this.hearts((L.x + R.x) / 2, 6); }, 700);
-      setTimeout(() => this.hearts((L.x + R.x) / 2, 4), 1800);
-      setTimeout(() => { O.el.classList.remove("lifted", "p-kick"); this.hop(O); }, 3000);
-      setTimeout(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 3900);
+      this.at(() => { O.el.classList.add("lifted", "p-kick", "e-laugh"); this.hop(S); this.say(O.k, pickOne(LIFTED_LINES), 2200); this.hearts((L.x + R.x) / 2, 6); }, 700);
+      this.at(() => this.hearts((L.x + R.x) / 2, 4), 1800);
+      this.at(() => { O.el.classList.remove("lifted", "p-kick"); this.hop(O); }, 3000);
+      this.at(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 3900);
     });
   },
   // Câlin surprise par-derrière, sur la pointe des pieds.
@@ -5376,10 +5649,10 @@ const Buddies = {
       // Celui qui enlace passe devant : on voit ses bras autour de l'autre.
       H.el.style.zIndex = "2"; T.el.style.zIndex = "1";
       this.pose(H, "p-hug", true); this.pose(H, "p-rest", true); H.tilt = 7;
-      this.talk(H.k, pickOne(BACKHUG_LINES), 2000); this.hop(T);
-      setTimeout(() => { T.el.classList.add("happy", "blush"); T.tilt = -6; this.talk(T.k, pickOne(BACKHUG_REPLY), 2300); this.hearts(T.x, 5, 18); }, 1900);
-      setTimeout(() => this.hearts(T.x, 3, 14), 3300);
-      setTimeout(() => { this.clearPoses([H, T]); this.walkTo(H, H.x - d * 34, false, () => this.done()); }, 4700);
+      this.talk(H.k, pickOne(BACKHUG_LINES), 2000); this.hop(T); this.expr(T, "e-wow", 1600);
+      this.at(() => { T.el.classList.add("happy", "blush"); T.tilt = -6; this.talk(T.k, pickOne(BACKHUG_REPLY), 2300); this.hearts(T.x, 5, 18); }, 1900);
+      this.at(() => this.hearts(T.x, 3, 14), 3300);
+      this.at(() => { this.clearPoses([H, T]); this.walkTo(H, H.x - d * 34, false, () => this.done()); }, 4700);
     });
   },
   /* ───── Dispute et réconciliation ───── */
@@ -5391,16 +5664,16 @@ const Buddies = {
       const angry = trait(L.k, "mood") + trait(R.k, "mood"), long = angry <= 2;
       this.mood([L, R], "grr", true); L.tilt = R.tilt = 6;
       this.talk(first.k, pair[0], 1600);
-      setTimeout(() => this.talk(second.k, pair[1], 1600), 1300);
-      if (!y.sleep) setTimeout(() => this.cloud((L.x + R.x) / 2, 1300), 2000);
+      this.at(() => this.talk(second.k, pair[1], 1600), 1300);
+      if (!y.sleep) this.at(() => this.cloud((L.x + R.x) / 2, 1300), 2000);
       // Bras croisés, chacun se tourne de son côté.
-      setTimeout(() => {
+      this.at(() => {
         this.mood([L, R], "grr", false); L.tilt = R.tilt = 0;
-        this.pose([L, R], "p-cross", true); L.face = -1; R.face = 1;
-        [L, R].forEach((o, i) => setTimeout(() => this.prop("fx-anger", FX_ANGER, o.x - 8, 62, 1000), i * 250));
+        this.pose([L, R], "p-cross", true); this.pose([L, R], "e-pout", true); L.face = -1; R.face = 1;
+        [L, R].forEach((o, i) => this.at(() => this.prop("fx-anger", FX_ANGER, o.x - 8, 62, 1000), i * 250));
         this.talk(pickOne([L, R]).k, y.sleep ? pickOne(["*boude en silence*", "Pff… (tout bas)"]) : pickOne(HMPH), 1700);
       }, 3300);
-      setTimeout(() => {
+      this.at(() => {
         if (this.yjFree() && Math.random() < 0.35) return this.yjPeace(L, R);
         if (!y.sleep && Math.random() < 0.15) { this.clearPoses([L, R]); return this.chase(second, first); }
         this.makeUp(L, R, first, second, teasing);
@@ -5410,18 +5683,18 @@ const Buddies = {
   // Le premier qui craque se retourne, s'excuse (parfois avec une fleur), l'autre fond, et câlin.
   makeUp(L, R, first, second, teasing) {
     const sorry = trait(first.k, "mood") <= trait(second.k, "mood") ? second : first, O = sorry === L ? R : L, mid = (L.x + R.x) / 2;
-    sorry.face = O.x > sorry.x ? 1 : -1; this.pose(sorry, "p-cross", false);
+    sorry.face = O.x > sorry.x ? 1 : -1; this.pose(sorry, "p-cross", false); this.pose(sorry, "e-pout", false); sorry.el.classList.add("blush");
     this.talk(sorry.k, pickOne(teasing && sorry === first ? TEASE_SORRY : SORRY_LINES), 2200);
-    if (Math.random() < 0.55) setTimeout(() => this.prop("fx-flower", FX_FLOWER, sorry.x + sorry.face * 14 - 8, 30, 2400), 500);
-    setTimeout(() => { O.el.classList.add("blush"); O.tilt = -5; }, 1500);
-    setTimeout(() => { O.face = -sorry.face; O.tilt = 0; this.pose(O, "p-cross", false); this.talk(O.k, pickOne(FORGIVE_LINES), 2200); }, 2600);
-    setTimeout(() => {
-      L.face = 1; R.face = -1; this.pose([L, R], "p-hug", true); this.mood([L, R], "happy", true); L.tilt = R.tilt = 9;
+    if (Math.random() < 0.55) this.at(() => this.prop("fx-flower", FX_FLOWER, sorry.x + sorry.face * 14 - 8, 30, 2400), 500);
+    this.at(() => { O.el.classList.add("blush"); O.tilt = -5; }, 1500);
+    this.at(() => { O.face = -sorry.face; O.tilt = 0; this.pose(O, "p-cross", false); this.pose(O, "e-pout", false); O.el.classList.add("e-joy"); this.talk(O.k, pickOne(FORGIVE_LINES), 2200); }, 2600);
+    this.at(() => {
+      L.face = 1; R.face = -1; this.pose([L, R], "e-joy", false); this.pose([L, R], "p-hug", true); this.pose([L, R], "e-heart", true); L.tilt = R.tilt = 9;
       this.walkTo(L, L.x + 6); this.walkTo(R, R.x - 6);
       this.bigHeart(mid); this.hearts(mid, 7);
     }, 4600);
-    setTimeout(() => this.hearts(mid, 4), 5600);
-    setTimeout(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 7000);
+    this.at(() => this.hearts(mid, 4), 5600);
+    this.at(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 7000);
   },
   /* ───── Courir ensemble, main dans la main ───── */
   runTogether() {
@@ -5430,27 +5703,27 @@ const Buddies = {
       const dir = (L.x + R.x) / 2 < W / 2 ? 1 : -1;
       L.face = R.face = dir;
       this.pose(L, dir > 0 ? "p-holdr" : "p-holdl", true); this.pose(R, dir > 0 ? "p-holdl" : "p-holdr", true);
-      this.mood([L, R], "happy", true);
+      this.mood([L, R], soft ? "happy" : "e-laugh", true);
       if (soft) [L, R].forEach(o => o.el.classList.add("sneak", "p-tiptoe"));
       this.talk(pickOne(["a", "b"]), pickOne(soft ? TIPTOE_LINES : RUN_LINES), 1800);
-      setTimeout(() => {
+      this.at(() => {
         const far = dir > 0 ? W - 30 : 30, lead = dir > 0 ? R : L, back = lead === R ? L : R;
         let n = 0, dust = null;
-        const trail = setInterval(() => this.hearts((L.x + R.x) / 2 - dir * 8, 1, 8), 650);
+        const trail = this.every(() => this.hearts((L.x + R.x) / 2 - dir * 8, 1, 8), 650);
         const end = () => {
           if (++n < 2) return;
           clearInterval(dust); clearInterval(trail);
           [L, R].forEach(o => o.el.classList.remove("sneak", "p-tiptoe", "p-holdr", "p-holdl"));
           lead.face = -dir; back.face = dir;
-          this.pose([L, R], soft ? "p-open" : "p-cheer", true); if (!soft) { this.hop(L); setTimeout(() => this.hop(R), 120); }
+          this.pose([L, R], soft ? "p-open" : "p-cheer", true); if (!soft) { this.hop(L); this.at(() => this.hop(R), 120); }
           this.talk(back.k, pickOne(soft ? TIPTOE_END : RUN_END), 2300); this.hearts((L.x + R.x) / 2, 5);
-          setTimeout(() => { this.clearPoses([L, R]); this.done(); }, 2300);
+          this.at(() => { this.clearPoses([L, R]); this.done(); }, 2300);
         };
         this.walkTo(lead, far, !soft, end); this.walkTo(back, far - dir * 30, !soft, end);
-        if (!soft) dust = setInterval(() => [L, R].forEach(o => this.dust(o, dir)), 240);
+        if (!soft) dust = this.every(() => [L, R].forEach(o => this.dust(o, dir)), 240);
         if (this.yjFree()) {
           y.run = true; y.target = far - dir * 62; y.onArrive = () => { y.run = false; };
-          setTimeout(() => this.yjSay(pickOne(["Attendez-moi !", "Je cours aussi !", "Plus vite, plus vite !"]), 1500), 500);
+          this.at(() => this.yjSay(pickOne(["Attendez-moi !", "Je cours aussi !", "Plus vite, plus vite !"]), 1500), 500);
         }
       }, 800);
     });
@@ -5460,17 +5733,17 @@ const Buddies = {
     const T = this.most("tease", 0), O = this.b[other(T.k)], y = this.yj;
     this.walkTo(T, O.x + (O.x > T.x ? -25 : 25), false, () => {
       T.face = O.x > T.x ? 1 : -1;
-      this.talk(T.k, pickOne(TEASE_LINES), 1800);
-      [0, 420, 840].forEach(ms => setTimeout(() => { this.pose(T, "p-poke", true); this.hop(O); setTimeout(() => this.pose(T, "p-poke", false), 200); }, ms));
-      setTimeout(() => { O.face = -T.face; O.el.classList.add("blush", "grr"); this.talk(O.k, pickOne(TEASE_BACK), 1800); }, 1400);
-      setTimeout(() => {
-        O.el.classList.remove("grr");
-        this.pose([T, O], "p-tickle", true); this.mood([T, O], "happy", true); T.tilt = -6; O.tilt = -8;
+      this.talk(T.k, pickOne(TEASE_LINES), 1800); T.el.classList.add("e-wink");
+      [0, 420, 840].forEach(ms => this.at(() => { this.pose(T, "p-poke", true); this.hop(O); this.at(() => this.pose(T, "p-poke", false), 200); }, ms));
+      this.at(() => { O.face = -T.face; O.el.classList.add("blush", "e-pout"); this.talk(O.k, pickOne(TEASE_BACK), 1800); }, 1400);
+      this.at(() => {
+        O.el.classList.remove("e-pout"); T.el.classList.remove("e-wink");
+        this.pose([T, O], "p-tickle", true); this.mood([T, O], "e-laugh", true); T.tilt = -6; O.tilt = -8;
         this.talk(pickOne([T, O]).k, pickOne(TICKLE_LINES), 2000);
         this.hearts((T.x + O.x) / 2, 5);
         if (this.yjFree() && Math.random() < 0.5) { y.target = (T.x + O.x) / 2 + (T.x < O.x ? 30 : -30); y.onArrive = () => { this.yjHop(); this.yjSay(pickOne(["Moi aussi, des chatouilles !", "Hihihi !", "Je veux jouer aussi !"]), 1700); }; }
       }, 3200);
-      setTimeout(() => { this.clearPoses([T, O]); this.apart(T.x < O.x ? T : O, T.x < O.x ? O : T, () => this.done()); }, 5800);
+      this.at(() => { this.clearPoses([T, O]); this.apart(T.x < O.x ? T : O, T.x < O.x ? O : T, () => this.done()); }, 5800);
     });
   },
   /* ───── Jouer : la balle, pierre-feuille-ciseaux ───── */
@@ -5485,22 +5758,22 @@ const Buddies = {
       const total = 4 + (Math.random() < 0.5 ? 1 : 0); let p = 0;
       const steal = !soft && this.yjFree() && Math.random() < 0.5;
       const pass = (from, to) => {
-        this.pose(from, "p-pump", true); setTimeout(() => this.pose(from, "p-pump", false), 260);
+        this.pose(from, "p-pump", true); this.at(() => this.pose(from, "p-pump", false), 260);
         if (++p === total && steal) {
           y.run = true; y.target = (from.x + to.x) / 2;
           this.ball(from.x, (from.x + to.x) / 2, 520, -30);
-          setTimeout(() => { y.run = false; this.yjHop(); this.yjSay(pickOne(["Attrapée ! Elle est à moi !", "Interception !", "Hihi, je la garde !"]), 1800); }, 560);
-          setTimeout(() => { this.mood([L, R], "happy", true); this.talk(to.k, pickOne(["Hé, petit voleur !", "Bien joué, toi !", "Il est trop fort !"]), 2000); this.hearts(y.x, 4, 14); }, 1700);
-          return setTimeout(() => { this.clearPoses([L, R]); this.done(); }, 3800);
+          this.at(() => { y.run = false; this.yjHop(); this.yjSay(pickOne(["Attrapée ! Elle est à moi !", "Interception !", "Hihi, je la garde !"]), 1800); }, 560);
+          this.at(() => { this.mood([L, R], "happy", true); this.talk(to.k, pickOne(["Hé, petit voleur !", "Bien joué, toi !", "Il est trop fort !"]), 2000); this.hearts(y.x, 4, 14); }, 1700);
+          return this.at(() => { this.clearPoses([L, R]); this.done(); }, 3800);
         }
         this.ball(from.x, to.x, soft ? 1100 : 900, soft ? -8 : -44);
-        setTimeout(() => {
-          this.pose(to, "p-open", true); this.hop(to); setTimeout(() => this.pose(to, "p-open", false), 320);
-          if (p < total) setTimeout(() => pass(to, from), 450);
-          else { this.mood([L, R], "happy", true); this.talk(to.k, pickOne(BALL_END), 2000); this.hearts((L.x + R.x) / 2, 4); setTimeout(() => { this.clearPoses([L, R]); this.done(); }, 2200); }
+        this.at(() => {
+          this.pose(to, "p-open", true); this.hop(to); this.expr(to, "e-laugh", 700); this.at(() => this.pose(to, "p-open", false), 320);
+          if (p < total) this.at(() => pass(to, from), 450);
+          else { this.mood([L, R], "happy", true); this.talk(to.k, pickOne(BALL_END), 2000); this.hearts((L.x + R.x) / 2, 4); this.at(() => { this.clearPoses([L, R]); this.done(); }, 2200); }
         }, soft ? 1100 : 900);
       };
-      setTimeout(() => pass(L, R), 700);
+      this.at(() => pass(L, R), 700);
     };
     this.walkTo(L, mid - 56, false, go); this.walkTo(R, mid + 56, false, go);
   },
@@ -5508,21 +5781,21 @@ const Buddies = {
     const y = this.yj;
     this.meet(44, (L, R) => {
       this.talk(L.k, "Pierre… feuille… ciseaux !", 1900);
-      [0, 330, 660].forEach(ms => setTimeout(() => { this.pose([L, R], "p-pump", true); setTimeout(() => this.pose([L, R], "p-pump", false), 160); }, ms));
-      setTimeout(() => {
+      [0, 330, 660].forEach(ms => this.at(() => { this.pose([L, R], "p-pump", true); this.at(() => this.pose([L, R], "p-pump", false), 160); }, ms));
+      this.at(() => {
         const H = ["✊", "✋", "✌️"], a = Math.floor(Math.random() * 3), b = Math.floor(Math.random() * 3);
         [[L, a], [R, b]].forEach(([o, h]) => this.prop("fx-rps", H[h], o.x + o.face * 10 - 12, 64, 2600));
         const win = a === b ? null : (a - b + 3) % 3 === 1 ? L : R;
-        setTimeout(() => {
-          if (!win) { this.talk(pickOne([L, R]).k, pickOne(["Égalité !", "On pense pareil, évidemment."]), 1800); if (this.yjFree()) setTimeout(() => this.yjSay("On recommence ! On recommence !", 1600), 900); this.hearts((L.x + R.x) / 2, 3); return; }
+        this.at(() => {
+          if (!win) { this.talk(pickOne([L, R]).k, pickOne(["Égalité !", "On pense pareil, évidemment."]), 1800); if (this.yjFree()) this.at(() => this.yjSay("On recommence ! On recommence !", 1600), 900); this.hearts((L.x + R.x) / 2, 3); return; }
           const lo = win === L ? R : L;
-          this.pose(win, "p-cheer", true); this.hop(win); this.talk(win.k, pickOne(RPS_WIN), 1700);
-          lo.el.classList.add("grr");
-          setTimeout(() => { lo.el.classList.remove("grr"); this.talk(lo.k, pickOne(RPS_LOSE), 1800); this.pose(win, "p-cheer", false); }, 1500);
-          if (y.sleep) setTimeout(() => this.hearts(y.x, 2, 10), 1200);
+          this.pose(win, "p-cheer", true); this.pose(win, "e-laugh", true); this.hop(win); this.talk(win.k, pickOne(RPS_WIN), 1700);
+          lo.el.classList.add("e-pout");
+          this.at(() => { lo.el.classList.remove("e-pout"); this.talk(lo.k, pickOne(RPS_LOSE), 1800); this.pose(win, "p-cheer", false); }, 1500);
+          if (y.sleep) this.at(() => this.hearts(y.x, 2, 10), 1200);
         }, 700);
       }, 1100);
-      setTimeout(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 5200);
+      this.at(() => { this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 5200);
     });
   },
   /* ───── Sieste à deux ───── */
@@ -5535,23 +5808,23 @@ const Buddies = {
       this.pose([L, R], "p-sit", true);
       this.talk(pickOne([L, R]).k, pickOne(NAP_LINES), 2000);
       let zz = null, blanket = null;
-      setTimeout(() => {
+      this.at(() => {
         this.pose([L, R], "p-rest", true); this.pose([L, R], "nap2", true); L.tilt = 4; R.tilt = 4;
         blanket = this.prop("fx-blanket", FX_BLANKET, (L.x + R.x) / 2 - 38, -2, 0);
-        zz = setInterval(() => [L, R].forEach((o, i) => setTimeout(() => this.prop("fx-z", "z", o.x + o.face * 6 - 3, 60, 2000), i * 800)), 1900);
+        zz = this.every(() => [L, R].forEach((o, i) => this.at(() => this.prop("fx-z", "z", o.x + o.face * 6 - 3, 60, 2000), i * 800)), 1900);
         if (this.yjFree()) {
           y.target = (L.x + R.x) / 2;
-          y.onArrive = () => { y.mode = "nap"; y.el.classList.add("napping"); this.yjSay("*bâille* Je peux venir ?", 1600); setTimeout(() => { y.body.innerHTML = yassenSvg(Jeu.stage(), true); }, 1700); };
+          y.onArrive = () => { y.mode = "nap"; y.el.classList.add("napping"); this.yjSay("*bâille* Je peux venir ?", 1600); this.at(() => { y.body.innerHTML = yassenSvg(Jeu.stage(), true); }, 1700); };
         }
       }, 1300);
-      setTimeout(() => {
+      this.at(() => {
         clearInterval(zz); if (blanket) blanket.remove();
         this.pose([L, R], "nap2", false); this.pose([L, R], "p-rest", false); L.tilt = R.tilt = 0;
         this.pose([L, R], "p-cheer", true); [L, R].forEach(o => o.el.classList.add("stretch"));
         this.talk(pickOne([L, R]).k, pickOne(NAP_WAKE), 2400);
-        if (y.mode === "nap") { y.mode = "follow"; y.el.classList.remove("napping"); y.body.innerHTML = yassenSvg(Jeu.stage(), y.sleep); setTimeout(() => this.yjSay(pickOne(["Bien dormi !", "Encore une sieste demain ?"]), 1600), 900); }
+        if (y.mode === "nap") { y.mode = "follow"; y.el.classList.remove("napping"); y.body.innerHTML = yassenSvg(Jeu.stage(), y.sleep); this.at(() => this.yjSay(pickOne(["Bien dormi !", "Encore une sieste demain ?"]), 1600), 900); }
       }, 9800);
-      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("stretch")); this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 11600);
+      this.at(() => { [L, R].forEach(o => o.el.classList.remove("stretch")); this.clearPoses([L, R]); this.apart(L, R, () => this.done()); }, 11600);
     };
     // Yassen Jr. dort déjà : on s'installe à côté de lui.
     if (y.sleep && y.mode === "follow") {
@@ -5564,10 +5837,10 @@ const Buddies = {
   },
   kiss() {
     this.meet(29, (L, R) => {
-      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7;
+      this.mood([L, R], "happy", true); L.tilt = R.tilt = 7; this.expr(L, Math.random() < 0.5 ? "e-heart" : "e-wink", 1700); this.expr(R, "e-heart", 1700);
       this.bigHeart((L.x + R.x) / 2); this.hearts((L.x + R.x) / 2, 5, 20); { const k = pickOne(["a", "b"]); this.say(k, lineFor(k, "kiss", KISS_LINES), 1800); }
       [L, R].forEach(o => { if (trait(o.k, "soc") <= 1 || trait(o.k, "tender") <= 1) o.el.classList.add("blush"); });
-      setTimeout(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
+      this.at(() => { [L, R].forEach(o => o.el.classList.remove("blush")); this.mood([L, R], "happy", false); L.tilt = R.tilt = 0; this.apart(L, R, () => this.done()); }, 1700);
     });
   },
   // Le personnage le plus marqué sur un trait (au moins min), ou le moins marqué (au plus max).
@@ -5582,11 +5855,11 @@ const Buddies = {
     const first = shyFirst ? T : F, second = shyFirst ? F : T;
     T.el.classList.add("blush", "shy");
     this.say(first.k, l1, 2800); if (first === F) this.hop(F);
-    setTimeout(() => {
+    this.at(() => {
       this.say(second.k, l2, 3000);
-      if (second === F) { this.spin(F); this.hearts(F.x, 3, 16); } else { T.face *= -1; setTimeout(() => { T.face *= -1; }, 900); this.hearts(T.x, 3, 16); }
+      if (second === F) { this.spin(F); this.hearts(F.x, 3, 16); } else { T.face *= -1; this.at(() => { T.face *= -1; }, 900); this.hearts(T.x, 3, 16); }
     }, 3000);
-    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 6400);
+    this.at(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 6400);
   },
   zoomies() {
     const F = this.most("energy", 3); if (!F) return this.done();
@@ -5598,7 +5871,7 @@ const Buddies = {
       if (shy) T.el.classList.add("blush"); T.el.classList.add("happy");
       this.say(T.k, pickOne(shy ? ["Hihi… quelle énergie.", "*regarde avec des cœurs dans les yeux*", "Reviens… j'ai le tournis."] : calm ? ["Moi, je reste là. Bon courage.", "*bâille en regardant la course*"] : ["Quelle énergie !", "Attends-moi !", "Tu vas t'épuiser !"]), 2600);
       this.hearts(T.x, 3, 16);
-      setTimeout(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 2700);
+      this.at(() => { T.el.classList.remove("blush", "happy"); this.done(); }, 2700);
     }));
   },
   shyMoment() {
@@ -5606,53 +5879,53 @@ const Buddies = {
     const F = this.b[other(T.k)];
     T.el.classList.add("blush", "shy"); T.face = F.x > T.x ? 1 : -1;
     this.say(T.k, pickOne(TRAIT_LINES.soc.lo.solo), 2400);
-    setTimeout(() => {
+    this.at(() => {
       F.face = T.x > F.x ? 1 : -1; this.hop(F);
       this.say(F.k, pickOne(trait(F.k, "tease") >= 3 ? ["Tu rougis ! Tu rougis !", "Je l'ai vu, ce sourire."] : trait(F.k, "tender") >= 3 || trait(F.k, "soc") >= 3 ? ["Adorable !!", "Ce rire… je fonds.", "Arrête, je fonds."] : ["C'est mignon.", "Viens là, toi."]), 2400);
       this.hearts(F.x, 3, 14);
     }, 2500);
-    setTimeout(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 5200);
+    this.at(() => { T.el.classList.remove("blush", "shy"); this.done(); }, 5200);
   },
   // Un bruit fait peur au plus peureux : il court se cacher, l'autre le rassure (ou panique aussi).
   scare() {
     const P = this.least("brave", 1); if (!P) return this.done();
     const O = this.b[other(P.k)], W = this.W();
     this.spawn("fx-note", "!", P.x + 10, 0, 1200);
-    P.el.classList.add("shiver");
+    P.el.classList.add("shiver"); this.expr(P, "e-wow", 1800);
     this.say(P.k, pickOne(["C'était quoi, ce bruit ?!", "AAAH ! Une araignée !", "Il y a quelque chose qui bouge…"]), 1800);
-    setTimeout(() => this.walkTo(P, O.x + (O.x > W / 2 ? 22 : -22), true, () => {
+    this.at(() => this.walkTo(P, O.x + (O.x > W / 2 ? 22 : -22), true, () => {
       P.face = O.x > P.x ? 1 : -1; O.face = -P.face;
       const ob = trait(O.k, "brave");
       if (ob <= 1) {
         O.el.classList.add("shiver"); this.say(O.k, pickOne(["AAAH ! …c'était quoi ?", "On court ?"]), 1600);
-        setTimeout(() => { const edge = O.x > W / 2 ? 28 : W - 28; this.walkTo(O, edge, true); this.walkTo(P, edge + (edge < W / 2 ? 30 : -30), true, () => { [O, P].forEach(o => o.el.classList.remove("shiver")); this.say(P.k, "…C'était juste le frigo.", 2200); this.hearts((O.x + P.x) / 2, 3); setTimeout(() => this.done(), 2200); }); }, 1500);
+        this.at(() => { const edge = O.x > W / 2 ? 28 : W - 28; this.walkTo(O, edge, true); this.walkTo(P, edge + (edge < W / 2 ? 30 : -30), true, () => { [O, P].forEach(o => o.el.classList.remove("shiver")); this.say(P.k, "…C'était juste le frigo.", 2200); this.hearts((O.x + P.x) / 2, 3); this.at(() => this.done(), 2200); }); }, 1500);
         return;
       }
       this.say(O.k, pickOne(ob >= 3 ? ["Pas de panique, je suis là.", "Je m'en occupe !", "Je te protège."] : ["C'est juste le vent.", "Ce n'est rien, viens là."]), 2400);
       if (ob >= 3) this.hop(O);
-      setTimeout(() => { P.el.classList.remove("shiver"); this.mood([P, O], "happy", true); this.hearts((O.x + P.x) / 2, 4); }, 1600);
-      setTimeout(() => { this.mood([P, O], "happy", false); this.apart(P.x < O.x ? P : O, P.x < O.x ? O : P, () => this.done()); }, 3600);
+      this.at(() => { P.el.classList.remove("shiver"); this.mood([P, O], "happy", true); this.hearts((O.x + P.x) / 2, 4); }, 1600);
+      this.at(() => { this.mood([P, O], "happy", false); this.apart(P.x < O.x ? P : O, P.x < O.x ? O : P, () => this.done()); }, 3600);
     }), 700);
   },
   // Anniversaire ou mois-anniversaire : confettis, cœurs, et Yassen Jr. qui le crie.
   celebrate(msg) {
     if (!this.el || this.el.hidden) return;
     const cols = ["#FF6E89", "#F2C84B", "#6DBE9B", "#5E8BD9", "#9B7BD6"];
-    ["a", "b"].forEach((k, i) => setTimeout(() => {
+    ["a", "b"].forEach((k, i) => this.at(() => {
       const o = this.b[k]; o.el.classList.remove("bigjump"); void o.el.offsetWidth; o.el.classList.add("bigjump"); o.el.classList.add("happy");
       for (let j = 0; j < 14; j++) this.prop("fx-confetti", "", o.x - 2, 46, 1500, { "--dx": ((Math.random() - 0.5) * 120).toFixed(0) + "px", "--dy": (-30 - Math.random() * 50).toFixed(0) + "px", background: pickOne(cols) });
       this.hearts(o.x, 5, 20);
-      setTimeout(() => o.el.classList.remove("bigjump", "happy"), 1600);
+      this.at(() => o.el.classList.remove("bigjump", "happy"), 1600);
     }, i * 300));
-    setTimeout(() => { this.yjHop(); this.yjSay(msg, 3200); }, 700);
+    this.at(() => { this.yjHop(); this.yjSay(msg, 3200); }, 700);
   },
   // Quête réussie, succès, achat : les deux fêtent ça.
   cheer() {
     if (!this.el || this.el.hidden) return;
-    ["a", "b"].forEach((k, i) => setTimeout(() => { this.hop(this.b[k]); this.hearts(this.b[k].x, 3, 20); }, i * 220));
+    ["a", "b"].forEach((k, i) => this.at(() => { const o = this.b[k]; this.hop(o); this.hearts(o.x, 3, 20); o.el.classList.add("p-cheer", "e-laugh"); window.setTimeout(() => o.el.classList.remove("p-cheer", "e-laugh"), 1300); }, i * 220));
     const k = pickOne(["a", "b"]);
     this.say(k, lineFor(k, "cheer", CHEERS), 2400);
-    setTimeout(() => this.yjGift(), 1200);
+    this.at(() => this.yjGift(), 1200);
   },
   // Aperçu dans l'éditeur : le personnage essaie sa nouvelle personnalité.
   preview(k) {
@@ -5664,10 +5937,10 @@ const Buddies = {
     if (Math.random() < 0.6) return this.napTogether();
     const o = this.least("energy", 4);
     this.pose(o, "p-sit", true); this.say(o.k, pickOne(["*bâille*", "Petite pause…", "Je ferme les yeux deux secondes."]), 1600);
-    setTimeout(() => { this.pose(o, "nap2", true); o.tilt = 8; }, 1300);
-    const zz = setInterval(() => this.prop("fx-z", "z", o.x + o.face * 6 - 3, 58, 2000), 1500);
-    setTimeout(() => { clearInterval(zz); this.pose(o, "nap2", false); o.tilt = 0; o.el.classList.add("stretch"); this.say(o.k, pickOne(NAP_WAKE), 2000); }, 6200);
-    setTimeout(() => { o.el.classList.remove("stretch"); this.clearPoses([o]); this.done(); }, 7800);
+    this.at(() => { this.pose(o, "nap2", true); o.tilt = 8; }, 1300);
+    const zz = this.every(() => this.prop("fx-z", "z", o.x + o.face * 6 - 3, 58, 2000), 1500);
+    this.at(() => { clearInterval(zz); this.pose(o, "nap2", false); o.tilt = 0; o.el.classList.add("stretch"); this.say(o.k, pickOne(NAP_WAKE), 2000); }, 6200);
+    this.at(() => { o.el.classList.remove("stretch"); this.clearPoses([o]); this.done(); }, 7800);
   },
   // Les deux se rejoignent au milieu, face à face.
   meet(gap, cb) {
@@ -5685,19 +5958,19 @@ const Buddies = {
     const edge = chaser.x < runner.x ? W - 28 : 28;
     this.say(runner.k, "Attrape-moi si tu peux !", 1800);
     this.walkTo(runner, edge, true);
-    setTimeout(() => this.walkTo(chaser, edge + (edge > W / 2 ? -34 : 34), true, () => {
+    this.at(() => this.walkTo(chaser, edge + (edge > W / 2 ? -34 : 34), true, () => {
       runner.face = -chaser.face; this.mood([runner, chaser], "happy", true);
       this.say(chaser.k, pickOne(["Trop rapide…", "Pause, je n'ai plus de souffle !", "Je t'attrape la prochaine fois."]), 2200);
       this.hearts((runner.x + chaser.x) / 2, 3);
-      setTimeout(() => { this.mood([runner, chaser], "happy", false); this.done(); }, 2000);
+      this.at(() => { this.mood([runner, chaser], "happy", false); this.done(); }, 2000);
     }), 300);
   },
   dance() {
     this.meet(56, (L, R) => {
       this.say(pickOne(["a", "b"]), pickOne(["On danse ?", "Petite choré !"]), 1600);
       this.mood([L, R], "happy", true);
-      [0, 550, 1100, 1650].forEach((ms, i) => setTimeout(() => { this.hop(L); this.hop(R); if (i % 2) { L.face *= -1; R.face *= -1; } this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 40); if (i % 2) this.hearts((L.x + R.x) / 2, 2); }, ms));
-      setTimeout(() => { L.face = 1; R.face = -1; this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2300);
+      [0, 550, 1100, 1650].forEach((ms, i) => this.at(() => { this.hop(L); this.hop(R); if (i % 2) { L.face *= -1; R.face *= -1; } this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 40); if (i % 2) this.hearts((L.x + R.x) / 2, 2); }, ms));
+      this.at(() => { L.face = 1; R.face = -1; this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2300);
     });
   },
   // Émotes de la boutique.
@@ -5705,23 +5978,23 @@ const Buddies = {
     this.meet(34, (L, R) => {
       this.say(L.k, pickOne(["Bataille de polochons !", "En garde !"]), 1600);
       this.mood([L, R], "happy", true);
-      [0, 450, 900, 1350, 1800].forEach((ms, i) => setTimeout(() => {
+      [0, 450, 900, 1350, 1800].forEach((ms, i) => this.at(() => {
         const o = i % 2 ? R : L; this.hop(o); this.spawn("fx-pillow", "", (L.x + R.x) / 2 - 9 + (Math.random() - 0.5) * 30, 0, 1300);
         this.spawn("fx-feather", "", (L.x + R.x) / 2 + (Math.random() - 0.5) * 40, 0.1, 1600);
       }, ms));
-      setTimeout(() => { this.say(R.k, pickOne(["Égalité !", "J'ai gagné ! …non ?", "Plus de plumes…"]), 2000); this.hearts((L.x + R.x) / 2, 4); }, 2300);
-      setTimeout(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 3600);
+      this.at(() => { this.say(R.k, pickOne(["Égalité !", "J'ai gagné ! …non ?", "Plus de plumes…"]), 2000); this.hearts((L.x + R.x) / 2, 4); }, 2300);
+      this.at(() => { this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 3600);
     });
   },
   disco() {
     this.meet(60, (L, R) => {
       this.say(pickOne(["a", "b"]), pickOne(["Disco time !", "Lumières, musique !"]), 1600);
       this.mood([L, R], "happy", true); this.el.classList.add("disco");
-      [0, 380, 760, 1140, 1520, 1900, 2280].forEach((ms, i) => setTimeout(() => {
+      [0, 380, 760, 1140, 1520, 1900, 2280].forEach((ms, i) => this.at(() => {
         if (i % 3 === 1) { this.spin(L); this.spin(R); } else { this.hop(L); this.hop(R); }
         L.face *= -1; R.face *= -1; this.note((L.x + R.x) / 2 + (Math.random() - 0.5) * 70);
       }, ms));
-      setTimeout(() => { this.el.classList.remove("disco"); L.face = 1; R.face = -1; this.hearts((L.x + R.x) / 2, 5); this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2800);
+      this.at(() => { this.el.classList.remove("disco"); L.face = 1; R.face = -1; this.hearts((L.x + R.x) / 2, 5); this.mood([L, R], "happy", false); this.apart(L, R, () => this.done()); }, 2800);
     });
   },
   spin(o) { o.el.classList.remove("spin"); void o.el.offsetWidth; o.el.classList.add("spin"); },
@@ -5729,15 +6002,15 @@ const Buddies = {
     const A = this.b.a, B = this.b.b, k = Math.random() < 0.5 ? "a" : "b";
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
     this.say(k, buddyLine(k), 2600);
-    setTimeout(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
-    setTimeout(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5300);
+    this.at(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
+    this.at(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5300);
   },
-  lookAround(o) { setTimeout(() => { o.face *= -1; }, 400); setTimeout(() => { o.face *= -1; }, 1300); },
+  lookAround(o) { this.at(() => { o.face *= -1; }, 400); this.at(() => { o.face *= -1; }, 1300); },
   hop(o) { o.el.classList.remove("hop"); void o.el.offsetWidth; o.el.classList.add("hop"); },
   spawn(cls, html, x, delay, life) {
     const s = document.createElement("span"); s.className = cls; s.innerHTML = html;
     s.style.left = x.toFixed(0) + "px"; s.style.animationDelay = delay + "s";
-    this.fx.appendChild(s); setTimeout(() => s.remove(), life);
+    this.fx.appendChild(s); this.at(() => s.remove(), life);
   },
   hearts(x, n, spread = 30) {
     for (let i = 0; i < n; i++) {
@@ -5758,18 +6031,18 @@ const Buddies = {
     q.el.classList.remove("talking"); if (this.yj) this.yj.el.classList.remove("talking");
     o.el.querySelector(".bubble").textContent = text;
     o.el.classList.add("talking");
-    clearTimeout(o.hush); o.hush = setTimeout(() => o.el.classList.remove("talking"), ms);
+    clearTimeout(o.hush); o.hush = window.setTimeout(() => o.el.classList.remove("talking"), ms);
   },
   chatter() {
     if (this.el && !this.el.hidden && !document.hidden && !this.busy) { const k = Math.random() < 0.5 ? "a" : "b"; this.say(k, buddyLine(k)); }
-    setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
+    window.setTimeout(() => this.chatter(), 16000 + Math.random() * 16000);
   },
   poke(k) {
     const o = this.b[k];
     Sfx.play("boop"); this.hop(o); this.hearts(o.x, 1, 10); this.say(k, lineFor(k, "poke", POKE_LINES), 2600);
     if (trait(k, "energy") >= 3 || trait(k, "humor") >= 3) this.spin(o);
     const face = trait(k, "mood") === 0 ? "grr" : trait(k, "mood") >= 3 ? "happy" : trait(k, "soc") <= 1 ? "blush" : "";
-    if (face) { o.el.classList.add(face); setTimeout(() => o.el.classList.remove(face), 1200); }
+    if (face) { o.el.classList.add(face); window.setTimeout(() => o.el.classList.remove(face), 1200); }
   }
 };
 
@@ -7798,7 +8071,7 @@ const ACT = {
     const q = draft("sv-q").trim(), t = draft("sv-t").trim(), w = draft("sv-w", "nous");
     if (!q || !t) { toast("Donnez un nom au moment et quelques mots pour le raconter."); return; }
     Store.add("capsule", { kind: "souvenir", question: q, entries: [{ who: w === "nous" ? "a" : w, label: w === "nous" ? "Nous deux" : nm(w), text: t }] });
-    clearDrafts("sv-q", "sv-t", "sv-w"); S.layer = null; S.tab = "capsule"; S.capSeg = "album"; toast("Gardé dans l'album");
+    clearDrafts("sv-q", "sv-t", "sv-w"); S.layer = null; S.tab = "capsule"; S.capSeg = "album"; toast("Gardé dans l'album"); setTimeout(() => Buddies.selfie(), 500);
   },
   "save-av"() {
     const ed = S.editAv && Store.cols.aventures.find(a => a.id === S.editAv);
@@ -7813,7 +8086,7 @@ const ACT = {
     toast(ed ? "Aventure mise à jour" : "Ajoutée à la liste");
   },
   "av-status"(d) {
-    const patch = { statut: d.v }; if (d.v === "realisee") patch.doneAt = Date.now();
+    const patch = { statut: d.v }; if (d.v === "realisee") { patch.doneAt = Date.now(); setTimeout(() => Buddies.cheer(), 300); }
     Store.update("aventures", d.id, patch);
     if (d.v === "planifiee") { S.editAv = d.id; S.drafts["av-s"] = "planifiee"; S.layer = { type: "sheet", name: "aventure" }; }
   },
@@ -7832,7 +8105,7 @@ const ACT = {
     Store.add("cartes", { cat, text: t.slice(0, 280), tone: draft("cc-tone", "l"), from: draft("cc-f", "a"), ...(cat === "def" ? { duree: +draft("cc-dur", "15") } : {}) });
     clearDrafts("cc-t"); toast("Carte ajoutée au paquet");
   },
-  "open-letter"(d) { const l = Store.cols.lettres.find(x => x.id === d.id); if (l && daysUntil(l.openOn) <= 0) { S.openLetters[d.id] = true; Jeu.flag("lettre"); Sfx.play("paper"); } },
+  "open-letter"(d) { const l = Store.cols.lettres.find(x => x.id === d.id); if (l && daysUntil(l.openOn) <= 0) { S.openLetters[d.id] = true; Jeu.flag("lettre"); Sfx.play("paper"); setTimeout(() => Buddies.letter(l.from), 400); } },
   tresors(d) { S.trSeg = d.v || S.trSeg || "quetes"; S.layer = { type: "tresors" }; },
   "tr-seg"(d) { S.trSeg = d.v; },
   "shop-cat"(d) { S.shopCat = d.v; },
