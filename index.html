@@ -941,6 +941,9 @@ textarea[readonly] { font-size: 16px; }
 .layer:focus { outline: none; }
 .link { min-height: 40px; }
 .chip { min-height: 38px; }
+/* Nouvelle version prête */
+.update-bar { display: block; width: 100%; margin: 4px 0 14px; padding: 12px 16px; border-radius: 18px; background: var(--accent); color: var(--on-accent); font-weight: 700; text-align: center; box-shadow: var(--shadow); }
+.notif-chips { margin: 6px 0 10px; }
 /* Installer l'appli */
 .install-row { display: flex; gap: 12px; align-items: center; }
 .install-row img { border-radius: 14px; box-shadow: var(--shadow); flex: none; }
@@ -1497,6 +1500,7 @@ function cleanMeta(m, v) {
   if (m === "space") {
     d.who = isObj(d.who) ? Object.fromEntries(["a", "b"].filter(k => typeof d.who[k] === "string").map(k => [k, d.who[k].slice(0, 64)])) : {};
     if ("epoch" in d) d.epoch = cNum(d.epoch, 0, 1e13, 0);
+    if ("notif" in d) d.notif = isObj(d.notif) ? Object.fromEntries(["a", "b"].filter(k => isObj(d.notif[k])).map(k => [k, Object.fromEntries(Object.entries(d.notif[k]).filter(([t, v]) => okTok(t) && typeof v === "boolean"))])) : {};
   }
   if (m === "progress") {
     ["seen", "endings"].forEach(k => { if (k in d) d[k] = Array.isArray(d[k]) ? d[k].filter(x => typeof x === "string") : []; });
@@ -2160,6 +2164,85 @@ function installSheet() {
       ${S.shLink ? `<textarea readonly rows="2" style="min-height:0" aria-label="Lien d'invitation">${esc(S.shLink)}</textarea>` : ""}</section>` : ""}
     <p class="small muted">${esc(fr("Rien n'est effacé : Safari garde sa copie, et vos souvenirs restent dans votre espace commun."))}</p>`;
 }
+/* ───────────────────────── Mises à jour ─────────────────────────
+   Posée sur l'écran d'accueil, l'appli peut rester ouverte des jours en arrière-plan. Quand une nouvelle
+   version est en ligne, elle se recharge toute seule au retour dans l'appli (si rien n'est en cours),
+   sinon un bandeau propose de l'ouvrir. */
+const hashStr = t => { let h = 0; for (let i = 0; i < t.length; i++) h = (Math.imul(h, 31) + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+const Update = {
+  base: null,
+  async check(back) {
+    if (navigator.onLine === false || !/^https?:$/.test(location.protocol)) return;
+    let h = null;
+    try { const r = await fetch(location.pathname + "?v=" + Date.now(), { cache: "no-store" }); if (r.ok) h = hashStr(await r.text()); } catch (e) { return; }
+    if (!h) return;
+    if (this.base == null) { this.base = h; return; }
+    if (h === this.base || S.update) return;
+    const ae = document.activeElement, busy = S.layer || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
+    if (back && !busy) this.apply(); else { S.update = true; render(); }
+  },
+  apply() { saveDrafts(); Store.saveCacheNow(); location.reload(); }
+};
+
+/* ───────────────────────── Notifications ─────────────────────────
+   Avec l'appli installée (iPhone : iOS 16.4 ou plus), chacun peut recevoir une notification pour un petit
+   mot, une lettre, une invitation à jouer… Le téléphone donne son adresse de notification (un « jeton »)
+   à l'espace commun (push/<a|b>/<id>) ; un service Firebase envoie les notifications. */
+// Clé publique « Web Push » (console Firebase → Paramètres du projet → Cloud Messaging → Certificats push web).
+const PUSH_VAPID = "";
+const NOTIF_TYPES = [["mot", "Les petits mots", true], ["lettre", "Les lettres scellées et celles qui s'ouvrent", true], ["partie", "Les invitations à jouer à distance", true], ["fete", "Anniversaires et dates qui comptent", true], ["quetes", "Un rappel le soir si Yassen Jr. vous attend encore", false]];
+const Push = {
+  supported() { return !!(PUSH_VAPID && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window); },
+  on() { return this.supported() && Notification.permission === "granted" && !!lsGet("entre-nous:push"); },
+  pref(k, t) { const v = ((((Store.meta.space || {}).notif || {})[k]) || {})[t]; return typeof v === "boolean" ? v : NOTIF_TYPES.find(x => x[0] === t)[2]; },
+  async token() {
+    const reg = await navigator.serviceWorker.ready;
+    const [A, M] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-messaging.js`)]);
+    const app = A.getApps()[0] || A.initializeApp(FIREBASE);
+    return { M, msg: M.getMessaging(app), t: await M.getToken(M.getMessaging(app), { vapidKey: PUSH_VAPID, serviceWorkerRegistration: reg }) };
+  },
+  async save(me, t) {
+    const key = hashStr(t), old = lsGet("entre-nous:push");
+    if (old && old !== key) Store.db.doc(`push/${me}/${old}`).delete().catch(() => {});
+    await Store.db.doc(`push/${me}/${key}`).set({ t, at: Date.now() });
+    lsSet("entre-nous:push", key);
+  },
+  async enable() {
+    const me = whoAmI();
+    if (!me) { toast("Dis d'abord qui tu es sur ce téléphone (Je suis…)."); return; }
+    if (Store.backend !== "shared" || !Store.db) { toast("Les notifications ont besoin de votre espace commun, et du réseau."); return; }
+    let perm = "default";
+    try { perm = await Notification.requestPermission(); } catch (e) { perm = "denied"; }
+    if (perm !== "granted") { toast("Notifications refusées : tu pourras les autoriser dans les Réglages de l'iPhone, rubrique Notifications."); render(true); return; }
+    try { const { t } = await this.token(); await this.save(me, t); toast("Notifications activées sur ce téléphone"); Sfx.play("chime"); }
+    catch (e) { console.error(e); toast("Les notifications n'ont pas pu s'activer. Réessaie dans un instant."); }
+    render(true);
+  },
+  async disable() {
+    const me = whoAmI(), key = lsGet("entre-nous:push");
+    try { if (me && key && Store.db) await Store.db.doc(`push/${me}/${key}`).delete(); const { M, msg } = await this.token(); await M.deleteToken(msg); } catch (e) { /* déjà retiré */ }
+    lsSet("entre-nous:push", ""); toast("Plus de notifications sur ce téléphone"); render(true);
+  },
+  // À chaque ouverture : le jeton peut changer, on garde l'espace commun à jour (sans rien demander).
+  async refresh() {
+    const me = whoAmI();
+    if (!this.on() || !me || !Store.db) return;
+    try { const { t } = await this.token(); await this.save(me, t); } catch (e) { /* on réessaiera */ }
+  }
+};
+function notifPanel() {
+  if (!PUSH_VAPID) return "";
+  const me = whoAmI(), head = `<h2 class="sec" id="h-notif">Notifications</h2>`;
+  let body;
+  if (isIOS() && !isInstalled()) body = `<p class="small">${esc(fr("Sur iPhone, les notifications marchent avec l'appli posée sur l'écran d'accueil."))}</p><button class="btn ghost" data-a="install">Installer Y&amp;S</button>`;
+  else if (!Push.supported()) body = `<p class="small muted">${esc(fr("Ce navigateur ne sait pas recevoir de notifications."))}</p>`;
+  else if (Notification.permission === "denied") body = `<p class="small">${esc(fr("Les notifications sont bloquées. Pour les autoriser : Réglages de l'iPhone → Notifications → Y&S."))}</p>`;
+  else if (!Push.on()) body = `<p class="small">${esc(fr("Un petit mot, une lettre, une invitation à jouer : ton téléphone te prévient, même appli fermée."))}</p><button class="btn" data-a="push-on">Activer les notifications</button>`;
+  else body = `<p class="small">${esc(fr(`Ce téléphone reçoit les notifications de ${me ? nm(me) : "toi"}. Choisis lesquelles :`))}</p>
+    <div class="chips notif-chips">${NOTIF_TYPES.map(([t, l]) => `<button class="chip" aria-pressed="${Push.pref(me, t)}" data-a="push-pref" data-v="${t}">${esc(fr(l))}</button>`).join("")}</div>
+    <button class="link" data-a="push-off">Ne plus recevoir de notifications ici</button>`;
+  return `<section class="panel" aria-labelledby="h-notif">${head}${body}</section>`;
+}
 function viewHome() {
   const c = couple(), named = c.a && c.b, h = new Date().getHours();
   const hello = h < 5 ? "Bonsoir" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
@@ -2170,6 +2253,7 @@ function viewHome() {
     ${sinceLine()}
     ${seasonChip()}
   </section>
+  ${S.update ? `<button class="update-bar" data-a="do-update">${esc(fr("Une nouvelle version de Y&S est prête : touche pour l'ouvrir"))}</button>` : ""}
   ${installCard()}
   ${dediHero()}
   ${celebrateCard()}
@@ -2693,6 +2777,7 @@ function sheetView() {
     <button class="btn wide" data-a="save-names">Enregistrer</button>
     <p class="small muted">${Store.backend !== "local" ? "Ces réglages, comme vos souvenirs, sont partagés avec l'autre." : "Sur ce téléphone, la progression est enregistrée ici même."}</p>
     ${!isInstalled() ? `<div class="row"><button class="btn ghost" data-a="install">${SHARE_ICO} Installer Y&amp;S sur l'écran d'accueil</button></div>` : ""}
+    ${notifPanel()}
     ${Shared.available() ? sharedPanel() : ""}
     ${Store.backend !== "local" ? "" : `<section class="panel" aria-labelledby="h-sync">
       <h2 class="sec" id="h-sync">Rassembler nos progressions</h2>
@@ -6994,6 +7079,10 @@ const ACT = {
     if (installEvt) { const e = installEvt; installEvt = null; e.prompt(); e.userChoice.then(() => render()).catch(() => {}); return; }
     S.layer = { type: "sheet", name: "install" };
   },
+  "push-on"() { Push.enable(); return false; },
+  "push-off"() { Push.disable(); return false; },
+  "push-pref"(d) { const me = whoAmI(); if (me && NOTIF_TYPES.some(x => x[0] === d.v)) Store.patchMeta("space", { [`notif/${me}/${d.v}`]: !Push.pref(me, d.v) }); },
+  "do-update"() { Update.apply(); return false; },
   "install-hide"() { lsSet("entre-nous:install-hide", "1"); },
   // iPhone : une bulle « Coller » apparaît, rien n'est lu sans ton accord.
   async "sh-paste"(d) {
@@ -7411,8 +7500,11 @@ function start(data) {
   atMidnight();
   document.addEventListener("visibilitychange", () => {
     document.documentElement.classList.toggle("ys-hidden", document.hidden);
-    if (!document.hidden) { Buddies.wake(); render(); }
+    if (!document.hidden) { Buddies.wake(); render(); Update.check(true); }
   });
+  Update.check(false);
+  setInterval(() => Update.check(false), 30 * 60000);
+  Store.connect().then(() => setTimeout(() => Push.refresh(), 3000));
 }
 const hot = window.claude && window.claude.hot;
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
