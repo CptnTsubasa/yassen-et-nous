@@ -1,23 +1,34 @@
-/* Y&S hors ligne : la page est d'abord demandée au réseau (pour avoir toujours la dernière version),
-   avec la copie gardée en cache si le réseau manque. Le reste (icônes, polices, modules Firebase)
-   sert la copie en cache et se met à jour en arrière-plan. Les données et l'IA ne sont jamais mises en cache. */
-const V = "ys-v1";
+/* Y&S hors ligne : la page est d'abord demandée au réseau (pour avoir toujours la dernière version) ;
+   si le réseau ne répond pas en 3 secondes, la copie gardée s'affiche, et la nouvelle version
+   prendra sa place à la prochaine ouverture. Le reste (icônes, polices, modules Firebase) sert la copie
+   en cache et se met à jour en arrière-plan. Les données et l'IA ne sont jamais mises en cache. */
+const V = "ys-v2", LIB = "ys-lib-v1";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "yassen.jpg"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
-self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== LIB).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+const keep = (name, req, res) => { if (res && (res.ok || res.type === "opaque")) { const cp = res.clone(); caches.open(name).then(c => c.put(req, cp)); } return res; };
 self.addEventListener("fetch", e => {
   const r = e.request;
   if (r.method !== "GET") return;
   const u = new URL(r.url);
   if (r.mode === "navigate") {
-    e.respondWith(fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put("index.html", cp)); } return res; })
-      .catch(() => caches.match("index.html").then(hit => hit || caches.match("./"))));
+    const app = u.origin === self.location.origin && /\/(index\.html)?$/.test(u.pathname);
+    if (!app) return;
+    const net = fetch(r).then(res => (res.ok && res.type === "basic" ? keep(V, "index.html", res) : res));
+    const late = new Promise(ok => setTimeout(ok, 3000)).then(() => caches.match("index.html"));
+    e.respondWith(new Promise((ok, no) => {
+      let done = false;
+      const give = res => { if (!done && res) { done = true; ok(res); } };
+      net.then(give, () => caches.match("index.html").then(hit => hit ? give(hit) : caches.match("./").then(h2 => h2 ? give(h2) : no(new Error("hors ligne")))));
+      late.then(give);
+    }));
     return;
   }
   const ours = u.origin === self.location.origin, lib = u.hostname === "www.gstatic.com" && u.pathname.startsWith("/firebasejs/"), font = /^fonts\.(googleapis|gstatic)\.com$/.test(u.hostname);
-  if (!ours && !lib && !font) return;
+  if (!(ours && CORE.some(p => p !== "./" && u.pathname.endsWith("/" + p))) && !lib && !font) return;
+  const name = ours ? V : LIB;
   e.respondWith(caches.match(r).then(hit => {
-    const net = fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; }).catch(() => hit);
+    const net = fetch(r).then(res => keep(name, r, res)).catch(() => hit);
     return hit || net;
   }));
 });

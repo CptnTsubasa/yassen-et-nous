@@ -24,13 +24,14 @@ img { max-width: 100%; }
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Figtree:wght@400;500;600;700&family=Young+Serif&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Figtree:wght@400;500;600;700&family=Young+Serif&display=swap" media="print" onload="this.media='all'" crossorigin>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Figtree:wght@400;500;600;700&family=Young+Serif&display=swap"></noscript>
 <style>
 /* Mise en page : une colonne façon appli de poche, des cartes à jouer au centre, une barre d'onglets en bas. */
 /* Ambiance : un cocon. Pastels poudrés pour les fonds (--m*), une encre plus soutenue de la même teinte pour le texte coloré (--i*). */
 :root {
   --bg: #F6F2F5; --surface: #FFFFFF; --surface-2: #EFE8EF; --line: #E3D9E2;
-  --fg: #3A2F40; --muted: #7E7385; --accent: #B0506C; --on-accent: #FFFFFF;
+  --fg: #3A2F40; --muted: #6C6173; --accent: #B0506C; --on-accent: #FFFFFF;
   --m1: #F4CDD6; --m2: #F3E2B3; --m3: #C9E2D3; --m4: #DDD1EE; --m5: #CDDEF1; --m6: #F7D5C2; --m7: #C6E7E4; --m8: #EED3E8;
   --on-m1: #3A2F40; --on-m2: #3A2F40; --on-m3: #3A2F40; --on-m4: #3A2F40; --on-m5: #3A2F40; --on-m6: #3A2F40; --on-m7: #3A2F40; --on-m8: #3A2F40;
   --i1: #A3445F; --i2: #82651A; --i3: #3B7558; --i4: #6A4F9C; --i5: #3A679A; --i6: #A0532C; --i7: #2F7370; --i8: #8C4582;
@@ -927,6 +928,36 @@ body { background: var(--bg); }
 .swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--fg); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ───── Solidité de l'interface ───── */
+/* Les petits messages restent centrés pendant leur apparition, et ne bloquent jamais un doigt. */
+.toast { animation-name: toastin; pointer-events: none; }
+@keyframes toastin { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translateX(-50%); } }
+/* Pendant l'édition des avatars, les chibis passent devant mais ne captent pas les touches. */
+#buddies.over * { pointer-events: none !important; }
+.nav button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+textarea[readonly] { font-size: 16px; }
+#layer .layer { overscroll-behavior: contain; }
+.layer:focus { outline: none; }
+.link { min-height: 40px; }
+.chip { min-height: 38px; }
+/* Un flou plus léger sous la prairie (il ne se recalcule qu'au défilement). */
+#ground { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+@media (max-height: 700px) { #ground { height: calc(168px + env(safe-area-inset-bottom, 0px)); } }
+/* Écran ouvert par-dessus, ou appli en arrière-plan : les animations du décor se mettent en pause. */
+.ys-paused #cozy *, .ys-paused .cozy-fx *, .ys-paused #ground *, .ys-hidden * { animation-play-state: paused !important; }
+/* iPhone plus anciens (avant iOS 16.2) : des couleurs simples là où color-mix() n'existe pas. */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  :root { --glass: rgba(255, 255, 255, .82); --hair: rgba(58, 47, 64, .08); }
+  #ground { background: var(--bg); --g1: var(--gbase); --g2: var(--gbase); --g3: var(--gbase); }
+  .spec .b2, .spec .b3, .spec .b4 { background: var(--accent); }
+  .spec .b2 { opacity: .25; } .spec .b3 { opacity: .45; } .spec .b4 { opacity: .8; }
+  .nav button[aria-current="page"] { background: var(--surface-2); }
+  .opt[aria-pressed="true"], .cx-len[aria-pressed="true"], .season-chip, .empty, .cx-talk { background: var(--surface-2); }
+  .fav[aria-pressed="true"], .daily .btn.ghost, .feature .icon-tile { background: rgba(255, 255, 255, .3); }
+}
+@supports not (color: color-mix(in srgb, red, blue)) { @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --glass: rgba(39, 33, 44, .85); --hair: rgba(239, 231, 240, .08); } } }
+@supports not (color: color-mix(in srgb, red, blue)) { :root[data-theme="dark"] { --glass: rgba(39, 33, 44, .85); --hair: rgba(239, 231, 240, .08); } }
 </style>
 
 <div id="cozy" aria-hidden="true"><i></i><i></i><i></i><i></i><div class="cozy-fx"></div></div>
@@ -1320,7 +1351,13 @@ const pickOne = a => a[Math.floor(Math.random() * a.length)];
 const hash = n => { let t = (n + 0x6D2B79F5) | 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0); };
 const cvar = n => `--c:var(--m${n});--on-c:var(--on-m${n});--ic:var(--i${n})`;
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* stockage indisponible */ } };
+// Renvoie false si le téléphone n'a plus de place (ou refuse le stockage) ; on prévient une fois.
+const lsSet = (k, v) => {
+  try { localStorage.setItem(k, v); return true; } catch (e) {
+    if (!lsSet.warned && e && (e.name === "QuotaExceededError" || e.code === 22)) { lsSet.warned = true; setTimeout(() => toast("La mémoire de ce téléphone pour l'appli est pleine : retirez quelques photos du puzzle."), 0); }
+    return false;
+  }
+};
 
 /* ───────────────────────── Stockage ─────────────────────────
    Données partagées (album, capsule, aventures, lettres, favoris, progression).
@@ -1912,7 +1949,18 @@ const addEnding = key => { if (okKey(key) && !endSet().has(key)) Store.patchMeta
 const addPuzzle = () => Store.patchMeta("progress", { ["puzzlesLog/" + uid()]: Date.now() });
 const dv = (id, def = "") => esc(S.drafts[id] ?? def);
 const draft = (id, def = "") => S.drafts[id] ?? def;
-const clearDrafts = (...ids) => ids.forEach(id => delete S.drafts[id]);
+const clearDrafts = (...ids) => { ids.forEach(id => delete S.drafts[id]); saveDrafts(); };
+// Les brouillons survivent à une fermeture de l'appli (iPhone qui la décharge, bouton retour d'Android…).
+function saveDrafts() {
+  clearTimeout(saveDrafts.tm);
+  saveDrafts.tm = setTimeout(() => {
+    const d = Object.fromEntries(Object.entries(S.drafts).filter(([k, v]) => typeof v === "string" && v.length < 6000 && !/^(sync-in|sh-in|ob-inv)$/.test(k)));
+    lsSet("entre-nous:drafts", JSON.stringify(d));
+  }, 400);
+}
+function loadDrafts() {
+  try { const d = JSON.parse(lsGet("entre-nous:drafts") || "{}"); if (isObj(d)) Object.entries(d).forEach(([k, v]) => { if (typeof v === "string" && !(k in S.drafts)) S.drafts[k] = v; }); } catch (e) { /* brouillons illisibles */ }
+}
 
 function toast(msg) {
   const t = document.getElementById("toast");
@@ -3656,7 +3704,7 @@ function pzPhotoStrip() {
   const cur = pzPhotoId(S.pzPhoto), list = pzPhotos();
   return `<div class="stack"><h2 class="sec">La photo du puzzle</h2><div class="pz-photos" role="group" aria-label="Photo du puzzle">
     <button class="pz-ph" aria-pressed="${cur === "yassen"}" data-a="pz-photo" data-v="yassen"><img src="${PZ_IMG}" alt="Yassen Jr."></button>
-    ${list.map(([id, v]) => `<span class="pz-ph-w"><button class="pz-ph${v ? "" : " loading"}" aria-pressed="${cur === id}" data-a="pz-photo" data-v="${id}">${v ? `<img src="${v}" alt="Votre photo">` : ""}</button>${S.pzDel === id ? `<button class="pz-del sure" data-a="pz-del" data-v="${id}">Supprimer ?</button>` : `<button class="pz-del" data-a="pz-del-ask" data-v="${id}" aria-label="Retirer cette photo">×</button>`}</span>`).join("")}
+    ${list.map(([id, v]) => `<span class="pz-ph-w"><button class="pz-ph${v ? "" : " loading"}"${v ? "" : ' aria-label="Photo en cours de chargement"'} aria-pressed="${cur === id}" data-a="pz-photo" data-v="${id}">${v ? `<img src="${v}" alt="Votre photo">` : ""}</button>${S.pzDel === id ? `<button class="pz-del sure" data-a="pz-del" data-v="${id}">Supprimer ?</button>` : `<button class="pz-del" data-a="pz-del-ask" data-v="${id}" aria-label="Retirer cette photo">×</button>`}</span>`).join("")}
     ${list.length < PZ_MAX_PHOTOS ? `<label class="pz-ph pz-add" for="pz-file"><span aria-hidden="true">+</span><span>Ajouter</span></label>` : ""}
   </div><input class="vh" type="file" id="pz-file" accept="image/*">
   <p class="small muted">${esc(fr("Ajoutez vos photos à vous : elles rejoignent votre album de puzzles, sur vos deux téléphones, sans remplacer Yassen Jr."))}</p></div>`;
@@ -4221,7 +4269,8 @@ function buddyLine(k) {
   else if (h < 11) pool.push("Bien dormi ?", "Café d'abord, câlin ensuite ?");
   return pickOne(pool).replace(/\{o\}/g, nm(other(k)));
 }
-const reduceMotion = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+const RM_Q = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+const reduceMotion = () => !!(RM_Q && RM_Q.matches);
 const HUG_LINES = ["Câlin !", "Viens là, toi.", "Je ne te lâche plus.", "Recharge de câlins : 100 %."];
 const KISS_LINES = ["Smack !", "Un bisou, juste comme ça.", "Mmh, encore un ?"];
 const SQUABBLES = [["C'est moi qui ai raison !", "Même pas vrai !"], ["Le dernier cookie était à moi !", "Prouve-le !"], ["Tu ronfles.", "Et toi, tu voles la couette !"],
@@ -4244,6 +4293,7 @@ const FX_BOLT = '<svg viewBox="0 0 16 26" width="14"><path d="M10 0L2 14h5l-3 12
 const Buddies = {
   el: null, fx: null, b: {}, sig: "", last: 0, busy: false, nextAct: 0,
   enabled() { return lsGet("entre-nous:buddies") !== "0"; },
+  wake() { if (this.loop && !this.running && this.el && !this.el.hidden && !document.hidden) { this.running = true; this.last = 0; requestAnimationFrame(this.loop); } },
   mount() {
     const el = this.el = document.createElement("div");
     el.id = "buddies"; el.setAttribute("aria-hidden", "true");
@@ -4265,7 +4315,7 @@ const Buddies = {
     this.yj = { el: yj, body: yj.querySelector(".yj-in"), bubble: yj.querySelector(".bubble"), x: 0.5 * this.W(), mode: "follow", holder: null, face: 1, phase: 0, fly: null, target: null, run: false, sleep: false };
     this.nextAct = performance.now() + 4000;
     this.loop = this.loop.bind(this);
-    requestAnimationFrame(this.loop);
+    this.running = true; requestAnimationFrame(this.loop);
     setTimeout(() => this.chatter(), 7000);
   },
   W() { return (this.el && this.el.clientWidth) || 360; },
@@ -4275,6 +4325,7 @@ const Buddies = {
     const show = (this.enabled() || editing) && (!S.layer || editing);
     this.el.classList.toggle("over", editing);
     this.el.hidden = !show;
+    this.wake();
     const ground = document.getElementById("ground"); if (ground) ground.hidden = !show || editing;
     if (!show) return;
     // La météo du cœur de chacun s'affiche au-dessus de son chibi et change sa façon d'être.
@@ -4297,10 +4348,11 @@ const Buddies = {
     o.face = o.target >= o.x ? 1 : -1;
   },
   // Accélération au départ, freinage à l'arrivée, un rebond et un balancement à chaque pas.
+  // La boucle s'arrête quand les chibis sont cachés ou l'appli en arrière-plan, et repart avec wake().
   loop(t) {
+    if (!this.el || this.el.hidden || document.hidden) { this.running = false; this.last = 0; return; }
     requestAnimationFrame(this.loop);
     const dt = Math.min(0.05, (t - (this.last || t)) / 1000); this.last = t;
-    if (!this.el || this.el.hidden || document.hidden) return;
     const still = reduceMotion(), W = this.W();
     for (const k in this.b) {
       const o = this.b[k];
@@ -5419,12 +5471,13 @@ function yassenSvg(stage, asleep) {
     : `<g class="av-eyes"><ellipse cx="40" cy="58" rx="9" ry="10.5" fill="#FFFFFF"/><ellipse cx="62" cy="58" rx="9" ry="10.5" fill="#FFFFFF"/><circle cx="42" cy="60" r="6.2" fill="#8A4A1A"/><circle cx="64" cy="60" r="6.2" fill="#8A4A1A"/><circle cx="42" cy="60" r="3.2" fill="#2A1408"/><circle cx="64" cy="60" r="3.2" fill="#2A1408"/><circle cx="40" cy="57" r="1.9" fill="#FFFFFF"/><circle cx="62" cy="57" r="1.9" fill="#FFFFFF"/></g>`;
   const brows = asleep ? "" : `<path d="M31 44q8 -6 15 -1" stroke="#E07B25" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M56 43q8 -5 15 1" stroke="#E07B25" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
   const mouth = asleep ? `<ellipse cx="51" cy="80" rx="3" ry="2.4" fill="#B23A1E"/>` : `<path d="M40 76q11 11 22 0q-11 4 -22 0z" fill="#B23A1E"/><path d="M45 80q6 4 12 0q-6 -2 -12 0z" fill="#F27A5A"/>`;
-  return `<svg viewBox="0 0 100 112" aria-hidden="true"><defs><linearGradient id="yjg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE15A"/><stop offset="1" stop-color="#F7A928"/></linearGradient></defs>
+  const gid = "yjg" + (yassenSvg.n = (yassenSvg.n || 0) + 1);
+  return `<svg viewBox="0 0 100 112" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE15A"/><stop offset="1" stop-color="#F7A928"/></linearGradient></defs>
     <ellipse cx="50" cy="108" rx="${(26 * s).toFixed(1)}" ry="4" fill="#000" opacity=".15"/>
     <g transform="translate(50 108) scale(${s}) translate(-50 -108)">
     ${stage >= 5 ? `<circle cx="50" cy="60" r="52" fill="#FFE15A" opacity=".2"/><path d="M19 62q-20 -10 -15 -28q10 13 23 15zM81 62q20 -10 15 -28q-10 13 -23 15z" fill="#FFFFFF" opacity=".92"/>` : ""}
     ${limbs ? `<path d="M40 99v8h-8M60 99v8h8" stroke="#F0A030" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 70q-10 8 -6 18M82 70q10 8 6 18" stroke="#F0A030" stroke-width="5" fill="none" stroke-linecap="round"/>` : ""}
-    <path d="M50 6C60 22 78 30 82 52C88 80 70 102 50 102C28 102 12 84 17 58C20 42 31 36 36 22C39 31 43 35 47 35C45 24 45 15 50 6Z" fill="url(#yjg)"/>
+    <path d="M50 6C60 22 78 30 82 52C88 80 70 102 50 102C28 102 12 84 17 58C20 42 31 36 36 22C39 31 43 35 47 35C45 24 45 15 50 6Z" fill="url(#${gid})"/>
     ${brows}${eyes}${mouth}<ellipse cx="29" cy="72" rx="5" ry="3" fill="#F07A5A" opacity=".35"/><ellipse cx="73" cy="72" rx="5" ry="3" fill="#F07A5A" opacity=".35"/>
     ${stage >= 3 ? `<path d="M23 84q27 12 54 0v8q-27 12 -54 0z" fill="#E0457A"/><path d="M64 90l7 16 -9 -2z" fill="#C2335F"/>` : ""}
     ${stage >= 4 ? `<path d="M37 16L40 3L46 11L50 1L54 11L60 3L63 16Z" fill="#F2C84B" stroke="#C9A035" stroke-width="1"/><circle cx="50" cy="11" r="1.8" fill="#E0457A"/>` : ""}
@@ -6184,7 +6237,8 @@ function cxNewView() {
   <div class="field"><label for="cx-det">Vos détails (facultatif)</label><textarea id="cx-det" data-d maxlength="500" rows="3" placeholder="${esc(fr("Un lieu qui compte pour vous, une blague à vous, un surnom, un plat préféré, un ami… Tout ce qui rendra l'histoire vraiment à vous."))}">${dv("cx-det")}</textarea></div>
   <button class="chip cx-yjt" aria-pressed="${cx.yassen !== false}" data-a="cx-set" data-k="yassen" data-v="${cx.yassen === false ? "1" : ""}">${cx.yassen === false ? "Sans Yassen Jr." : "Avec Yassen Jr. en invité"}</button>
   <button class="btn wide c" style="${cvar(rpg ? 7 : 8)}" data-a="cx-pitch">Imaginer trois histoires</button>
-  <div class="cx-aifoot">${cxAiPill()}</div>`;
+  <div class="cx-aifoot">${cxAiPill()}</div>
+  <p class="small muted" style="text-align:center">${esc(fr("Avec l'IA, le contexte, vos détails et vos prénoms sont envoyés à Google (Gemini) pour écrire l'histoire. Sans elle, tout reste sur vos téléphones."))}</p>`;
 }
 function cxPitchView() {
   const cx = S.cx, rpg = cx.mode === "rpg";
@@ -6667,6 +6721,33 @@ function crashView() {
     <div class="actions"><button class="btn wide" data-a="crash-retry">Réessayer</button><button class="btn ghost wide" data-a="crash-repair">Réparer</button></div>
     <p class="small muted">${esc(fr(Store.backend === "shared" || Shared.code() ? "« Réparer » efface la copie gardée sur ce téléphone, puis la recharge depuis votre espace commun." : "« Réparer » met de côté les données de ce téléphone (une copie de secours est gardée), puis relance l'appli."))}</p></section></main>`;
 }
+// Retrouve l'élément qui avait le focus après un nouveau rendu (même bouton, même champ).
+function focusSel() {
+  const a = document.activeElement;
+  if (!a || a === document.body || !a.closest || !a.closest("#app, #layer")) return null;
+  if (a.id) return { q: "#" + CSS.escape(a.id), s: a.selectionStart, e: a.selectionEnd };
+  if (!a.dataset || !a.dataset.a) return null;
+  return { q: ["a", "v", "i", "id", "mode", "name", "tab", "k", "t"].filter(k => a.dataset[k] != null).map(k => `[data-${k}="${CSS.escape(a.dataset[k])}"]`).join("") };
+}
+function focusBack(f) {
+  if (!f) return;
+  const el = document.querySelector(f.q); if (!el || el === document.activeElement) return;
+  try { el.focus({ preventScroll: true }); if (f.s != null && el.setSelectionRange) el.setSelectionRange(f.s, f.e); } catch (e) { /* facultatif */ }
+}
+// Bouton retour d'Android (ou geste) : il ferme l'écran ouvert au lieu de quitter l'appli.
+function layerHistory() {
+  if (S.layer && !layerHistory.on) { layerHistory.on = true; try { history.pushState({ ysLayer: 1 }, ""); } catch (e) { layerHistory.on = false; } }
+  else if (!S.layer && layerHistory.on) { layerHistory.on = false; layerHistory.skip = true; try { history.back(); } catch (e) { layerHistory.skip = false; } }
+}
+window.addEventListener("popstate", () => {
+  if (layerHistory.skip) { layerHistory.skip = false; return; }
+  if (!layerHistory.on) return;
+  layerHistory.on = false;
+  if (!S.layer) return;
+  // Une partie en cours ne se ferme pas par mégarde : on demande d'abord.
+  if (S.layer.type === "game" && S.game && S.game.phase !== "end") { S.game.askQuit = true; render(true); return; }
+  ACT["close-layer"](); render(true);
+});
 function renderNow(force) {
   const ae = document.activeElement;
   const typing = ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT" || ae.tagName === "SELECT");
@@ -6690,18 +6771,22 @@ function renderNow(force) {
     <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
+  document.documentElement.classList.toggle("ys-paused", !!S.layer);
+  layerHistory();
   questBurst();
-  if (!S.celebrated && !S.layer && celebrationMsg()) { S.celebrated = true; setTimeout(() => { Buddies.celebrate(celebrationMsg()); Sfx.play("fanfare"); }, 1400); }
+  const cel = celebrationMsg(), celKey = todayStr() + ":" + cel;
+  if (cel && !S.layer && S.celebrated !== celKey && lsGet("entre-nous:celebrated") !== celKey) { S.celebrated = celKey; lsSet("entre-nous:celebrated", celKey); setTimeout(() => { Buddies.celebrate(cel); Sfx.play("fanfare"); }, 1400); }
   sigCheck();
   if (!S.layer) { layer.innerHTML = ""; return; }
   const key = S.layer.type + (S.game ? S.game.i + S.game.phase : "")
     + (S.arc ? S.arc.game + S.arc.i + S.arc.phase + (S.arc.round || "") : "")
     + (S.layer.type === "conte" && S.cx ? S.cx.view + (S.cx.id || "") + (cxStory() ? cxSteps(cxStory()).length : "") + (cxBusy() || S.cx.pitching ? "b" : "") + (S.cx.ri || "") : "")
     + (S.layer.type === "live" && Live.state ? "lv" + Live.state.startAt + (Live.state.i || 0) + (Live.state.node || "") + (Live.state.round || "") : "") + (S.story ? S.story.id + S.story.node + S.story.phase : "");
-  const prev = layer.firstElementChild, keep = prev && prev.dataset.key === key ? prev.scrollTop : 0;
+  const prev = layer.firstElementChild, keep = prev && prev.dataset.key === key ? prev.scrollTop : 0, fresh = !prev;
+  const fsel = focusSel();
   let html = "";
   if (S.layer.type === "setup") html = setupView();
-  else if (S.layer.type === "game") html = gameView();
+  else if (S.layer.type === "game") html = (S.game && S.game.askQuit ? `<div class="confirm" role="alert"><span>Quitter la partie ?</span><button class="btn" data-a="g-quit">Quitter</button><button class="btn ghost" data-a="g-stay">Continuer</button></div>` : "") + gameView();
   else if (S.layer.type === "defis") html = defisView();
   else if (S.layer.type === "sheet") html = sheetView();
   else if (S.layer.type === "arcade") html = arcadeView();
@@ -6711,8 +6796,10 @@ function renderNow(force) {
   else if (S.layer.type === "tresors") html = tresorsView();
   else if (S.layer.type === "onboard") html = onboardView();
   else if (S.layer.type === "conte") html = conteView();
-  layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
+  layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" tabindex="-1" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
+  // Un écran qui s'ouvre prend le focus (lecteurs d'écran, clavier) ; sinon on rend le focus là où il était.
+  if (fresh) { try { layer.firstElementChild.focus({ preventScroll: true }); } catch (e) { /* facultatif */ } } else focusBack(fsel);
   questBurst();
 }
 
@@ -6769,6 +6856,7 @@ const ACT = {
   "daily-skip"() { lsSet("entre-nous:daily-skip", todayStr()); },
   "daily-unskip"() { lsSet("entre-nous:daily-skip", ""); },
   "g-quit"() { quitGame(); },
+  "g-stay"() { if (S.game) S.game.askQuit = false; },
   "g-skip"() { nextCard(); },
   "g-next"() { nextCard(); },
   "g-step"(d) { S.game.phase = d.v; },
@@ -7181,7 +7269,7 @@ document.addEventListener("click", e => {
   if (r !== false) render(true);
 });
 document.addEventListener("input", e => {
-  if (e.target.matches("[data-d]")) S.drafts[e.target.id] = e.target.value;
+  if (e.target.matches("[data-d]")) { S.drafts[e.target.id] = e.target.value; saveDrafts(); }
   if (e.target.id === "lv-g") {
     S.lvGuess = +e.target.value;
     const n = document.getElementById("needle"); if (n) n.style.left = S.lvGuess + "%";
@@ -7192,7 +7280,7 @@ document.addEventListener("input", e => {
   }
 });
 document.addEventListener("change", e => {
-  if (e.target.matches("[data-d]")) S.drafts[e.target.id] = e.target.value;
+  if (e.target.matches("[data-d]")) { S.drafts[e.target.id] = e.target.value; saveDrafts(); }
   if (e.target.id === "pz-file" && e.target.files && e.target.files[0]) pzUpload(e.target.files[0]);
   if (e.target.id === "av-s") render(true);
 });
@@ -7211,6 +7299,7 @@ setInterval(() => {
 function start(data) {
   Store.loadLocal();
   if (data && data.S) S = { ...S, ...data.S };
+  loadDrafts();
   if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
     try { window.claude.hot.snapshot(() => ({ S: JSON.parse(JSON.stringify(S)) })); } catch (e) { /* facultatif */ }
   }
@@ -7231,6 +7320,13 @@ function start(data) {
   window.addEventListener("offline", () => toast("Hors ligne : tout reste lisible, vos changements partiront au retour du réseau."));
   window.addEventListener("online", () => { toast("De retour en ligne"); if (Shared.code() && !Store.db) Store.retrySoon(true); });
   setInterval(() => { document.documentElement.setAttribute("data-sky", skyNow()); Jeu.applyTheme(); }, 300000);
+  // À minuit : nouvelles quêtes, saison, anniversaire… l'accueil se met à jour tout seul.
+  const atMidnight = () => { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 5); setTimeout(() => { render(); atMidnight(); }, m - n); };
+  atMidnight();
+  document.addEventListener("visibilitychange", () => {
+    document.documentElement.classList.toggle("ys-hidden", document.hidden);
+    if (!document.hidden) { Buddies.wake(); render(); }
+  });
 }
 const hot = window.claude && window.claude.hot;
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
