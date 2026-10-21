@@ -8390,7 +8390,15 @@ document.addEventListener("change", e => {
   if (e.target.id === "av-s") render(true);
 });
 // Un lien d'invitation ouvert alors que le site est déjà affiché ne recharge pas la page.
+// Ouvert depuis une notification de l'iPhone : on arrive sur le centre de notifications.
+function openNotifs() {
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* facultatif */ }
+  if (S.layer && S.layer.type === "game") return;
+  S.layer = { type: "sheet", name: "notifs" }; render(true);
+}
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.ys === "notifs") openNotifs(); });
 window.addEventListener("hashchange", () => {
+  if (location.hash === "#notifs") return openNotifs();
   if (!Shared.available() || !/^#c-/.test(location.hash)) return;
   if (Shared.takeInvite()) Shared.reconnect(); else render(true);
 });
@@ -8405,6 +8413,7 @@ function start(data) {
   Store.loadLocal();
   if (data && data.S) S = { ...S, ...data.S };
   loadDrafts();
+  if (location.hash === "#notifs") setTimeout(openNotifs, 600);
   if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
     try { window.claude.hot.snapshot(() => ({ S: JSON.parse(JSON.stringify(S)) })); } catch (e) { /* facultatif */ }
   }

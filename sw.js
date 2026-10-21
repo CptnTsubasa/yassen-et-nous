@@ -2,7 +2,7 @@
    si le réseau ne répond pas en 3 secondes, la copie gardée s'affiche, et la nouvelle version
    prendra sa place à la prochaine ouverture. Le reste (icônes, polices, modules Firebase) sert la copie
    en cache et se met à jour en arrière-plan. Les données et l'IA ne sont jamais mises en cache. */
-const V = "ys-v4", LIB = "ys-lib-v1";
+const V = "ys-v5", LIB = "ys-lib-v1";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "yassen.jpg"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== LIB).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -42,9 +42,11 @@ self.addEventListener("push", e => {
 });
 self.addEventListener("notificationclick", e => {
   e.notification.close();
-  const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
+  // Toucher une notification ouvre l'appli directement sur son centre de notifications.
+  const url = new URL("./#notifs", self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(ws => {
     const w = ws.find(c => c.url.startsWith(self.registration.scope));
-    return w ? w.focus() : self.clients.openWindow(url);
+    if (w) { w.postMessage({ ys: "notifs" }); return w.focus(); }
+    return self.clients.openWindow(url);
   }));
 });
