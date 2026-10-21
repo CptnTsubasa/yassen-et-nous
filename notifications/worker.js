@@ -5,7 +5,7 @@
    la clé privée ne quitte jamais Cloudflare. L'appli lit la clé publique sur /vapid.
 
    - POST /register { code }            : un téléphone a activé les notifications pour ce couple
-   - POST /notify { code, type, id }     : quelque chose vient d'arriver (petit mot, lettre, partie)
+   - POST /notify { code, type, id }     : quelque chose vient d'arriver (petit mot, geste, lettre, partie)
      Le Worker relit lui-même l'élément dans l'espace commun : il n'envoie que ce qui existe vraiment.
    - Tâches programmées : 9 h (lettres qui s'ouvrent, anniversaires) et 20 h 30 (rappel, si demandé).
 
@@ -15,7 +15,8 @@
 const DB = "https://y-s-14d43-default-rtdb.europe-west1.firebasedatabase.app";
 const SITE = "https://cptntsubasa.github.io/yassen-et-nous/";
 const TZ = "Europe/Paris";
-const DEFAULTS = { mot: true, lettre: true, partie: true, fete: true, quetes: false };
+const DEFAULTS = { mot: true, geste: true, lettre: true, partie: true, fete: true, quetes: false };
+const GESTES = { calin: ["🤗", "{f} t'envoie un câlin", "Un gros câlin à distance."], courage: ["💪", "{f} t'envoie plein de courage", "Tu vas y arriver."], pense: ["💭", "{f} pense à toi", "Juste comme ça, parce que."], espace: ["🌙", "{f} est là si tu as besoin", "Prends ton temps."] };
 const okCode = c => typeof c === "string" && /^[A-Za-z0-9]{24,64}$/.test(c);
 const okId = v => typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v);
 const other = k => (k === "a" ? "b" : "a");
@@ -120,6 +121,13 @@ async function onEvent(env, code, type, id) {
       ? { title: `💌 Un petit mot de ${nm(from)}`, body: x.text || "Ouvre Y&S pour le lire." }
       : { title: `📖 ${nm(from)} a raconté une anecdote`, body: x.text || "" });
   }
+  if (type === "geste") {
+    // id = le destinataire (a ou b) : son dernier geste reçu, s'il est tout frais.
+    const x = await rtdb(`couples/${code}/meta/signal/${id}`), g = x && GESTES[x.kind];
+    if (!g || (id !== "a" && id !== "b") || Date.now() - (+x.t || 0) > 600000 || !(await once(env, `sent:${code}:geste:${x.id}`))) return 0;
+    const from = x.from === "b" ? "b" : "a";
+    return notify(env, code, id, "geste", { title: `${g[0]} ${g[1].replace("{f}", nm(from))}`, body: g[2], tag: "geste" });
+  }
   if (type === "lettre") {
     const x = await rtdb(`couples/${code}/lettres/${id}`);
     if (!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.openOn || "") || Date.now() - (+x.createdAt || 0) > 86400000) return 0;
@@ -194,7 +202,7 @@ export default {
         return json({ ok: true });
       }
       if (url.pathname === "/notify") {
-        if (!["mot", "lettre", "partie"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
+        if (!["mot", "geste", "lettre", "partie"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
         return json({ ok: true, sent: await onEvent(env, b.code, b.type, b.id) });
       }
       return json({ error: "inconnu" }, 404);

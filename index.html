@@ -2377,7 +2377,7 @@ const Update = {
    envoie les notifications : l'appli lui signale ce qui vient d'arriver, il relit l'élément et prévient l'autre. */
 // Adresse du service Cloudflare (par exemple https://ys-notif.<ton-nom>.workers.dev).
 const NOTIF_URL = "https://ys-notif.m-steeven93190.workers.dev";
-const NOTIF_TYPES = [["mot", "Les petits mots", true], ["lettre", "Les lettres scellées et celles qui s'ouvrent", true], ["partie", "Les invitations à jouer à distance", true], ["fete", "Anniversaires et dates qui comptent", true], ["quetes", "Un rappel le soir si Yassen Jr. vous attend encore", false]];
+const NOTIF_TYPES = [["mot", "Les petits mots", true], ["geste", "Les câlins, pensées et encouragements", true], ["lettre", "Les lettres scellées et celles qui s'ouvrent", true], ["partie", "Les invitations à jouer à distance", true], ["fete", "Anniversaires et dates qui comptent", true], ["quetes", "Un rappel le soir si Yassen Jr. vous attend encore", false]];
 const unb64u = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)), c => c.charCodeAt(0));
 const notifPost = (path, body) => fetch(NOTIF_URL + path, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body) });
 const Push = {
@@ -2428,9 +2428,9 @@ const Push = {
 const Notify = {
   q() { try { const v = JSON.parse(lsGet("entre-nous:notifq") || "[]"); return Array.isArray(v) ? v.filter(isObj) : []; } catch (e) { return []; } },
   set(v) { lsSet("entre-nous:notifq", JSON.stringify(v.slice(-30))); },
-  ping(type, id) {
+  ping(type, id, wait) {
     if (!NOTIF_URL || Store.backend !== "shared" || !Shared.code()) return;
-    this.set([...this.q(), { type, id: id || "", code: Shared.code(), n: 0, at: Date.now() }]);
+    this.set([...this.q(), { type, id: id || "", code: Shared.code(), n: 0, at: Date.now(), ...(wait ? { w: wait } : {}) }]);
     setTimeout(() => this.flush(), 300);
   },
   async flush() {
@@ -2439,7 +2439,7 @@ const Notify = {
     const q = this.q(), keep = [], same = (x, y) => x.at === y.at && x.type === y.type && x.id === y.id;
     try {
       for (const it of q) {
-        if (it.id && Store.outbox.some(o => o.p.endsWith("/" + it.id))) { keep.push(it); continue; }
+        if ((it.id && Store.outbox.some(o => o.p.endsWith("/" + it.id))) || (it.w && Store.outbox.some(o => o.p === it.w))) { keep.push(it); continue; }
         if (Date.now() - it.at > 86400000 || it.n >= 5) continue;
         try { const r = await notifPost("/notify", { code: it.code, type: it.type, id: it.id }); if (!r.ok) { it.n++; keep.push(it); } }
         catch (e) { keep.push(it); }
@@ -6481,46 +6481,49 @@ const ago = t => {
 function notifItems() {
   const me = whoAmI(), o = me ? other(me) : "", by = x => x.by || x.from, mine = x => !me || by(x) === me;
   const recent = t => +t && Date.now() - t < 14 * 86400000, out = [];
-  const add = (t, icon, text, go, label, live) => out.push({ t: +t || 0, icon, text, go, label, live });
+  const add = (key, t, icon, text, go, label, live) => out.push({ key, t: Math.min(+t || 0, Date.now()), icon, text, go, label, live });
   const L = Live.state;
-  if (Store.backend === "shared" && L && Live.active() && L.by && L.by !== me) add(L.startAt, "🎲", `${nm(L.by)} t'invite à jouer : ${fr(liveTitle(L))}`, "live", "Rejoindre", true);
+  if (Store.backend === "shared" && L && Live.active() && L.by && L.by !== me) add("live:" + L.startAt, L.startAt, "🎲", `${nm(L.by)} t'invite à jouer : ${fr(liveTitle(L))}`, "live", "Rejoindre", true);
   Store.cols.capsule.forEach(x => {
     if (!recent(x.createdAt) || mine(x) || !by(x)) return;
-    if (x.kind === "mot") add(x.createdAt, "💌", `${nm(by(x))} t'a laissé un petit mot : « ${cleanTxt(x.text, 70)} »`, "mots", "Lire");
-    else if (x.kind === "anecdote") add(x.createdAt, "📖", `${nm(by(x))} a raconté une anecdote`, "mots", "Lire");
-    else if (x.kind === "souvenir") add(x.createdAt, "📸", `${nm(by(x))} a gardé un souvenir : « ${cleanTxt(x.question, 60)} »`, "album", "Voir");
-    else if (x.kind === "defi") add(x.createdAt, "🏁", `${nm(by(x))} a noté un défi relevé`, "album", "Voir");
+    const k = "cap:" + x.id;
+    if (x.kind === "mot") add(k, x.createdAt, "💌", `${nm(by(x))} t'a laissé un petit mot : « ${cleanTxt(x.text, 70)} »`, "mots", "Lire");
+    else if (x.kind === "anecdote") add(k, x.createdAt, "📖", `${nm(by(x))} a raconté une anecdote`, "mots", "Lire");
+    else if (x.kind === "souvenir") add(k, x.createdAt, "📸", `${nm(by(x))} a gardé un souvenir : « ${cleanTxt(x.question, 60)} »`, "album", "Voir");
+    else if (x.kind === "defi") add(k, x.createdAt, "🏁", `${nm(by(x))} a noté un défi relevé`, "album", "Voir");
   });
   Store.cols.lettres.forEach(l => {
     const from = l.from === "b" ? "b" : "a";
     if (me && from !== me) {
-      if (daysUntil(l.openOn) <= 0 && !S.openLetters[l.id]) add(parseDay(l.openOn).getTime() + 8 * 3600000, "✉️", `Une lettre de ${nm(from)} peut s'ouvrir${l.title ? ` : « ${cleanTxt(l.title, 50)} »` : ""}`, "lettres", "Ouvrir");
-      else if (recent(l.createdAt) && daysUntil(l.openOn) > 0) add(l.createdAt, "🔒", `${nm(from)} a scellé une lettre pour toi : elle s'ouvrira le ${fmtDay(l.openOn, { day: "numeric", month: "long" })}`, "lettres", "Voir");
+      if (daysUntil(l.openOn) <= 0 && daysUntil(l.openOn) > -7 && !S.openLetters[l.id]) add("lopen:" + l.id, parseDay(l.openOn).getTime(), "✉️", `Une lettre de ${nm(from)} peut s'ouvrir${l.title ? ` : « ${cleanTxt(l.title, 50)} »` : ""}`, "lettres", "Ouvrir");
+      else if (recent(l.createdAt) && daysUntil(l.openOn) > 0) add("lnew:" + l.id, l.createdAt, "🔒", `${nm(from)} a scellé une lettre pour toi : elle s'ouvrira le ${fmtDay(l.openOn, { day: "numeric", month: "long" })}`, "lettres", "Voir");
     }
   });
-  Store.cols.aventures.forEach(x => { if (recent(x.createdAt) && x.by && !mine(x)) add(x.createdAt, "🧭", `${nm(x.by)} a ajouté une aventure : « ${cleanTxt(x.title, 60)} »`, "aventures", "Voir"); });
-  Store.cols.contes.forEach(x => { if (recent(x.createdAt) && x.by && !mine(x)) add(x.createdAt, x.mode === "rpg" ? "⚔️" : "📚", `${nm(x.by)} a commencé ${x.mode === "rpg" ? "une épopée" : "un conte"} : « ${cleanTxt(x.title, 50)} »`, "conte:" + x.id, "Lire"); });
+  Store.cols.aventures.forEach(x => { if (recent(x.createdAt) && x.by && !mine(x)) add("av:" + x.id, x.createdAt, "🧭", `${nm(x.by)} a ajouté une aventure : « ${cleanTxt(x.title, 60)} »`, "aventures", "Voir"); });
+  Store.cols.contes.forEach(x => { if (recent(x.createdAt) && x.by && !mine(x)) add("cx:" + x.id, x.createdAt, x.mode === "rpg" ? "⚔️" : "📚", `${nm(x.by)} a commencé ${x.mode === "rpg" ? "une épopée" : "un conte"} : « ${cleanTxt(x.title, 50)} »`, "conte:" + x.id, "Lire"); });
   yjLog().forEach(e => {
     if (!recent(e.t) || !me) return;
-    if (e.w === o) add(e.t, "💬", `${nm(o)} a parlé à Yassen Jr. : « ${cleanTxt(e.x, 60)} »`, "yassen", "Voir");
-    else if (e.w === "y" && e.to === o) add(e.t, "🔥", `Yassen Jr. a répondu à ${nm(o)} : « ${cleanTxt(e.x, 60)} »`, "yassen", "Voir");
+    if (e.w === o) add("yj:" + e.id, e.t, "💬", `${nm(o)} a parlé à Yassen Jr. : « ${cleanTxt(e.x, 60)} »`, "yassen", "Voir");
+    else if (e.w === "y" && e.to === o) add("yj:" + e.id, e.t, "🔥", `Yassen Jr. a répondu à ${nm(o)} : « ${cleanTxt(e.x, 60)} »`, "yassen", "Voir");
   });
   const dl = (Store.meta.yj || {}).daily;
-  if (dl && dl.day === todayStr()) add(parseDay(dl.day).getTime() + 7 * 3600000, "🌟", `Le petit mot du jour de Yassen Jr. : « ${cleanTxt(dl.x, 80)} »`, "home", "Voir");
+  if (dl && dl.day === todayStr()) add("daily:" + dl.day, parseDay(dl.day).getTime(), "🌟", `Le petit mot du jour de Yassen Jr. : « ${cleanTxt(dl.x, 80)} »`, "home", "Voir");
   const mo = o && moodOf(o);
-  if (mo) add(mo.t, "🌤️", `${nm(o)} a partagé sa météo du cœur : ${MOOD_BY_ID[mo.m][1]}${mo.note ? ` (« ${cleanTxt(mo.note, 50)} »)` : ""}`, "home", "Voir");
+  if (mo) add("mood:" + mo.t, mo.t, "🌤️", `${nm(o)} a partagé sa météo du cœur : ${MOOD_BY_ID[mo.m][1]}${mo.note ? ` (« ${cleanTxt(mo.note, 50)} »)` : ""}`, "home", "Voir");
   const sg = me && (Store.meta.signal || {})[me];
-  if (sg && sg.from !== me && recent(sg.t) && own(SIGNALS, sg.kind)) add(sg.t, "🤗", fr(SIGNALS[sg.kind].toast.replace("{f}", nm(sg.from))), "home", "");
-  bdayToday().forEach(k => add(parseDay(todayStr()).getTime() + 6 * 3600000, "🎂", k === me ? "Joyeux anniversaire !" : `C'est l'anniversaire de ${nm(k)} aujourd'hui`, "home", ""));
+  if (sg && sg.from !== me && recent(sg.t) && own(SIGNALS, sg.kind)) add("sig:" + sg.id, sg.t, "🤗", fr(SIGNALS[sg.kind].toast.replace("{f}", nm(sg.from))), "home", "");
+  bdayToday().forEach(k => add("bday:" + k + todayStr(), parseDay(todayStr()).getTime(), "🎂", k === me ? "Joyeux anniversaire !" : `C'est l'anniversaire de ${nm(k)} aujourd'hui`, "home", ""));
   return out.sort((p, q) => (q.live ? 1 : 0) - (p.live ? 1 : 0) || q.t - p.t).slice(0, 40);
 }
-const notifSeen = () => +(lsGet("entre-nous:notif-seen") || 0);
-const notifUnread = () => notifItems().filter(n => n.live || n.t > notifSeen()).length;
+// Ce que ce téléphone a déjà vu, notification par notification.
+const notifKeys = () => { try { const v = JSON.parse(lsGet("entre-nous:notif-keys") || "[]"); return new Set(Array.isArray(v) ? v : []); } catch (e) { return new Set(); } };
+const notifIsNew = (n, keys) => !keys.has(n.key) && n.t > +(lsGet("entre-nous:notif-seen") || 0);
+const notifUnread = () => { const k = notifKeys(); return notifItems().filter(n => notifIsNew(n, k)).length; };
 function notifSheet() {
-  const items = notifItems(), seen = notifSeen();
-  setTimeout(() => lsSet("entre-nous:notif-seen", String(Date.now())), 0);
+  const items = notifItems(), keys = notifKeys(), fresh = new Set(items.filter(n => notifIsNew(n, keys)).map(n => n.key));
+  setTimeout(() => { const all = [...keys, ...items.map(n => n.key)]; lsSet("entre-nous:notif-keys", JSON.stringify([...new Set(all)].slice(-400))); }, 0);
   return `${layerHead("Notifications")}
-    ${items.length ? `<div class="notif-list">${items.map((n, i) => `<div class="notif${n.live ? " live" : ""}${n.t > seen ? " new" : ""}"><span class="notif-ic" aria-hidden="true">${n.icon}</span>
+    ${items.length ? `<div class="notif-list">${items.map((n, i) => `<div class="notif${n.live ? " live" : ""}${fresh.has(n.key) ? " new" : ""}"><span class="notif-ic" aria-hidden="true">${n.icon}</span>
       <div class="notif-body"><p>${esc(n.text)}</p><span class="small muted">${n.live ? "En cours" : ago(n.t)}</span></div>
       ${n.label ? `<button class="btn${n.live ? "" : " ghost"}" data-a="notif-go" data-i="${i}">${esc(n.label)}</button>` : ""}</div>`).join("")}</div>`
       : empty("Rien de nouveau pour l'instant", "Les petits mots, lettres, parties et souvenirs de l'autre apparaîtront ici.", "lettres")}
@@ -7705,6 +7708,8 @@ function sigSend(kind, text) {
   const me = whoAmI() || "a", to = other(me), payload = { kind, from: me, t: Date.now(), id: uid(), ...(text ? { text: text.slice(0, 240) } : {}) };
   if (Store.backend === "local") { setTimeout(() => Buddies.deliver(payload), 300); return; }
   Store.patchMeta("signal", { [to]: payload });
+  // Un câlin, du courage, une pensée : l'autre reçoit aussi une notification sur son iPhone.
+  if (kind !== "mot") Notify.ping("geste", to, "meta/signal");
   Buddies.sendFx(me);
 }
 function sigCheck() {
