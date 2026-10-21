@@ -2808,6 +2808,9 @@ function sheetView() {
     <div class="stack"><p class="lbl">Sons doux</p><div class="chips">
       <button class="chip" aria-pressed="${Sfx.on()}" data-a="sfx" data-v="1">Activés</button>
       <button class="chip" aria-pressed="${!Sfx.on()}" data-a="sfx" data-v="0">Coupés</button></div><p class="small muted">${esc(fr("De petits sons discrets sur les moments importants : une quête cochée, une lettre ouverte, un dé lancé, un achat. Sur Android, avec une légère vibration."))}</p></div>
+    <div class="stack"><p class="lbl">Bruitages des boutons</p><div class="chips">
+      <button class="chip" aria-pressed="${Sfx.taps()}" data-a="taps" data-v="1">Activés</button>
+      <button class="chip" aria-pressed="${!Sfx.taps()}" data-a="taps" data-v="0">Coupés</button></div><p class="small muted">${esc(fr("Un petit « tic » tout doux à chaque bouton (si les sons doux sont activés)."))}</p></div>
     <div class="stack"><p class="lbl">Musique d'ambiance</p><div class="chips">
       <button class="chip" aria-pressed="${Music.on()}" data-a="music-set" data-v="1">Activée</button>
       <button class="chip" aria-pressed="${!Music.on()}" data-a="music-set" data-v="0">Coupée</button></div><p class="small muted">${esc(fr("Une petite musique pendant les histoires (selon le genre), les parties de cartes, le puzzle, l'arcade et les défis. Jamais sur l'accueil."))}</p></div>
@@ -6768,8 +6771,16 @@ const Sfx = {
     src.connect(f); f.connect(g); g.connect(this.out); src.start(t);
   },
   buzz(p) { try { if (navigator.vibrate && this.on()) navigator.vibrate(p); } catch (e) { /* vibration indisponible */ } },
+  taps() { return lsGet("entre-nous:taps") !== "0"; },
+  // Le bruitage d'un bouton : seulement si l'action n'a pas déjà son propre son.
+  tap(el) {
+    if (!this.taps()) return;
+    const a = el.dataset.a || "", p = el.getAttribute("aria-pressed");
+    this.play(a === "tab" || a === "cap-seg" || a === "tr-seg" ? "tab" : /close|quit|flee|cancel|stay|uncheck|-no$|hide/.test(a) || el.dataset.v === "no" ? "close" : p === "true" ? "off" : p === "false" ? "on" : "tap");
+  },
   play(name) {
     if (!this.on() || !this.init()) return;
+    this.n = (this.n || 0) + 1;
     const c = this.ctx; if (c.state !== "running") c.resume().catch(() => {});
     const t = c.currentTime + 0.01;
     switch (name) {
@@ -6788,6 +6799,12 @@ const Sfx = {
       case "soft": this.tone(392, t, 0.4, "sine", 0.4); this.tone(523, t + 0.12, 0.5, "sine", 0.32); break;
       case "fanfare": [523, 659, 784, 1047].forEach((f, i) => this.tone(f, t + i * 0.11, 0.42, "triangle", 0.4)); this.buzz([20, 40, 20, 40, 40]); break;
       case "whoosh": this.noise(t, 0.3, 0.3, 800, "bandpass"); break;
+      // Bruitages des boutons : très courts et très doux.
+      case "tap": this.tone(1250, t, 0.045, "sine", 0.22, 900); break;
+      case "tab": this.tone(720, t, 0.06, "triangle", 0.2, 560); break;
+      case "close": this.tone(560, t, 0.08, "sine", 0.2, 340); break;
+      case "on": this.tone(880, t, 0.05, "sine", 0.18); this.tone(1320, t + 0.05, 0.07, "sine", 0.15); break;
+      case "off": this.tone(1100, t, 0.05, "sine", 0.15); this.tone(740, t + 0.05, 0.07, "sine", 0.13); break;
     }
   }
 };
@@ -7424,6 +7441,7 @@ const ACT = {
   "sig-send"(d) { if (!SIGNALS[d.v] || !whoAmI()) return; sigSend(d.v); Sfx.play("heart"); toast(`${SIGNALS[d.v].sent} à ${nm(other(whoAmI()))}`); },
   "mot-live"() { lsSet("entre-nous:motlive", lsGet("entre-nous:motlive") === "1" ? "0" : "1"); },
   sfx(d) { lsSet("entre-nous:sfx", d.v); if (d.v === "1") Sfx.play("chime"); },
+  taps(d) { lsSet("entre-nous:taps", d.v); if (d.v === "1") Sfx.play("on"); },
   "save-mot"() {
     const t = draft("mot-t").trim(); if (!t) { toast("Le mot est encore vide."); return; }
     const from = draft("mot-f", whoAmI() || "a"), live = S.mot === "mot" && lsGet("entre-nous:motlive") === "1" && Store.backend !== "local";
@@ -7504,8 +7522,9 @@ document.addEventListener("click", e => {
   e.preventDefault();
   if (Music.ctx && Music.ctx.state === "suspended" && Music.theme) Music.ctx.resume();
   // Une action qui renvoie false anime seulement ce qui est déjà affiché.
-  let r;
+  let r; const n0 = Sfx.n;
   try { r = fn(t.dataset, t); } catch (err) { console.error(err); toast("Oups, ça n'a pas marché. Réessaie dans un instant."); }
+  if (Sfx.n === n0) Sfx.tap(t);
   if (r !== false) render(true);
 });
 document.addEventListener("input", e => {
