@@ -1637,7 +1637,7 @@ const Store = {
       if (e && e.code === "invalid_argument") { this.goLocal(); render(true); } else this.fail(e);
     });
   },
-  ack(op) { const n = this.outbox.length; this.outbox = this.outbox.filter(x => x.k !== op.k); if (this.outbox.length !== n) this.saveOutbox(); },
+  ack(op) { const n = this.outbox.length; this.outbox = this.outbox.filter(x => x.k !== op.k); if (this.outbox.length !== n) { this.saveOutbox(); Notify.flush(); } },
   epoch() { return +((this.meta.space || {}).epoch) || 0; },
   write(op) {
     op = { ...op, k: uid(), ep: this.epoch() };
@@ -1737,7 +1737,7 @@ const Store = {
   },
   add(col, data) {
     data = { ...data, createdAt: Date.now() };
-    const id = this.db ? this.db.collection(col).doc().id : uid();
+    const id = this.lastId = this.db ? this.db.collection(col).doc().id : uid();
     const p = this.write({ p: col + "/" + id, o: "set", d: data });
     Jeu.onAdd(col, data);
     return p;
@@ -2186,26 +2186,33 @@ const Update = {
 
 /* ───────────────────────── Notifications ─────────────────────────
    Avec l'appli installée (iPhone : iOS 16.4 ou plus), chacun peut recevoir une notification pour un petit
-   mot, une lettre, une invitation à jouer… Le téléphone donne son adresse de notification (un « jeton »)
-   à l'espace commun (push/<a|b>/<id>) ; un service Firebase envoie les notifications. */
-// Clé publique « Web Push » (console Firebase → Paramètres du projet → Cloud Messaging → Certificats push web).
-const PUSH_VAPID = "";
+   mot, une lettre, une invitation à jouer… Chaque téléphone s'abonne (notifications Web standard) et range
+   son abonnement dans l'espace commun (push/<a|b>/<id>). Un petit service Cloudflare (notifications/worker.js)
+   envoie les notifications : l'appli lui signale ce qui vient d'arriver, il relit l'élément et prévient l'autre. */
+// Adresse du service Cloudflare (par exemple https://ys-notif.<ton-nom>.workers.dev).
+const NOTIF_URL = "";
 const NOTIF_TYPES = [["mot", "Les petits mots", true], ["lettre", "Les lettres scellées et celles qui s'ouvrent", true], ["partie", "Les invitations à jouer à distance", true], ["fete", "Anniversaires et dates qui comptent", true], ["quetes", "Un rappel le soir si Yassen Jr. vous attend encore", false]];
+const unb64u = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)), c => c.charCodeAt(0));
+const notifPost = (path, body) => fetch(NOTIF_URL + path, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body) });
 const Push = {
-  supported() { return !!(PUSH_VAPID && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window); },
+  supported() { return !!(NOTIF_URL && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window); },
   on() { return this.supported() && Notification.permission === "granted" && !!lsGet("entre-nous:push"); },
   pref(k, t) { const v = ((((Store.meta.space || {}).notif || {})[k]) || {})[t]; return typeof v === "boolean" ? v : NOTIF_TYPES.find(x => x[0] === t)[2]; },
-  async token() {
-    const reg = await navigator.serviceWorker.ready;
-    const [A, M] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-messaging.js`)]);
-    const app = A.getApps()[0] || A.initializeApp(FIREBASE);
-    return { M, msg: M.getMessaging(app), t: await M.getToken(M.getMessaging(app), { vapidKey: PUSH_VAPID, serviceWorkerRegistration: reg }) };
+  // L'abonnement de ce téléphone (créé si besoin) ; renouvelé si la clé du service a changé.
+  async sub(create) {
+    const reg = await navigator.serviceWorker.ready, key = (await (await fetch(NOTIF_URL + "/vapid")).json()).key;
+    let sb = await reg.pushManager.getSubscription();
+    if (sb && lsGet("entre-nous:push-key") !== key) { await sb.unsubscribe().catch(() => {}); sb = null; }
+    if (!sb && create) sb = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: unb64u(key) });
+    if (sb) lsSet("entre-nous:push-key", key);
+    return sb;
   },
-  async save(me, t) {
-    const key = hashStr(t), old = lsGet("entre-nous:push");
-    if (old && old !== key) Store.db.doc(`push/${me}/${old}`).delete().catch(() => {});
-    await Store.db.doc(`push/${me}/${key}`).set({ t, at: Date.now() });
-    lsSet("entre-nous:push", key);
+  async save(me, sb) {
+    const j = sb.toJSON(), id = hashStr(j.endpoint), old = lsGet("entre-nous:push"), oldMe = lsGet("entre-nous:push-who");
+    if (old && (old !== id || (oldMe && oldMe !== me))) Store.db.doc(`push/${oldMe || me}/${old}`).delete().catch(() => {});
+    await Store.db.doc(`push/${me}/${id}`).set({ e: j.endpoint, p: j.keys.p256dh, a: j.keys.auth, at: Date.now() });
+    lsSet("entre-nous:push", id); lsSet("entre-nous:push-who", me);
+    notifPost("/register", { code: Shared.code() }).catch(() => {});
   },
   async enable() {
     const me = whoAmI();
@@ -2214,24 +2221,51 @@ const Push = {
     let perm = "default";
     try { perm = await Notification.requestPermission(); } catch (e) { perm = "denied"; }
     if (perm !== "granted") { toast("Notifications refusées : tu pourras les autoriser dans les Réglages de l'iPhone, rubrique Notifications."); render(true); return; }
-    try { const { t } = await this.token(); await this.save(me, t); toast("Notifications activées sur ce téléphone"); Sfx.play("chime"); }
+    try { await this.save(me, await this.sub(true)); toast("Notifications activées sur ce téléphone"); Sfx.play("chime"); }
     catch (e) { console.error(e); toast("Les notifications n'ont pas pu s'activer. Réessaie dans un instant."); }
     render(true);
   },
   async disable() {
-    const me = whoAmI(), key = lsGet("entre-nous:push");
-    try { if (me && key && Store.db) await Store.db.doc(`push/${me}/${key}`).delete(); const { M, msg } = await this.token(); await M.deleteToken(msg); } catch (e) { /* déjà retiré */ }
+    const me = lsGet("entre-nous:push-who") || whoAmI(), id = lsGet("entre-nous:push");
+    try { if (me && id && Store.db) await Store.db.doc(`push/${me}/${id}`).delete(); const sb = await this.sub(false); if (sb) await sb.unsubscribe(); } catch (e) { /* déjà retiré */ }
     lsSet("entre-nous:push", ""); toast("Plus de notifications sur ce téléphone"); render(true);
   },
-  // À chaque ouverture : le jeton peut changer, on garde l'espace commun à jour (sans rien demander).
+  // À chaque ouverture : l'abonnement peut changer, on garde l'espace commun à jour (sans rien demander).
   async refresh() {
     const me = whoAmI();
     if (!this.on() || !me || !Store.db) return;
-    try { const { t } = await this.token(); await this.save(me, t); } catch (e) { /* on réessaiera */ }
+    try { const sb = await this.sub(true); if (sb) await this.save(me, sb); } catch (e) { /* on réessaiera */ }
+  }
+};
+// Ce qui vient d'arriver est signalé au service, une fois l'élément bien arrivé dans l'espace commun
+// (après un passage hors ligne, le signal attend lui aussi).
+const Notify = {
+  q() { try { const v = JSON.parse(lsGet("entre-nous:notifq") || "[]"); return Array.isArray(v) ? v.filter(isObj) : []; } catch (e) { return []; } },
+  set(v) { lsSet("entre-nous:notifq", JSON.stringify(v.slice(-30))); },
+  ping(type, id) {
+    if (!NOTIF_URL || Store.backend !== "shared" || !Shared.code()) return;
+    this.set([...this.q(), { type, id: id || "", code: Shared.code(), n: 0, at: Date.now() }]);
+    setTimeout(() => this.flush(), 300);
+  },
+  async flush() {
+    if (this.busy || !NOTIF_URL || navigator.onLine === false || lsGet("entre-nous:notifq") === "[]") return;
+    this.busy = true;
+    const q = this.q(), keep = [], same = (x, y) => x.at === y.at && x.type === y.type && x.id === y.id;
+    try {
+      for (const it of q) {
+        if (it.id && Store.outbox.some(o => o.p.endsWith("/" + it.id))) { keep.push(it); continue; }
+        if (Date.now() - it.at > 86400000 || it.n >= 5) continue;
+        try { const r = await notifPost("/notify", { code: it.code, type: it.type, id: it.id }); if (!r.ok) { it.n++; keep.push(it); } }
+        catch (e) { keep.push(it); }
+      }
+    } finally {
+      this.set([...keep, ...this.q().filter(x => !q.some(y => same(x, y)))]);
+      this.busy = false;
+    }
   }
 };
 function notifPanel() {
-  if (!PUSH_VAPID) return "";
+  if (!NOTIF_URL) return "";
   const me = whoAmI(), head = `<h2 class="sec" id="h-notif">Notifications</h2>`;
   let body;
   if (isIOS() && !isInstalled()) body = `<p class="small">${esc(fr("Sur iPhone, les notifications marchent avec l'appli posée sur l'écran d'accueil."))}</p><button class="btn ghost" data-a="install">Installer Y&amp;S</button>`;
@@ -4025,7 +4059,7 @@ const Live = {
     if (!Store.db) { toast("Hors ligne : les parties à distance reviendront avec le réseau."); return; }
     const s = { ...state, by: whoAmI() || "a", startAt: Date.now(), updatedAt: Date.now(), ended: false };
     this.state = s; this.lastStart = s.startAt; S.lvRules = null; S.lvGuess = 50;
-    Store.db.doc("live/game").set(s).catch(e => Store.fail(e));
+    Store.db.doc("live/game").set(s).then(() => Notify.ping("partie"), e => Store.fail(e));
     S.layer = { type: "live" };
   },
   active() { const s = this.state; return !!(s && !s.ended && Date.now() - (s.updatedAt || 0) < 12 * 3600 * 1000); }
@@ -7361,7 +7395,7 @@ const ACT = {
   "save-mot"() {
     const t = draft("mot-t").trim(); if (!t) { toast("Le mot est encore vide."); return; }
     const from = draft("mot-f", whoAmI() || "a"), live = S.mot === "mot" && lsGet("entre-nous:motlive") === "1" && Store.backend !== "local";
-    Store.add("capsule", { kind: S.mot, text: t, from });
+    Store.add("capsule", { kind: S.mot, text: t, from }); Notify.ping("mot", Store.lastId);
     if (live && from === (whoAmI() || from)) sigSend("mot", t);
     Sfx.play("paper");
     clearDrafts("mot-t", "mot-f"); S.layer = null; S.tab = "capsule"; S.capSeg = "mots"; toast(live ? `Rangé dans la capsule, et en route vers ${nm(other(from))}` : "Rangé dans la capsule");
@@ -7394,7 +7428,7 @@ const ACT = {
     const m = draft("le-m").trim(), dte = draft("le-d");
     if (!m) { toast("Le message est encore vide."); return; }
     if (!dte || daysUntil(dte) < 1) { toast("Choisissez une date d'ouverture à partir de demain."); return; }
-    Store.add("lettres", { title: draft("le-t").trim(), message: m, from: draft("le-f", "a"), openOn: dte });
+    Store.add("lettres", { title: draft("le-t").trim(), message: m, from: draft("le-f", "a"), openOn: dte }); Notify.ping("lettre", Store.lastId);
     clearDrafts("le-t", "le-m", "le-f", "le-d"); S.layer = null; S.tab = "lettres"; Sfx.play("paper"); toast("Carte scellée jusqu'au " + fmtDay(dte));
   },
   "save-carte"() {
@@ -7493,7 +7527,7 @@ function start(data) {
   // Hors ligne : l'appli s'ouvre depuis le téléphone, et les changements partent au retour du réseau.
   if ("serviceWorker" in navigator && location.protocol === "https:" && /github\.io$/.test(location.hostname)) navigator.serviceWorker.register("sw.js").catch(() => {});
   window.addEventListener("offline", () => toast("Hors ligne : tout reste lisible, vos changements partiront au retour du réseau."));
-  window.addEventListener("online", () => { toast("De retour en ligne"); if (Shared.code() && !Store.db) Store.retrySoon(true); });
+  window.addEventListener("online", () => { toast("De retour en ligne"); Notify.flush(); if (Shared.code() && !Store.db) Store.retrySoon(true); });
   setInterval(() => { document.documentElement.setAttribute("data-sky", skyNow()); Jeu.applyTheme(); }, 300000);
   // À minuit : nouvelles quêtes, saison, anniversaire… l'accueil se met à jour tout seul.
   const atMidnight = () => { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 5); setTimeout(() => { render(); atMidnight(); }, m - n); };
@@ -7504,7 +7538,7 @@ function start(data) {
   });
   Update.check(false);
   setInterval(() => Update.check(false), 30 * 60000);
-  Store.connect().then(() => setTimeout(() => Push.refresh(), 3000));
+  Store.connect().then(() => setTimeout(() => { Push.refresh(); Notify.flush(); }, 3000));
 }
 const hot = window.claude && window.claude.hot;
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
