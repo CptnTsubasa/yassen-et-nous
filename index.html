@@ -1430,7 +1430,7 @@ function cxNormRpg(r) {
     return { cls: h.cls, stats: st, lvl: cInt(h.lvl, 1, 99, 1), xp: cInt(h.xp, 0, 99999, 0), pvMax, pv: cInt(h.pv, 0, pvMax, pvMax), pmMax, pm: cInt(h.pm, 0, pmMax, pmMax) };
   };
   const H = isObj(r.heroes) ? r.heroes : {};
-  return { heroes: { a: hero(H.a, "sentinelle"), b: hero(H.b, "druide") }, items: toArr(r.items).map(cxNormItem).filter(Boolean).slice(0, 20),
+  return { heroes: { a: hero(H.a, "sentinelle"), b: hero(H.b, "druide") }, items: toArr(r.items).map(cxNormItem).filter(Boolean).slice(0, BAG_MAX),
     gold: cInt(r.gold, 0, 1e6, 0), wins: cInt(r.wins, 0, 1e5, 0), bosses: cInt(r.bosses, 0, 1e5, 0) };
 }
 // Les documents « meta » : toujours des objets, avec quelques champs vérifiés.
@@ -3612,19 +3612,21 @@ const pzList = () => Object.entries((Store.meta.puzzle || {}).list || {}).filter
 const pzPhotos = () => pzList().map(id => [id, PZ_CACHE[id] || ""]);
 const pzPhotoId = id => (id && id !== "yassen" && pzList().includes(id) ? id : "yassen");
 const pzImage = id => { const k = pzPhotoId(id === undefined ? S.pzPhoto : id); return k === "yassen" ? PZ_IMG : PZ_CACHE[k] || PZ_IMG; };
+// Une photo introuvable n'est demandée qu'une fois par visite (sinon : demande, rendu, demande…).
+const PZ_MISSING = {};
 function pzLoadPhotos() {
   pzList().forEach(id => {
-    if (PZ_CACHE[id] || PZ_LOADING[id]) return;
+    if (PZ_CACHE[id] || PZ_LOADING[id] || PZ_MISSING[id]) return;
     if (!Store.db) { const v = lsGet("entre-nous:pz:" + id); if (okImg(v)) PZ_CACHE[id] = v; return; }
     PZ_LOADING[id] = true;
     let un = null, got = false;
     un = Store.db.doc("pzimg/" + id).onSnapshot(sn => {
       if (got) return; got = true;
       const v = sn.exists && sn.data() && sn.data().data;
-      if (okImg(v)) PZ_CACHE[id] = v;
+      if (okImg(v)) PZ_CACHE[id] = v; else PZ_MISSING[id] = true;
       PZ_LOADING[id] = false; setTimeout(() => { try { un && un(); } catch (e) { /* déjà fermé */ } }, 0);
       if (S.layer && S.layer.type === "puzzle") render();
-    }, () => { PZ_LOADING[id] = false; });
+    }, () => { PZ_LOADING[id] = false; PZ_MISSING[id] = true; });
   });
 }
 function pzSaveImg(id, data) {
@@ -3676,6 +3678,7 @@ function pzUpload(file) {
   im.src = url;
 }
 function startPuzzle() {
+  S.pzAsk = false;
   const n = S.pzSize || 3, N = n * n;
   let order;
   do { order = shuffle([...Array(N).keys()]); } while (order.every((p, i) => p === i));
@@ -3697,7 +3700,12 @@ function pzGrid(n, order, sel, done, act, img) {
 }
 function pzRemoteOpen() {
   if (S.pzUnsub || !Store.db) return;
-  S.pzUnsub = Store.db.doc("live/puzzle").onSnapshot(s => { S.pzLive = s.exists ? pzValid(s.data()) : null; render(); }, e => Store.fail(e));
+  S.pzUnsub = Store.db.doc("live/puzzle").onSnapshot(s => {
+    const prev = S.pzLive; S.pzLive = s.exists ? pzValid(s.data()) : null;
+    // Nouvelle partie ou autre taille de grille : la pièce choisie n'a plus de sens.
+    if (!S.pzLive || !prev || S.pzLive.startAt !== prev.startAt || S.pzLive.n !== prev.n) { S.pzSel = null; S.pzrAsk = false; }
+    render();
+  }, e => Store.fail(e));
 }
 function pzRemoteClose() {
   if (S.pzUnsub) { try { S.pzUnsub(); } catch (e) { /* déjà fermé */ } }
@@ -3730,7 +3738,8 @@ function pzRemoteView() {
     + (S.pzPeek ? `<img class="pz-img peek" src="${img}" alt="Modèle du puzzle">` : "")
     + `<div style="${mine ? "" : "opacity:.6"}">${pzGrid(L.n, L.order, S.pzSel, false, "pzr-tap", img)}</div>`
     + `<p class="small muted" style="text-align:center">${placed} pièce${placed > 1 ? "s" : ""} bien placée${placed > 1 ? "s" : ""} sur ${N}</p>
-      <div class="actions"><div class="row"><button class="btn ghost" data-a="pzr-peek">${S.pzPeek ? "Cacher le modèle" : "Voir le modèle"}</button><button class="btn line" data-a="pzr-new">Nouvelle partie</button></div></div>`;
+      <div class="actions"><div class="row"><button class="btn ghost" data-a="pzr-peek">${S.pzPeek ? "Cacher le modèle" : "Voir le modèle"}</button>${S.pzrAsk ? "" : `<button class="btn line" data-a="pzr-ask">Nouvelle partie</button>`}</div>
+      ${S.pzrAsk ? `<div class="confirm"><span>Abandonner cette partie ?</span><button class="btn" data-a="pzr-new">Oui</button><button class="btn ghost" data-a="pzr-ask" data-v="no">Continuer</button></div>` : ""}</div>`;
 }
 function puzzleView() {
   pzLoadPhotos();
@@ -3763,7 +3772,8 @@ function puzzleView() {
   return head + `<p class="lbl" style="text-align:center">À ${esc(nm(z.turn))} de jouer</p>`
     + (z.peek ? `<img class="pz-img peek" src="${img}" alt="Modèle du puzzle">` : "") + grid
     + `<p class="small muted" style="text-align:center">${placed} pièce${placed > 1 ? "s" : ""} bien placée${placed > 1 ? "s" : ""} sur ${N}</p>
-      <div class="actions"><div class="row"><button class="btn ghost" data-a="pz-peek">${z.peek ? "Cacher le modèle" : "Voir le modèle"}</button><button class="btn line" data-a="pz-start">Mélanger à nouveau</button></div></div>`;
+      <div class="actions"><div class="row"><button class="btn ghost" data-a="pz-peek">${z.peek ? "Cacher le modèle" : "Voir le modèle"}</button>${S.pzAsk ? "" : `<button class="btn line" data-a="pz-ask">Mélanger à nouveau</button>`}</div>
+      ${S.pzAsk ? `<div class="confirm"><span>Tout remélanger ?</span><button class="btn" data-a="pz-start">Oui</button><button class="btn ghost" data-a="pz-ask" data-v="no">Continuer</button></div>` : ""}</div>`;
 }
 
 /* ───────────────────────── Parties à distance ─────────────────────────
@@ -3852,7 +3862,9 @@ function liveCard(L) {
   return { c, g, slots: slotsOf(g) };
 }
 function liveSaveAlbum(L) {
-  const x = liveCard(L); if (!x) return;
+  // Une seule fois par carte, même si l'accord arrive deux fois (clic et écoute de la base).
+  const x = liveCard(L), key = L.startAt + ":" + L.i; if (!x || liveSaveAlbum.done === key) return;
+  liveSaveAlbum.done = key;
   const entries = x.slots.map(s => ({ who: s.who, label: x.g.flow === "guess" ? (s.key === "guess" ? `Prédiction de ${nm(s.who)}` : `Réponse de ${nm(s.who)}`) : nm(s.who), text: String(x.g.ans[s.key] || "") }));
   Store.add("capsule", { kind: "souvenir", question: x.c.text, cardId: x.c.id, entries });
   Live.answer("saved", "album", true);
@@ -4857,9 +4869,14 @@ const Buddies = {
     }), 1400);
   },
   // Un geste reçu de l'autre téléphone : son chibi vient le jouer en vrai.
+  // Un geste reçu attend la fin de la scène en cours (jusqu'à une minute), puis se joue ; il n'est
+  // marqué « vu » qu'au moment où il se joue vraiment.
   deliver(sg, tries = 0) {
-    if (!this.el || this.el.hidden) return;
-    if (this.busy && tries < 8) { setTimeout(() => this.deliver(sg, tries + 1), 1500); return; }
+    if (!this.el || this.el.hidden) { this.pending = null; return; }
+    this.pending = sg.id;
+    if (this.busy) { if (tries < 40) setTimeout(() => this.deliver(sg, tries + 1), 1500); else this.pending = null; return; }
+    this.pending = null;
+    if (sg.id) lsSet("entre-nous:sig", sg.id);
     const from = sg.from === "b" ? "b" : "a", F = this.b[from], T = this.b[other(from)], W = this.W(), sig = own(SIGNALS, sg.kind) ? SIGNALS[sg.kind] : null;
     if (sg.kind !== "mot" && !sig) return;
     this.busy = true;
@@ -5165,7 +5182,7 @@ const QUESTS = [
   { id: "defi", label: "Relever un défi", reward: 15 },
   { id: "aventure", label: "Ajouter une idée à vos aventures", reward: 10 },
   { id: "arcade", label: "Finir un mini-jeu de l'arcade", reward: 10 },
-  { id: "puzzle", label: "Reconstituer le puzzle de Yassen Jr.", reward: 15 }
+  { id: "puzzle", label: "Reconstituer un puzzle", reward: 15 }
 ];
 const QUEST_BONUS = 20;
 const SHOP = [
@@ -5323,15 +5340,24 @@ const Jeu = {
     if (!Store.ready || this.busy) return;
     this.busy = true;
     try {
-      if (S.game && S.game.phase === "end") this.event(S.game.mode === "daily" ? "rdv" : "partie");
-      if (S.arc && ["end", "win", "lost"].includes(S.arc.phase)) this.event("arcade");
+      // Seule la partie affichée compte : une partie finie restée en mémoire ne valide rien le lendemain.
+      const open = t => !!(S.layer && S.layer.type === t);
+      if (open("game") && S.game && S.game.phase === "end") {
+        if (S.game.mode === "daily") this.event("rdv");
+        else if ((S.game.seen || []).length >= 3) this.event("partie");
+      }
+      if (open("arcade") && S.arc && ["end", "win", "lost"].includes(S.arc.phase)) this.event("arcade");
       // À distance : seulement la partie affichée et récente, pas une vieille partie restée en mémoire.
       const L = S.layer && S.layer.type === "live" && Live.state && Date.now() - (Live.state.updatedAt || 0) < 3 * 3600 * 1000 ? Live.state : null;
       const storyEnd = L && L.kind === "story" && STORY[L.id] && (STORY[L.id].nodes[L.node] || {}).end;
-      if (L && (storyEnd || (L.ended && L.kind !== "story"))) { this.event(L.kind === "arcade" ? "arcade" : L.kind === "cards" ? "partie" : "fin"); this.flag("distance"); }
-      if (S.story && STORY[S.story.id] && (STORY[S.story.id].nodes[S.story.node] || {}).end) this.event("fin");
-      if (S.pz && S.pz.done) { this.event("puzzle"); if (S.pz.n === 5) this.flag("puzzle25"); }
-      if (S.pzRemote && S.pzLive && S.pzLive.done) { this.event("puzzle"); this.flag("distance"); if (S.pzLive.n === 5) this.flag("puzzle25"); }
+      if (L && !L.aborted && (storyEnd || (L.ended && L.kind !== "story"))) { this.event(L.kind === "arcade" ? "arcade" : L.kind === "cards" ? "partie" : "fin"); this.flag("distance"); }
+      if (open("story") && S.story && own(STORY, S.story.id) && (STORY[S.story.id].nodes[S.story.node] || {}).end) this.event("fin");
+      if (open("puzzle") && S.pz && S.pz.done) { this.event("puzzle"); if (S.pz.n >= 5) this.flag("puzzle25"); }
+      const PL = S.pzLive;
+      if (open("puzzle") && S.pzRemote && PL && PL.done && Date.now() - (+PL.startAt || 0) < 6 * 3600 * 1000) { this.event("puzzle"); this.flag("distance"); if (PL.n >= 5) this.flag("puzzle25"); }
+      // Les 3 quêtes faites (même à moitié sur chaque téléphone) : le bonus du jour, une seule fois.
+      const day = this.day(), dn = this.doneToday();
+      if (this.todayQuests().every(q => dn[q.id]) && !(((this.g().earn) || {})[day + "_bonus"])) { Store.patchMeta("game", { [`earn/${day}_bonus`]: QUEST_BONUS }); gainToast(`Les 3 quêtes du jour sont faites : +${QUEST_BONUS} cœurs !`); }
       if (Store.backend === "shared" && this.rawHearts() < 0) this.refund();
       const g = this.g(), s = this.stats(), patch = {}, got = [];
       ACH.forEach(a => { if (!(g.ach || {})[a.id] && a.test(s)) { patch["ach/" + a.id] = Date.now(); patch["earn/ach_" + a.id] = a.reward; got.push(a); } });
@@ -5652,6 +5678,8 @@ const AI = {
     try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
     const stop = new Promise((_, no) => { this.giveUp = no; });
     let last, busyTries = 0;
+    // Tous les modèles ont échoué il y a plus de 10 minutes : on retente depuis le premier.
+    if (this.mi >= this.models.length && Date.now() - (this.miAt || 0) > 600000) this.mi = 0;
     try {
       while (this.mi < this.models.length) {
         try {
@@ -5674,7 +5702,7 @@ const AI = {
           if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) {
             const rec = /use (?:models\/)?(gemini-[\w.-]+)/i.exec(msg);
             if (rec && !this.models.includes(rec[1])) this.models.splice(this.mi + 1, 0, rec[1]);
-            this.mi++; continue;
+            this.mi++; this.miAt = Date.now(); continue;
           }
           break;
         }
@@ -5746,9 +5774,9 @@ function cxCleanStep(o, st, last) {
   const rpg = st.mode === "rpg", decor = SCENE_KEYS.includes(o.decor) ? o.decor : pickOne(CX_GENRES[st.genre].decor);
   const step = { text, sc: decor };
   const pause = cleanTxt(o.pause, 220); if (pause && !rpg) step.talk = pause;
-  if (last || o.fin === true) { step.end = cleanTxt(o.titreFin, 60) || "Et ils vécurent… ensemble"; step.choices = []; return step; }
+  if (last) { step.end = cleanTxt(o.titreFin, 60) || "Et ils vécurent… ensemble"; step.choices = []; return step; }
   step.choices = (Array.isArray(o.choix) ? o.choix : []).slice(0, 3).map(c => {
-    const t = cleanTxt(c && (c.texte || c.text), 110);
+    const t = cleanTxt(typeof c === "string" ? c : c && (c.texte || c.text), 110);
     if (!t) return null;
     const ch = { t };
     if (rpg && CX_STATS[c.stat]) { ch.stat = c.stat; ch.dc = clampN(c.difficulte, 6, 18, 12); }
@@ -5907,7 +5935,7 @@ const RPG_CLASSES = {
     spell: { name: "Chant vif", cost: 2, kind: "song", desc: "Soigne un peu vous deux et renforce le prochain coup de l'autre." }, special: { name: "Ballade", kind: "lull", desc: "L'ennemi s'endort et passe son tour." },
     icon: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>' }
 };
-const RPG_POINTS = 4, RPG_CAP = 7;
+const RPG_POINTS = 4, RPG_CAP = 7, BAG_MAX = 20;
 const rpgIcon = (path, cls = "") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 const STAT_ICON = { force: '<path d="M6 12h12M4 9v6M20 9v6M7 8v8M17 8v8"/>', agilite: '<path d="M4 17c4 0 5-10 9-10s5 6 7 6"/><path d="M17 4l3 3-3 3"/>', esprit: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/>', charme: '<path d="M12 20l-7-7a4.2 4.2 0 0 1 7-4.6A4.2 4.2 0 0 1 19 13z"/>' };
 const d20 = () => 1 + Math.floor(Math.random() * 20), dN = n => 1 + Math.floor(Math.random() * n);
@@ -5923,8 +5951,8 @@ function rpgUseItem(st, idx, target, F) {
   const it = (st.rpg.items || [])[idx]; if (!it) return "";
   const H = st.rpg.heroes, t = H[target], v = +it.valeur || 1;
   let msg = "";
-  if (it.type === "potion") { if (t.pv <= 0 && !F) return ""; const g = 12 + 4 * v; t.pv = Math.min(t.pvMax, Math.max(t.pv, 0) + g); msg = `${nm(target)} boit ${it.nom} : +${g} PV.`; }
-  else if (it.type === "ether") { const g = 6 + 2 * v; t.pm = Math.min(t.pmMax, t.pm + g); msg = `${nm(target)} retrouve ${g} PM.`; }
+  if (it.type === "potion") { if (t.pv <= 0 || t.pv >= t.pvMax) return ""; const g = 12 + 4 * v; t.pv = Math.min(t.pvMax, Math.max(t.pv, 0) + g); msg = `${nm(target)} boit ${it.nom} : +${g} PV.`; }
+  else if (it.type === "ether") { if (t.pv <= 0 || t.pm >= t.pmMax) return ""; const g = 6 + 2 * v; t.pm = Math.min(t.pmMax, t.pm + g); msg = `${nm(target)} retrouve ${g} PM.`; }
   else if (it.type === "plume") { if (t.pv > 0) return ""; t.pv = Math.ceil(t.pvMax / 2); msg = `${it.nom} : ${nm(target)} se relève !`; }
   else if (it.type === "bombe" && F) { const dmg = 10 + 4 * v; F.enemy.pv = Math.max(0, F.enemy.pv - dmg); F.fx.push({ on: "foe", kind: "dmg", v: dmg }); msg = `${it.nom} explose : ${dmg} dégâts !`; }
   else return "";
@@ -5940,6 +5968,9 @@ function rpgStartFight(st, enemy) {
 function rpgLog(F, msg) { F.log.push(msg); if (F.log.length > 6) F.log.shift(); }
 function rpgHeroAct(st, k, act, arg) {
   const F = S.fight, H = st.rpg.heroes, h = H[k], C = RPG_CLASSES[h.cls], e = F.enemy, tal = rpgBonus(st, "talisman"), buff = F.buff[k] || 0;
+  const was = { fx: F.fx, roll: F.roll, guard: F.guard[k] };
+  // Une action refusée (pas assez de PM, objet inutile…) ne coûte ni le bonus reçu ni la garde.
+  const refuse = () => { F.fx = was.fx; F.roll = was.roll; F.buff[k] = buff; F.guard[k] = was.guard; return false; };
   F.fx = []; F.roll = null; F.buff[k] = 0; F.guard[k] = false;
   const weak = s => (e.faiblesse === s ? 1.5 : 1);
   const hurt = (dmg, crit) => { dmg = Math.max(1, Math.round(dmg)); e.pv = Math.max(0, e.pv - dmg); F.fx.push({ on: "foe", kind: crit ? "crit" : "dmg", v: dmg }); F.fx.push({ on: k, kind: "lunge" }); return dmg; };
@@ -5950,7 +5981,7 @@ function rpgHeroAct(st, k, act, arg) {
     if (!F.roll.ok) { rpgLog(F, `${nm(k)} attaque… et manque !`); F.fx.push({ on: "foe", kind: "miss" }); }
     else { const d = hurt((4 + stat + dN(6) + rpgBonus(st, "arme") * 2) * (crit ? 2 : 1) * weak("force"), crit); rpgLog(F, `${nm(k)} frappe${crit ? " un coup critique" : ""} : ${d} dégâts${e.faiblesse === "force" ? " (point faible !)" : ""}.`); }
   } else if (act === "spell") {
-    const sp = C.spell; if (h.pm < sp.cost) return false;
+    const sp = C.spell; if (h.pm < sp.cost) return refuse();
     h.pm -= sp.cost;
     if (sp.kind === "bolt") { const r = d20(), tot = r + h.stats.esprit + tal + buff; F.roll = { v: r, tot, ok: r !== 1 && tot >= 9 + e.def };
       if (F.roll.ok) { const d = hurt((5 + 2 * h.stats.esprit + dN(6)) * weak("esprit")); rpgLog(F, `${nm(k)} lance ${sp.name} : ${d} dégâts !`); } else { rpgLog(F, `${sp.name} rate sa cible.`); F.fx.push({ on: "foe", kind: "miss" }); } }
@@ -5959,7 +5990,7 @@ function rpgHeroAct(st, k, act, arg) {
     else if (sp.kind === "taunt") { F.taunt = k; F.tauntN = 2; F.fx.push({ on: k, kind: "shield" }); rpgLog(F, `${nm(k)} attire toute l'attention de ${e.nom} !`); }
     else if (sp.kind === "song") { ["a", "b"].forEach(x => { if (H[x].pv > 0) { H[x].pv = Math.min(H[x].pvMax, H[x].pv + 5); F.fx.push({ on: x, kind: "heal", v: 5 }); } }); F.buff[other(k)] = 4; rpgLog(F, `${nm(k)} chante : +5 PV, et ${nm(other(k))} se sent pousser des ailes.`); }
   } else if (act === "special") {
-    if (F.specials[k]) return false;
+    if (F.specials[k]) return refuse();
     F.specials[k] = true;
     const sp = C.special;
     if (sp.kind === "shield") { F.shield = 2; ["a", "b"].forEach(x => F.fx.push({ on: x, kind: "shield" })); rpgLog(F, `${nm(k)} dresse un Rempart : vous êtes protégés.`); }
@@ -5974,7 +6005,7 @@ function rpgHeroAct(st, k, act, arg) {
     else if (!e.boss) { F.over = "calm"; F.fx.push({ on: "foe", kind: "love" }); rpgLog(F, `${e.nom} est touché par tant de gentillesse et s'en va, apaisé.`); }
     else { e.atk = Math.max(2, e.atk - 2); F.fx.push({ on: "foe", kind: "love" }); rpgLog(F, `${e.nom} est troublé : son attaque baisse !`); }
   } else if (act === "item") {
-    const msg = rpgUseItem(st, arg.i, arg.t || k, F); if (!msg) return false;
+    const msg = rpgUseItem(st, arg.i, arg.t || k, F); if (!msg) return refuse();
     if (/PV|relève/.test(msg)) F.fx.push({ on: arg.t || k, kind: "heal", v: "" });
     rpgLog(F, msg);
   } else if (act === "guard") { F.guard[k] = true; h.pm = Math.min(h.pmMax, h.pm + 3); F.fx.push({ on: k, kind: "shield" }); rpgLog(F, `${nm(k)} se met en garde (+3 PM).`); }
@@ -5986,7 +6017,8 @@ function rpgEnemyAct(st) {
   F.fx = []; F.roll = null;
   if (F.poison > 0) { const d = 3 + Math.floor(e.pvMax / 25); e.pv = Math.max(0, e.pv - d); F.poison--; F.fx.push({ on: "foe", kind: "dmg", v: d }); rpgLog(F, `Le poison ronge ${e.nom} : ${d} dégâts.`); if (e.pv <= 0) { F.over = "win"; return; } }
   if (e.boss && F.phase === 1 && e.pv <= e.pvMax / 2) { F.phase = 2; e.atk += 2; rpgLog(F, `${e.nom} entre dans une colère noire !`); F.fx.push({ on: "foe", kind: "rage" }); }
-  if (F.lulled) { F.lulled = false; rpgLog(F, `${e.nom} dort encore… et passe son tour.`); return; }
+  const tick = () => { if (F.shield > 0) F.shield--; if (F.tauntN > 0 && --F.tauntN === 0) F.taunt = null; };
+  if (F.lulled) { F.lulled = false; tick(); rpgLog(F, `${e.nom} dort encore… et passe son tour.`); return; }
   const armor = rpgBonus(st, "armure"), alive = ["a", "b"].filter(k => H[k].pv > 0);
   const hit = (k, base) => {
     let dmg = Math.max(1, base - armor);
@@ -6008,8 +6040,7 @@ function rpgEnemyAct(st) {
     if (r + e.atk < 8 + h.stats.agilite && r !== 20) { rpgLog(F, `${e.nom} attaque ${nm(k)}, qui esquive !`); F.fx.push({ on: k, kind: "dodge" }); }
     else { const d = hit(k, e.atk + dN(6) + (r === 20 ? e.atk : 0)); rpgLog(F, `${e.nom} attaque ${nm(k)} : −${d} PV${H[k].pv <= 0 ? `. ${nm(k)} est à terre !` : "."}`); }
   }
-  if (F.shield > 0) F.shield--;
-  if (F.tauntN > 0 && --F.tauntN === 0) F.taunt = null;
+  tick();
   if (!["a", "b"].some(k => H[k].pv > 0)) F.over = "lose";
 }
 // Après chaque action : à qui le tour ?
@@ -6031,12 +6062,14 @@ function rpgWin(st) {
   });
   if (e.boss) loot.push({ nom: "Talisman du héros", type: "talisman", valeur: 1 });
   if (Math.random() < 0.6) { const t = pickOne(["potion", "potion", "ether", "bombe", "plume"]); loot.push({ nom: ITEM_KINDS[t], type: t, valeur: 1 }); }
-  R.items = [...(R.items || []), ...loot].slice(0, 12); R.gold = (R.gold || 0) + 5 + Math.round(e.pvMax / 5); R.wins = (R.wins || 0) + 1;
+  const room = BAG_MAX - (R.items || []).length;
+  if (loot.length > room) { rpgLog(F, `Sac plein : ${loot.slice(Math.max(0, room)).map(x => x.nom).join(", ")} reste par terre.`); loot.length = Math.max(0, room); }
+  R.items = [...(R.items || []), ...loot]; R.gold = (R.gold || 0) + 5 + Math.round(e.pvMax / 5); R.wins = (R.wins || 0) + 1;
   if (e.boss) R.bosses = (R.bosses || 0) + 1;
   return { gain, loot, ups };
 }
 // Défaite : personne n'est puni. On se relève, et l'histoire continue autrement.
-function rpgRise(st) { ["a", "b"].forEach(k => { const h = st.rpg.heroes[k]; h.pv = h.pvMax; h.pm = h.pmMax; }); }
+function rpgRise(st, f = 1) { ["a", "b"].forEach(k => { const h = st.rpg.heroes[k]; h.pv = Math.max(h.pv, Math.ceil(h.pvMax * f)); h.pm = Math.max(h.pm, Math.ceil(h.pmMax * f)); }); }
 
 /* Les créatures, dessinées en SVG : couleur, taille et allure de boss selon l'ennemi. */
 function monsterSvg(kind, boss, hue) {
@@ -6112,7 +6145,7 @@ function cxHud(st) {
     return `<div class="cx-hchip${h.pv <= 0 ? " ko" : ""}" style="${cvar(C.c)}"><span class="cx-hav">${avatarSvg(k)}</span><span class="cx-hinfo"><b>${esc(nm(k))} <small>${esc(C.name)} · niv. ${h.lvl}</small></b>${cxBar(h.pv, h.pvMax, "pv")}${cxBar(h.pm, h.pmMax, "pm")}<small>${h.pv}/${h.pvMax} PV · ${h.pm}/${h.pmMax} PM</small></span></div>`; }).join("")}
     <button class="cx-bag" data-a="cx-bag" aria-expanded="${!!S.cx.bag}">${rpgIcon('<path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/>')}<span>${(R.items || []).length}</span></button></div>
   ${S.cx.bag ? `<div class="panel cx-bagp"><h2 class="sec">Votre sac · ${R.gold || 0} pièces d'or</h2>${(R.items || []).length ? `<div class="cx-items">${R.items.map((it, i) => `<div class="cx-item"><span class="cx-it ${it.type}" aria-hidden="true"></span><span><b>${esc(it.nom)}</b><small>${esc(ITEM_KINDS[it.type])}${["arme", "armure", "talisman"].includes(it.type) ? ` · +${it.valeur} ${it.type === "arme" ? "dégâts" : it.type === "armure" ? "protection" : "à tous les jets"}` : ""}</small></span>
-    ${["potion", "ether", "plume"].includes(it.type) ? `<span class="row">${["a", "b"].map(k => `<button class="chip" data-a="cx-use" data-i="${i}" data-t="${k}">${esc(nm(k))}</button>`).join("")}</span>` : ""}</div>`).join("")}</div>` : `<p class="small muted">Le sac est vide.</p>`}</div>` : ""}`;
+    ${["potion", "ether"].includes(it.type) ? `<span class="row">${["a", "b"].map(k => `<button class="chip" data-a="cx-use" data-i="${i}" data-t="${k}">${esc(nm(k))}</button>`).join("")}</span>` : ""}</div>`).join("")}</div>` : `<p class="small muted">Le sac est vide.</p>`}</div>` : ""}`;
 }
 function conteView() {
   const cx = S.cx, v = cx.view;
@@ -6392,7 +6425,8 @@ const CX_ACT = {
   },
   "cx-loot"() {
     let it;
-    cxCommit((u, last) => { it = last.event.item; u.rpg.items = [...(u.rpg.items || []), it].slice(0, 12); last.done = "ok"; last.outcome = `ils trouvent ${it.nom}`; });
+    const st = cxStory(); if (st && st.rpg && (st.rpg.items || []).length >= BAG_MAX) { toast(`Le sac est plein (${BAG_MAX} objets) : utilisez-en un d'abord.`); return; }
+    cxCommit((u, last) => { it = last.event.item; u.rpg.items = [...(u.rpg.items || []), it]; last.done = "ok"; last.outcome = `ils trouvent ${it.nom}`; });
     if (it) gainToast(`${it.nom} rejoint votre sac !`);
   },
   "cx-bag"() { S.cx.bag = !S.cx.bag; },
@@ -6405,7 +6439,7 @@ const CX_ACT = {
     const st = cxStory(), s = cxSteps(st)[cxSteps(st).length - 1]; if (!s || !s.event || s.event.type !== "combat") return;
     const copy = cxCopy(st);
     rpgStartFight(copy, s.event.enemy);
-    Object.assign(S.fight, { st: copy, sc: s.sc, seq: 1, drawn: 0 });
+    Object.assign(S.fight, { st: copy, sc: s.sc, seq: 1, drawn: 0, orig: cxCopy(s.event.enemy) });
     S.cx.view = "fight";
   },
   "cx-menu"(d) { if (S.fight) S.fight.menu = d.v || null; },
@@ -6417,17 +6451,22 @@ const CX_ACT = {
     rpgNextTurn(F.st);
     if (F.turn === "enemy") cxEnemySoon();
   },
-  "cx-retry"() { const F = S.fight; if (!F) return; rpgRise(F.st); const e = { ...F.enemy, pv: F.enemy.pvMax }; const sc = F.sc; rpgStartFight(F.st, e); Object.assign(S.fight, { st: F.st, sc, seq: 1, drawn: 0 }); },
+  "cx-retry"() {
+    // On repart de l'histoire telle qu'avant le combat, face au même ennemi qu'au départ (sans sa colère).
+    const F = S.fight, base = cxStory(); if (!F || !base) return;
+    const st = cxCopy(base), sc = F.sc, orig = F.orig || { ...F.enemy, pv: F.enemy.pvMax };
+    rpgRise(st); rpgStartFight(st, cxCopy(orig)); Object.assign(S.fight, { st, sc, seq: 1, drawn: 0, orig });
+  },
   "cx-fight-end"() {
     const F = S.fight; if (!F) return;
     const e = F.enemy, res = F.over;
-    if (res === "lose") rpgRise(F.st);
+    if (res === "lose") rpgRise(F.st, 0.5);
     cxCommit((u, last) => { u.rpg = F.st.rpg; last.done = res === "lose" ? "lose" : res;
       last.outcome = res === "win" ? `victoire contre ${e.nom}` : res === "calm" ? `${e.nom} apaisé par la douceur des héros` : `défaite face à ${e.nom}, mais ils se relèvent ensemble et trouvent une autre voie`; });
     S.fight = null; S.cx.view = "read";
     if (res === "win" && e.boss) gainToast(`${e.nom} est vaincu !`);
   },
-  "cx-flee"() { S.fight = null; S.cx.view = "read"; },
+  "cx-flee"() { if (S.fight && S.fight.over) return ACT["cx-fight-end"](); S.fight = null; S.cx.view = "read"; },
   "cx-replay"() { S.cx.view = "replay"; S.cx.ri = 0; },
   "cx-ri"(d) { S.cx.ri = Math.max(0, (S.cx.ri || 0) + +d.v); const L = document.querySelector("#layer .layer"); if (L) L.scrollTop = 0; },
   "cx-album"() {
@@ -6560,8 +6599,7 @@ function sigCheck() {
   const seen = lsGet("entre-nous:sig");
   if (seen === s.id) return;
   if (Date.now() - (+s.t || 0) > 6 * 3600 * 1000) { lsSet("entre-nous:sig", s.id); return; }
-  if (!Buddies.el || Buddies.el.hidden) return;
-  lsSet("entre-nous:sig", s.id);
+  if (!Buddies.el || Buddies.el.hidden || Buddies.pending === s.id) return;
   Buddies.deliver(s);
 }
 
@@ -6720,7 +6758,7 @@ const ACT = {
     if (S.pzRemote) pzRemoteClose();
     if (S.layer && S.layer.type === "game") return quitGame();
     if (S.layer && S.layer.type === "defis" && S.dfSeen.length) flushSeen(S.dfSeen, false);
-    S.layer = null; S.editAv = null; S.fromOb = false; S.fight = null; S.invite = null;
+    S.layer = null; S.editAv = null; S.fromOb = false; S.fight = null; S.invite = null; S.arc = null; S.story = null; S.pz = null;
   },
   setup(d) { S.setup[d.k] = d.k === "dur" ? +d.v : d.v; },
   start() { if (S.setup.style === "distance" && Store.backend === "shared") startLiveCards(S.setup); else startGame(S.setup); },
@@ -6822,7 +6860,7 @@ const ACT = {
   },
   "lv-join"() { S.layer = { type: "live" }; },
   "lv-rules-ok"() { if (Live.state) S.lvRules = Live.state.startAt; },
-  "lv-end"() { if (Live.state) Live.write({ ended: true }); S.layer = null; },
+  "lv-end"() { if (Live.state) Live.write({ ended: true, aborted: true }); S.layer = null; },
   "lv-replay"() {
     const L = Live.state; if (!L) return;
     if (L.kind === "cards") startLiveCards({ ...L.setup });
@@ -6844,8 +6882,9 @@ const ACT = {
   "lv-album-ok"() {
     const L = Live.state, me = whoAmI(); if (!L || !me) return;
     Live.answer("saved/ok", me, true);
-    const ok = (L.saved || {}).ok || {};
-    if (me === "a" && ok.b && !(L.saved || {}).album) liveSaveAlbum(L);
+    // L'album est enregistré par l'écoute de la base, sur le téléphone de « a » : une seule fois.
+    const sv = L.saved || {}, ok = sv.ok || {};
+    if (me === "a" && ok.a && ok.b && !sv.album) liveSaveAlbum(L);
   },
   "lv-idea"(d) {
     const L = Live.state, x = L && liveCard(L); if (!x) return;
@@ -6903,7 +6942,9 @@ const ACT = {
   "pzr-open"() { S.pzRemote = true; S.pzSel = null; S.pzrSetup = false; pzRemoteOpen(); },
   "pzr-close"() { pzRemoteClose(); },
   "pzr-me"(d) { claimMe(d.v); },
-  "pzr-new"() { S.pzrSetup = true; },
+  "pzr-new"() { S.pzrSetup = true; S.pzrAsk = false; },
+  "pzr-ask"(d) { S.pzrAsk = d.v !== "no"; },
+  "pz-ask"(d) { if (d.v !== "no" && S.pz && !S.pz.moves) { startPuzzle(); return; } S.pzAsk = d.v !== "no"; },
   "pzr-resume"() { S.pzrSetup = false; },
   "pzr-peek"() { S.pzPeek = !S.pzPeek; },
   "pzr-start"() {
