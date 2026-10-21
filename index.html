@@ -1078,6 +1078,10 @@ textarea[readonly] { font-size: 16px; }
 .layer:focus { outline: none; }
 .link { min-height: 40px; }
 .chip { min-height: 38px; }
+/* Arrêter une partie à deux */
+.stop-req { margin-top: 12px; text-align: center; border: 1.5px dashed var(--line); }
+.stop-req p { margin: 0 0 8px; }
+.stop-req .row { justify-content: center; }
 /* Centre de notifications */
 .icon-btn.bell { position: relative; }
 .bell .badge { position: absolute; top: 4px; right: 3px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #E0457A; color: #FFFFFF; font-size: .66rem; font-weight: 800; line-height: 17px; text-align: center; box-shadow: 0 0 0 2px var(--surface); animation: rpspop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
@@ -1717,6 +1721,7 @@ function cleanLive(v) {
   s.i = cInt(s.i, 0, 199, 0);
   ["score", "target", "round", "steps", "startAt", "updatedAt"].forEach(k => { if (k in s) s[k] = cNum(s[k], 0, 1e13, 0); });
   ["by", "first", "coinWho"].forEach(k => { if (k in s && s[k] !== "a" && s[k] !== "b") delete s[k]; });
+  if ("stopReq" in s && !(isObj(s.stopReq) && (s.stopReq.by === "a" || s.stopReq.by === "b"))) delete s.stopReq;
   if (s.kind === "cards") { if (!own(MODES, s.mode)) return null; s.deck = (s.deck || []).filter(id => own(CARDS, id)); }
   if (s.kind === "arcade") {
     if (!own(ARCADE, s.game)) return null;
@@ -4266,6 +4271,8 @@ const Live = {
         if (this.seen && st.by && st.by !== whoAmI() && !st.ended) toast(`${nm(st.by)} a lancé une partie à distance`);
         this.lastStart = st.startAt;
       }
+      if (was && st && was.startAt === st.startAt && !was.ended && st.ended && st.aborted && S.layer && S.layer.type === "live") { S.layer = null; toast("Partie arrêtée, d'un commun accord"); }
+      if (st && st.stopReq && st.stopReq.by !== whoAmI() && !(was && was.stopReq)) toast(`${nm(st.stopReq.by)} propose d'arrêter la partie`);
       this.seen = true;
       // L'accord pour l'album est enregistré par un seul téléphone, pour éviter les doublons.
       if (st && st.kind === "cards" && whoAmI() === "a") {
@@ -4307,6 +4314,14 @@ function liveBanner() {
   return `<section class="panel" style="${cvar(7)};background:var(--c);color:var(--on-c)"><p class="sec" style="color:inherit;opacity:.75">Partie à distance en cours</p>
     <p><b>${esc(fr(liveTitle(L)))}</b>${L.by ? ` · lancée par ${esc(nm(L.by))}` : ""}</p>
     <div class="row"><button class="btn" data-a="lv-join">Rejoindre la partie</button></div></section>`;
+}
+// Arrêter une partie à distance se décide à deux : l'un propose, l'autre accepte (ou on continue).
+function liveStopBox(L, me) {
+  const q = L.stopReq, o = me ? other(me) : "b";
+  if (!q || !me) return `<div class="joker" style="padding-top:8px"><button class="link" data-a="lv-stop-ask">Proposer d'arrêter la partie</button></div>`;
+  if (q.by === me) return `<div class="panel stop-req" role="status"><p>${esc(fr(`Tu as proposé d'arrêter. On attend la réponse de ${nm(o)}…`))}</p><button class="link" data-a="lv-stop-cancel">Annuler, on continue</button></div>`;
+  return `<div class="panel stop-req" role="alert"><p><b>${esc(fr(`${nm(q.by)} propose d'arrêter la partie.`))}</b></p>
+    <div class="row"><button class="btn" data-a="lv-stop-yes">D'accord, on arrête</button><button class="btn ghost" data-a="lv-stop-cancel">On continue</button></div></div>`;
 }
 const liveWaiting = (who, done) => `<p class="small muted" style="text-align:center">${done ? `${esc(nm(who))} a répondu ✓` : `${esc(nm(who))} est en train de répondre…`}</p>`;
 const liveSent = `<p class="verdict" style="font-size:1.4rem">Réponse envoyée ✓</p>`;
@@ -4508,7 +4523,7 @@ function liveView() {
     <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${cvar(7)}" data-a="pzr-me" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
     <p class="small muted" style="text-align:center">${esc(fr("Ce choix reste enregistré sur ce téléphone. Chacun fait le sien sur son propre téléphone."))}</p>`;
   const body = L.kind === "cards" ? liveCardsView(L, me, head) : L.kind === "arcade" ? liveArcadeView(L, me, head) : liveStoryView(L, me, head);
-  return body + (L.ended ? "" : `<div class="joker" style="padding-top:8px"><button class="link" data-a="lv-end">Arrêter la partie pour vous deux</button></div>`);
+  return body + (L.ended ? "" : liveStopBox(L, me));
 }
 
 /* ───────────────────────── Petits compagnons ─────────────────────────
@@ -8072,7 +8087,10 @@ const ACT = {
   },
   "lv-join"() { S.layer = { type: "live" }; },
   "lv-rules-ok"() { if (Live.state) S.lvRules = Live.state.startAt; },
-  "lv-end"() { if (Live.state) Live.write({ ended: true, aborted: true }); S.layer = null; },
+  "lv-stop-ask"() { const me = whoAmI(); if (Live.state && me) { Live.write({ stopReq: { by: me, t: Date.now() } }); toast(`Demande envoyée à ${nm(other(me))}`); } },
+  "lv-stop-cancel"() { if (Live.state) Live.write({ stopReq: null }); },
+  // Seul l'autre peut accepter : la partie s'arrête alors pour vous deux.
+  "lv-stop-yes"() { const L = Live.state, me = whoAmI(); if (!L || !L.stopReq || L.stopReq.by === me) return; Live.write({ ended: true, aborted: true, stopReq: null }); S.layer = null; toast("Partie arrêtée, d'un commun accord"); },
   "lv-replay"() {
     const L = Live.state; if (!L) return;
     if (L.kind === "cards") startLiveCards({ ...L.setup });
