@@ -1344,6 +1344,8 @@ const isObj = v => !!v && typeof v === "object" && !Array.isArray(v);
 const okId = v => typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v);
 const okTok = v => typeof v === "string" && /^[A-Za-z0-9_-]{0,64}$/.test(v);
 const okDay = v => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(parseDay(v));
+// La base renvoie parfois une liste sous forme d'objet { "0": …, "1": … } : on la remet en liste.
+const toArr = v => Array.isArray(v) ? v : isObj(v) ? Object.keys(v).filter(k => /^\d+$/.test(k)).sort((x, y) => x - y).map(k => v[k]) : [];
 const cStr = (v, n = 4000) => (typeof v === "string" ? v.slice(0, n) : typeof v === "number" && Number.isFinite(v) ? String(v) : "");
 const cNum = (v, a, b, d) => { v = +v; return Number.isFinite(v) ? Math.max(a, Math.min(b, v)) : d; };
 const cInt = (v, a, b, d) => Math.round(cNum(v, a, b, d));
@@ -1366,7 +1368,7 @@ function cleanItem(col, x) {
     const ok = t === "s" ? (o[k] = cStr(v), true) : t === "n" ? Number.isFinite(+v) && (o[k] = +v, true) : t === "t" ? okTok(v) : t === "d" ? okDay(v) : v === "a" || v === "b";
     if (!ok) delete o[k];
   }
-  if (col === "capsule") o.entries = (Array.isArray(x.entries) ? x.entries : []).filter(isObj).slice(0, 12).map(e => ({ who: e.who === "b" ? "b" : "a", label: cStr(e.label, 80), text: cStr(e.text) }));
+  if (col === "capsule") o.entries = toArr(x.entries).filter(isObj).slice(0, 12).map(e => ({ who: e.who === "b" ? "b" : "a", label: cStr(e.label, 80), text: cStr(e.text) }));
   if (col === "lettres" && !o.openOn) return null;
   if (col === "cartes" && (!own(POOL, o.cat) || !o.text)) return null;
   if (col === "contes") return cxNormalize(o);
@@ -1389,7 +1391,9 @@ function cxNormalize(st) {
   o.status = st.status === "done" ? "done" : "play";
   const sd = isObj(st.seed) ? st.seed : {};
   o.seed = { l: cInt(sd.l, 0, 99, 0), o: cInt(sd.o, 0, 99, 0), al: cInt(sd.al, 0, 99, 0), m: cInt(sd.m, 0, 99, 0), r: cInt(sd.r, 0, 1e6, 0) };
-  o.steps = (Array.isArray(st.steps) ? st.steps : []).filter(isObj).slice(0, 24).map(cxNormStep);
+  o.steps = toArr(st.steps).filter(isObj).slice(0, 24).map(cxNormStep);
+  if (isObj(st.gen) && typeof st.gen.by === "string") o.gen = { by: st.gen.by.slice(0, 64), n: cInt(st.gen.n, 0, 99, 0), at: cNum(st.gen.at, 0, 1e13, 0) }; else delete o.gen;
+  o.saved = !!st.saved; if (!o.saved) delete o.saved;
   if (o.mode === "rpg" && st.rpg != null) o.rpg = isObj(st.rpg) ? cxNormRpg(st.rpg) : undefined;
   if (o.rpg === undefined) delete o.rpg;
   return o;
@@ -1400,7 +1404,7 @@ function cxNormStep(s) {
   if (s.talk) o.talk = cStr(s.talk, 300);
   if (s.end) o.end = cStr(s.end, 80);
   if (typeof s.beat === "string" || typeof s.beat === "number") o.beat = s.beat;
-  o.choices = (Array.isArray(s.choices) ? s.choices : []).slice(0, 4).map(c => {
+  o.choices = toArr(s.choices).slice(0, 4).map(c => {
     const t = cStr(typeof c === "string" ? c : c && c.t, 160); if (!t) return null;
     const ch = { t };
     if (isObj(c) && own(CX_STATS, c.stat)) { ch.stat = c.stat; ch.dc = cInt(c.dc, 2, 25, 12); }
@@ -1426,7 +1430,7 @@ function cxNormRpg(r) {
     return { cls: h.cls, stats: st, lvl: cInt(h.lvl, 1, 99, 1), xp: cInt(h.xp, 0, 99999, 0), pvMax, pv: cInt(h.pv, 0, pvMax, pvMax), pmMax, pm: cInt(h.pm, 0, pmMax, pmMax) };
   };
   const H = isObj(r.heroes) ? r.heroes : {};
-  return { heroes: { a: hero(H.a, "sentinelle"), b: hero(H.b, "druide") }, items: (Array.isArray(r.items) ? r.items : []).map(cxNormItem).filter(Boolean).slice(0, 20),
+  return { heroes: { a: hero(H.a, "sentinelle"), b: hero(H.b, "druide") }, items: toArr(r.items).map(cxNormItem).filter(Boolean).slice(0, 20),
     gold: cInt(r.gold, 0, 1e6, 0), wins: cInt(r.wins, 0, 1e5, 0), bosses: cInt(r.bosses, 0, 1e5, 0) };
 }
 // Les documents « meta » : toujours des objets, avec quelques champs vérifiés.
@@ -1437,9 +1441,14 @@ function cleanMeta(m, v) {
     d.style = okTok(d.style) ? d.style : "partage";
     ["bda", "bdb", "since"].forEach(k => { if (k in d && !okDay(d[k])) delete d[k]; });
   }
+  if (m === "space") {
+    d.who = isObj(d.who) ? Object.fromEntries(["a", "b"].filter(k => typeof d.who[k] === "string").map(k => [k, d.who[k].slice(0, 64)])) : {};
+    if ("epoch" in d) d.epoch = cNum(d.epoch, 0, 1e13, 0);
+  }
   if (m === "progress") {
     ["seen", "endings"].forEach(k => { if (k in d) d[k] = Array.isArray(d[k]) ? d[k].filter(x => typeof x === "string") : []; });
     ["parties", "puzzles"].forEach(k => { if (k in d) d[k] = cInt(d[k], 0, 1e7, 0); });
+    ["seenMap", "endMap", "partiesLog", "puzzlesLog"].forEach(k => { if (k in d && !isObj(d[k])) delete d[k]; });
   }
   return d;
 }
@@ -1477,13 +1486,26 @@ function cleanLive(v) {
   if (s.deck && s.deck.length && s.i >= s.deck.length) s.i = s.deck.length - 1;
   return s;
 }
+// Applique des chemins « a/b/c » à une copie d'un objet ; null retire le champ.
+function patchObj(obj, flat) {
+  const cur = JSON.parse(JSON.stringify(obj || {}));
+  for (const [path, v] of Object.entries(flat || {})) {
+    const keys = path.split("/"), last = keys.pop();
+    let o = cur;
+    for (const k of keys) o = o[k] && typeof o[k] === "object" ? o[k] : (o[k] = {});
+    if (v == null) delete o[last]; else o[last] = JSON.parse(JSON.stringify(v));
+  }
+  return cur;
+}
+const emptyCols = () => ({ capsule: [], aventures: [], lettres: [], favoris: [], cartes: [], contes: [] });
 const Store = {
-  backend: "local", db: null, q: {}, unsubs: [], ready: false,
-  cols: { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [], contes: [] },
+  backend: "local", db: null, ready: false, outbox: [], connecting: null,
+  cols: emptyCols(),
   meta: JSON.parse(JSON.stringify(DEFAULT_META)),
   // Sur un téléphone relié à l'espace commun, on démarre sur la dernière copie reçue :
   // l'appli s'affiche tout de suite, et reste lisible sans réseau.
   cacheKey() { const c = Shared.code(); return c ? "entre-nous:cache:" + c.slice(0, 12) : ""; },
+  obKey() { const c = Shared.code(); return c ? "entre-nous:outbox:" + c.slice(0, 12) : ""; },
   saveCache() {
     if (this.backend !== "shared") return;
     clearTimeout(this._ct);
@@ -1492,107 +1514,181 @@ const Store = {
   loadLocal() {
     try {
       const k = this.cacheKey(), d = JSON.parse((k && lsGet(k)) || lsGet(LS) || "null");
-      if (!d) return;
-      for (const k in this.cols) if (Array.isArray(d.cols && d.cols[k])) this.cols[k] = cleanCol(k, d.cols[k]);
-      for (const k in this.meta) if (d.meta && d.meta[k]) this.meta[k] = cleanMeta(k, d.meta[k]);
-    } catch (e) { /* données locales illisibles : on repart à vide */ }
+      if (d) {
+        for (const k in this.cols) if (Array.isArray(d.cols && d.cols[k])) this.cols[k] = cleanCol(k, d.cols[k]);
+        for (const k in this.meta) if (d.meta && d.meta[k]) this.meta[k] = cleanMeta(k, d.meta[k]);
+      }
+    } catch (e) {
+      // Données locales illisibles : on en garde une copie de côté, et l'on repart à vide.
+      const k = this.cacheKey() || LS, v = lsGet(k); if (v) lsSet(k + ":illisible", v);
+    }
+    this.loadOutbox();
+    this.outbox.forEach(op => this.applyOp(op));
   },
   saveLocal() { if (this.backend === "local") lsSet(LS, JSON.stringify({ cols: this.cols, meta: this.meta })); },
-  async connect() {
-    if (this.db) return;
+  // La file d'envoi : chaque changement est appliqué ici tout de suite, gardé sur le téléphone, puis envoyé.
+  // Il ne quitte la file qu'une fois reçu par l'espace commun : fermer l'appli hors ligne ne perd rien.
+  loadOutbox() {
+    let v = null; try { v = JSON.parse(lsGet(this.obKey()) || "[]"); } catch (e) { v = null; }
+    this.outbox = Array.isArray(v) ? v.filter(o => isObj(o) && typeof o.p === "string" && typeof o.k === "string" && ["set", "update", "remove"].includes(o.o)) : [];
+  },
+  saveOutbox() {
+    const k = this.obKey(); if (!k) return;
+    try { if (this.outbox.length) localStorage.setItem(k, JSON.stringify(this.outbox)); else localStorage.removeItem(k); }
+    catch (e) {
+      // Plein : on garde au moins les petits changements (une photo très lourde attendra en mémoire).
+      try { localStorage.setItem(k, JSON.stringify(this.outbox.filter(o => JSON.stringify(o).length < 100000))); } catch (e2) { /* stockage plein */ }
+    }
+  },
+  applyOp(op) {
+    try {
+      const [col, id] = op.p.split("/");
+      if (col === "meta") {
+        if (!own(DEFAULT_META, id)) return;
+        this.meta[id] = cleanMeta(id, op.o === "set" ? op.d : op.o === "update" ? patchObj(this.meta[id], op.d) : null);
+        return;
+      }
+      if (!own(this.cols, col) || !okId(id)) return;
+      const list = this.cols[col], i = list.findIndex(x => x.id === id);
+      if (op.o === "remove") { if (i >= 0) this.cols[col] = list.filter(x => x.id !== id); return; }
+      const next = cleanItem(col, op.o === "set" ? { ...op.d, id } : i >= 0 ? { ...patchObj(list[i], op.d), id } : null);
+      if (!next) return;
+      if (i >= 0) list[i] = next; else list.push(next);
+    } catch (e) { console.error(e); }
+  },
+  sendOp(op) {
+    const db = this.db, [col, id] = op.p.split("/");
+    const ref = col === "meta" || !own(this.cols, col) ? db.doc(op.p) : db.collection(col).doc(id);
+    if (op.o === "remove") return ref.delete();
+    if (op.o === "set") return ref.set(op.d);
+    // La base des artifacts ne sait pas écrire chemin par chemin : on y envoie le document entier.
+    if (this.backend !== "shared" && col === "meta") return ref.set(this.meta[id]);
+    return ref.update(op.d);
+  },
+  send(op) {
+    const db = this.db; if (!db) return Promise.resolve();
+    let p; try { p = Promise.resolve(this.sendOp(op)); } catch (e) { p = Promise.reject(e); }
+    return p.then(() => this.ack(op), e => {
+      if (this.db !== db) return;
+      this.ack(op);
+      if (e && e.code === "invalid_argument") { this.goLocal(); render(true); } else this.fail(e);
+    });
+  },
+  ack(op) { const n = this.outbox.length; this.outbox = this.outbox.filter(x => x.k !== op.k); if (this.outbox.length !== n) this.saveOutbox(); },
+  epoch() { return +((this.meta.space || {}).epoch) || 0; },
+  write(op) {
+    op = { ...op, k: uid(), ep: this.epoch() };
+    this.applyOp(op);
+    if (this.backend === "local") { this.saveLocal(); return Promise.resolve(); }
+    this.outbox.push(op); this.saveOutbox(); this.saveCache();
+    return this.send(op);
+  },
+  // Ce qui attend dans la file repart (au retour du réseau, ou au démarrage) ; ce qui date d'avant
+  // une remise à zéro de l'espace est jeté.
+  replay() {
+    const ep = this.epoch(), n = this.outbox.length;
+    this.outbox = this.outbox.filter(o => (+o.ep || 0) >= ep);
+    if (this.outbox.length !== n) this.saveOutbox();
+    this.outbox.forEach(op => this.send(op));
+  },
+  // Après chaque nouvelle version reçue, ce qui n'est pas encore parti est réappliqué par-dessus.
+  reapply(prefix) { this.outbox.forEach(op => { if (op.p === prefix || op.p.startsWith(prefix + "/")) this.applyOp(op); }); },
+  connect() {
+    if (this.db) return Promise.resolve();
+    if (!this.connecting) this.connecting = this._connect().finally(() => { this.connecting = null; });
+    return this.connecting;
+  },
+  async _connect() {
     let db = null;
     try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
     if (!db) db = await Shared.open();
-    if (!db) { this.ready = true; render(); return; }
+    if (!db) {
+      // Relié à l'espace commun mais injoignable (hors ligne, réseau bloqué) : on reste sur sa copie,
+      // les changements attendent dans la file et partiront dès que possible.
+      if (Shared.code()) { this.backend = "shared"; this.loadFailed = true; this.retrySoon(); }
+      this.ready = true; render(); return;
+    }
+    if (this.db) return;
     this.db = db; this.backend = db.kind === "shared" ? "shared" : "db"; this.ready = false;
-    const firsts = [];
+    const firsts = [], unsubs = this.unsubs = [];
     const first = () => { let r; firsts.push(new Promise(res => { r = res; })); return () => { if (r) { r(); r = null; } }; };
     for (const col of Object.keys(this.cols)) {
       const done = first();
-      this.unsubs.push(db.collection(col).onSnapshot(snap => {
+      unsubs.push(db.collection(col).onSnapshot(snap => {
+        if (this.db !== db) return;
         this.cols[col] = cleanCol(col, snap.docs.map(d => { const v = d.data(); return isObj(v) ? { ...v, id: d.id } : null; }));
+        this.reapply(col);
         this.saveCache();
         done(); render();
       }, e => { done(); this.fail(e); }));
     }
     for (const m of Object.keys(this.meta)) {
       const done = first();
-      this.unsubs.push(db.doc("meta/" + m).onSnapshot(s => {
+      unsubs.push(db.doc("meta/" + m).onSnapshot(s => {
+        if (this.db !== db) return;
         this.meta[m] = cleanMeta(m, s.exists ? s.data() : null);
+        this.reapply("meta/" + m);
         this.saveCache();
         done(); render();
       }, e => { done(); this.fail(e); }));
     }
     if (db.kind === "shared") Live.open();
+    render();
+    await Promise.all(firsts);
+    if (this.db !== db) return;
     // Les quêtes attendent d'avoir reçu toute la progression commune avant de compter quoi que ce soit.
-    Promise.all(firsts).then(() => { if (this.db === db) { this.ready = true; render(); } });
+    this.ready = true;
+    this.replay();
     render();
     // En rejoignant l'espace commun, ce que ce téléphone contenait déjà y est ajouté.
     if (db.kind === "shared" && Shared.joining) {
-      await Promise.all(firsts);
       const data = Shared.joining; Shared.joining = null;
       await mergeData(data, true);
       toast("Vous partagez maintenant la même progression");
     }
   },
-  // Écrit en ligne quand c'est possible. Si ce compte n'a pas le droit d'écrire (lien public,
-  // accès en lecture), on bascule sur ce téléphone et la modification y est appliquée.
-  write(path, fn, local) {
-    if (!this.db) { local(); this.saveLocal(); return Promise.resolve(); }
-    const p = (this.q[path] || Promise.resolve()).then(fn).catch(e => {
-      if (e && e.code === "invalid_argument" && this.db) { this.goLocal(); local(); this.saveLocal(); render(true); }
-      else this.fail(e);
-    });
-    this.q[path] = p; return p;
+  retrySoon(now) {
+    clearTimeout(this._rt);
+    this._rt = setTimeout(() => this.retry(), now ? 0 : 30000);
   },
+  // Le navigateur ne retente jamais un module qui n'a pas pu se charger : pour rejoindre l'espace commun,
+  // on recharge la page dès que c'est sans risque (aucun écran ouvert, rien en cours de saisie).
+  // Les changements faits entre-temps attendent dans la file, sur le téléphone.
+  retry() {
+    if (this.db || !Shared.code()) return;
+    if (navigator.onLine === false) { this.retrySoon(); return; }
+    const ae = document.activeElement, busy = S.layer || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
+    if (!this.loadFailed) this.connect();
+    else if (!busy) { clearTimeout(this._ct); this.saveCacheNow(); location.reload(); }
+    else this.retrySoon();
+  },
+  saveCacheNow() { const k = this.cacheKey(); if (k && this.backend === "shared") lsSet(k, JSON.stringify({ cols: this.cols, meta: this.meta })); },
   goLocal() { this.detach(); this.saveLocal(); },
   // Se débranche de l'espace commun sans rien recopier sur ce téléphone.
   detach() {
-    this.unsubs.forEach(u => { try { u(); } catch (e) { /* déjà fermé */ } });
-    this.unsubs = []; this.db = null; this.backend = "local"; this.ready = true;
+    (this.unsubs || []).forEach(u => { try { u(); } catch (e) { /* déjà fermé */ } });
+    this.unsubs = []; this.db = null; this.backend = "local"; this.ready = true; this.outbox = [];
+    clearTimeout(this._rt);
     Live.close();
+    if (S.pzRemote) pzRemoteClose();
   },
   add(col, data) {
     data = { ...data, createdAt: Date.now() };
     const id = this.db ? this.db.collection(col).doc().id : uid();
-    const p = this.write(col + "/" + id, () => this.db.collection(col).doc(id).set(data),
-      () => { if (!this.cols[col].some(x => x.id === id)) this.cols[col].push({ id, ...data }); });
+    const p = this.write({ p: col + "/" + id, o: "set", d: data });
     Jeu.onAdd(col, data);
     return p;
   },
-  put(col, id, data) {
-    return this.write(col + "/" + id, () => this.db.collection(col).doc(id).set(data), () => {
-      const i = this.cols[col].findIndex(x => x.id === id);
-      if (i >= 0) this.cols[col][i] = { id, ...data }; else this.cols[col].push({ id, ...data });
-    });
-  },
-  update(col, id, patch) {
-    patch = { ...patch, updatedAt: Date.now() };
-    return this.write(col + "/" + id, () => this.db.collection(col).doc(id).update(patch),
-      () => { const it = this.cols[col].find(x => x.id === id); if (it) Object.assign(it, patch); });
-  },
-  remove(col, id) {
-    return this.write(col + "/" + id, () => this.db.collection(col).doc(id).delete(),
-      () => { this.cols[col] = this.cols[col].filter(x => x.id !== id); });
-  },
-  setMeta(m, data) {
-    this.meta[m] = { ...data };
-    return this.write("meta/" + m, () => this.db.doc("meta/" + m).set(data), () => {});
-  },
+  put(col, id, data) { return this.write({ p: col + "/" + id, o: "set", d: data }); },
+  update(col, id, patch) { return this.write({ p: col + "/" + id, o: "update", d: { ...patch, updatedAt: Date.now() } }); },
+  // Comme patchMeta, pour un élément d'une collection (« steps/3 », « gen »…).
+  patchDoc(col, id, flat) { return this.update(col, id, flat); },
+  remove(col, id) { return this.write({ p: col + "/" + id, o: "remove" }); },
+  setMeta(m, data) { return this.write({ p: "meta/" + m, o: "set", d: { ...data } }); },
   // Change quelques champs d'un document, chemin par chemin (« earn/2026-10-20_rdv »).
   // Dans l'espace commun, seuls ces chemins sont envoyés : vos deux téléphones peuvent gagner
   // des cœurs au même moment sans effacer ceux de l'autre. null retire le champ.
-  patchMeta(m, flat) {
-    const cur = this.meta[m] = JSON.parse(JSON.stringify(this.meta[m] || {}));
-    for (const [path, v] of Object.entries(flat)) {
-      const keys = path.split("/"), last = keys.pop();
-      let o = cur;
-      for (const k of keys) o = o[k] && typeof o[k] === "object" ? o[k] : (o[k] = {});
-      if (v == null) delete o[last]; else o[last] = v;
-    }
-    const full = JSON.parse(JSON.stringify(cur));
-    return this.write("meta/" + m, () => this.backend === "shared" ? this.db.doc("meta/" + m).update(flat) : this.db.doc("meta/" + m).set(full), () => {});
-  },
+  patchMeta(m, flat) { return this.write({ p: "meta/" + m, o: "update", d: flat }); },
   fail(e) {
     const code = e && e.code;
     if (code === "invalid_argument" || code === "revoked") { if (this.db) { this.goLocal(); render(true); } }
@@ -1615,7 +1711,7 @@ const FIREBASE = {
   appId: "1:386108389485:web:df3a699c641c1c20e92764"
 };
 const FB_VER = "10.12.2";
-const snapshotLocal = () => ({ v: 1, cols: JSON.parse(JSON.stringify(Store.cols)), meta: { couple: Store.meta.couple, progress: Store.meta.progress } });
+const snapshotLocal = () => JSON.parse(JSON.stringify({ v: 1, cols: Store.cols, meta: { couple: Store.meta.couple, progress: Store.meta.progress, game: Store.meta.game } }));
 const Shared = {
   key: "entre-nous:couple",
   joining: null,
@@ -1647,14 +1743,14 @@ const Shared = {
     if (cur && !sure) { S.invite = code; return false; }
     if (cur) lsSet("entre-nous:prev-couple", cur);
     lsSet(this.key, code); S.invite = null;
-    const any = Object.values(Store.cols).some(a => a.length) || (Store.meta.progress.seen || []).length || couple().a || couple().b;
+    const any = Object.values(Store.cols).some(a => a.length) || seenSet().size || couple().a || couple().b;
     this.joining = !cur && Store.backend === "local" && any ? snapshotLocal() : null;
     return true;
   },
   // Passe sur l'espace dont le code vient d'être enregistré.
   reconnect() {
     Store.detach();
-    Store.cols = { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [], contes: [] };
+    Store.cols = emptyCols();
     Store.meta = JSON.parse(JSON.stringify(DEFAULT_META));
     Store.loadLocal(); Store.ready = false; S.shLink = null; S.layer = null; S.obShown = false;
     render(true);
@@ -1672,7 +1768,7 @@ const Shared = {
       ]);
       return rtdbAdapter(F, F.getDatabase(A.initializeApp(FIREBASE)), "couples/" + code);
     } catch (e) {
-      toast("L'espace commun est injoignable pour le moment. La progression est gardée sur ce téléphone.");
+      toast("Hors ligne : tout reste lisible, et vos changements partiront dès le retour du réseau.");
       return null;
     }
   }
@@ -1709,6 +1805,7 @@ function sharedPanel() {
   const back = prevSpace() ? `<button class="link" data-a="sh-back">Revenir à l'espace précédent</button>` : "";
   if (Store.backend === "shared") return `<section class="panel" aria-labelledby="h-shared"><h2 class="sec" id="h-shared">Notre progression commune</h2>
     <p class="small">${esc(fr("Ce téléphone est relié à votre espace commun : souvenirs, aventures, lettres et progression sont les mêmes sur vos deux téléphones."))}</p>
+    ${!Store.db ? `<p class="small muted">${esc(fr(`Hors ligne pour l'instant${Store.outbox.length ? ` : ${Store.outbox.length} changement${Store.outbox.length > 1 ? "s attendent" : " attend"} le retour du réseau, sur ce téléphone` : ""}.`))}</p>` : ""}
     <div class="row">${navigator.share ? `<button class="btn" data-a="sh-share">Envoyer le lien d'invitation</button>` : ""}<button class="btn ghost" data-a="sh-copy">Copier le lien</button></div>
     ${S.shLink ? `<textarea readonly rows="2" style="font-size:.85rem;min-height:0" aria-label="Lien d'invitation">${esc(S.shLink)}</textarea>` : ""}
     <p class="small muted">${esc(fr("Envoie ce lien à l'autre : en l'ouvrant, son téléphone rejoint le même espace, et ce qu'il contenait déjà y est ajouté. Gardez-le pour vous deux : il sert de clé."))}</p>
@@ -1726,7 +1823,7 @@ function sharedPanel() {
    Pour rassembler deux progressions sans compte : un code à s'envoyer par message.
    Les éléments gardent leur identifiant, donc fusionner deux fois ne crée pas de doublons. */
 function makeCode() {
-  const json = JSON.stringify({ v: 1, cols: Store.cols, meta: { couple: Store.meta.couple, progress: Store.meta.progress } });
+  const json = JSON.stringify(snapshotLocal());
   const bytes = new TextEncoder().encode(json);
   let bin = "";
   for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
@@ -1753,13 +1850,26 @@ async function mergeData(data, quiet) {
       await Store.put(col, id, body); added++;
     }
   }
-  const p = Store.meta.progress, q = cleanMeta("progress", isObj(data.meta) ? data.meta.progress : null);
-  const uni = (a, b) => [...new Set([...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])])].filter(x => typeof x === "string");
-  await Store.setMeta("progress", { ...p, seen: uni(p.seen, q.seen), endings: uni(p.endings, q.endings),
-    parties: Math.max(p.parties || 0, +q.parties || 0), puzzles: Math.max(p.puzzles || 0, +q.puzzles || 0) });
+  // La progression et le jeu s'ajoutent entrée par entrée : rien de ce qui est déjà là n'est écrasé.
+  const p = Store.meta.progress, q = cleanMeta("progress", isObj(data.meta) ? data.meta.progress : null), pp = {};
+  const ps = seenSet(), pe = endSet();
+  progSet(q.seen, q.seenMap).forEach(x => { if (okKey(x) && !ps.has(x)) pp["seenMap/" + x] = 1; });
+  progSet(q.endings, q.endMap).forEach(x => { if (okKey(x) && !pe.has(x)) pp["endMap/" + x] = 1; });
+  const qp = progCount(q.parties, q.partiesLog), qz = progCount(q.puzzles, q.puzzlesLog);
+  if (qp > nParties()) pp.parties = (+p.parties || 0) + qp - nParties();
+  if (qz > nPuzzles()) pp.puzzles = (+p.puzzles || 0) + qz - nPuzzles();
+  if (Object.keys(pp).length) await Store.patchMeta("progress", pp);
+  const qg = isObj(data.meta) && isObj(data.meta.game) ? data.meta.game : null;
+  if (qg) {
+    const g = Jeu.g(), gp = {}, has = (k, x, y) => isObj(g[k]) && (y == null ? x in g[k] : isObj(g[k][x]) && y in g[k][x]);
+    const leaf = v => v === true || (typeof v === "number" && Number.isFinite(v));
+    ["earn", "owned", "days", "flags", "ach"].forEach(k => { if (isObj(qg[k])) Object.entries(qg[k]).forEach(([x, v]) => { if (okKey(x) && leaf(v) && !has(k, x)) gp[k + "/" + x] = v; }); });
+    ["quests", "chroma"].forEach(k => { if (isObj(qg[k])) Object.entries(qg[k]).forEach(([x, m]) => { if (okKey(x) && isObj(m)) Object.entries(m).forEach(([y, v]) => { if (okKey(y) && leaf(v) && !has(k, x, y)) gp[`${k}/${x}/${y}`] = v; }); }); });
+    if (Object.keys(gp).length) await Store.patchMeta("game", gp);
+  }
   const c = couple(), qc = (data.meta && data.meta.couple) || {};
   if ((!c.a || !c.b) && typeof qc.a === "string" && typeof qc.b === "string" && qc.a && qc.b) {
-    await Store.setMeta("couple", { a: qc.a.slice(0, 24), b: qc.b.slice(0, 24), style: c.style || "partage" });
+    await Store.patchMeta("couple", { a: qc.a.slice(0, 24), b: qc.b.slice(0, 24) });
   }
   if (!quiet) toast(added ? `C'est fusionné : ${added} élément${added > 1 ? "s" : ""} ajouté${added > 1 ? "s" : ""} ou mis à jour` : "Tout était déjà à jour");
 }
@@ -1789,7 +1899,17 @@ const couple = () => Store.meta.couple || DEFAULT_META.couple;
 const nm = k => cStr(couple()[k], 24).trim() || (k === "a" ? "Partenaire 1" : "Partenaire 2");
 const other = k => (k === "a" ? "b" : "a");
 const isFav = id => Store.cols.favoris.some(f => f.id === id);
-const seenSet = () => new Set(Store.meta.progress.seen || []);
+// La progression s'écrit entrée par entrée (seenMap/<carte>, endMap/<fin>, partiesLog/<id>) : deux téléphones
+// qui jouent en même temps ne s'effacent plus. Les anciennes listes et compteurs restent comptés.
+const progSet = (arr, map) => new Set([...(Array.isArray(arr) ? arr : []), ...Object.keys(isObj(map) ? map : {})]);
+const seenSet = () => progSet(Store.meta.progress.seen, Store.meta.progress.seenMap);
+const endSet = () => progSet(Store.meta.progress.endings, Store.meta.progress.endMap);
+const progCount = (n, log) => (+n || 0) + Object.keys(isObj(log) ? log : {}).length;
+const nParties = () => progCount(Store.meta.progress.parties, Store.meta.progress.partiesLog);
+const nPuzzles = () => progCount(Store.meta.progress.puzzles, Store.meta.progress.puzzlesLog);
+const okKey = v => typeof v === "string" && /^[A-Za-z0-9_\-:]{1,100}$/.test(v);
+const addEnding = key => { if (okKey(key) && !endSet().has(key)) Store.patchMeta("progress", { ["endMap/" + key]: 1 }); };
+const addPuzzle = () => Store.patchMeta("progress", { ["puzzlesLog/" + uid()]: Date.now() });
 const dv = (id, def = "") => esc(S.drafts[id] ?? def);
 const draft = (id, def = "") => S.drafts[id] ?? def;
 const clearDrafts = (...ids) => ids.forEach(id => delete S.drafts[id]);
@@ -1801,11 +1921,11 @@ function toast(msg) {
 }
 
 function flushSeen(ids, party) {
-  const set = seenSet(); let added = 0;
-  ids.forEach(id => { if (!set.has(id)) { set.add(id); added++; } });
-  if (!added && !party) return 0;
-  const p = Store.meta.progress;
-  Store.setMeta("progress", { ...p, seen: [...set], parties: (p.parties || 0) + (party ? 1 : 0) });
+  const set = seenSet(), patch = {};
+  ids.forEach(id => { if (okKey(id) && !set.has(id)) { set.add(id); patch["seenMap/" + id] = 1; } });
+  const added = Object.keys(patch).length;
+  if (party) patch["partiesLog/" + uid()] = Date.now();
+  if (Object.keys(patch).length) Store.patchMeta("progress", patch);
   return added;
 }
 
@@ -2018,13 +2138,13 @@ function cartesBlock() {
 function carnetBlock() {
   const cap = Store.cols.capsule, p = Store.meta.progress;
   const items = [
-    [(p.seen || []).length, "carte jouée", "cartes jouées"],
+    [seenSet().size, "carte jouée", "cartes jouées"],
     [cap.filter(x => x.kind === "souvenir").length, "souvenir gardé", "souvenirs gardés"],
     [cap.filter(x => x.kind === "mot" || x.kind === "anecdote").length, "petit mot", "petits mots"],
     [cap.filter(x => x.kind === "defi").length, "défi relevé", "défis relevés"],
     [Store.cols.aventures.filter(a => a.statut === "realisee").length, "aventure vécue", "aventures vécues"],
-    [(p.endings || []).length, "fin d'histoire découverte", "fins d'histoire découvertes"],
-    [p.puzzles || 0, "puzzle reconstitué", "puzzles reconstitués"]
+    [endSet().size, "fin d'histoire découverte", "fins d'histoire découvertes"],
+    [nPuzzles(), "puzzle reconstitué", "puzzles reconstitués"]
   ].filter(x => x[0] > 0);
   const last = byDate(cap.filter(x => x.kind === "souvenir"))[0];
   return `
@@ -2442,6 +2562,10 @@ function defisView() {
 /* Formulaires */
 function sheetView() {
   const name = S.layer.name;
+  if (name === "claim") { const k = S.claim === "b" ? "b" : "a"; return `${layerHead("C'est bien toi ?")}
+    <p>${esc(fr(`L'autre téléphone a déjà choisi d'être ${nm(k)}.`))}</p>
+    <p class="small muted">${esc(fr("Si vous êtes deux sur le même prénom, les avatars et les tours de jeu se mélangent. Si l'autre a changé de téléphone, choisis quand même ton prénom."))}</p>
+    <div class="actions"><button class="btn wide" data-a="claim-other">Je suis ${esc(nm(other(k)))}</button><button class="btn ghost wide" data-a="claim-yes">Je suis bien ${esc(nm(k))}</button></div>`; }
   if (name === "invite") return `${layerHead("Rejoindre un autre espace ?")}
     <p>${esc(fr("Ce téléphone est déjà relié à un espace commun. Ce lien mène à un autre espace."))}</p>
     <p class="small muted">${esc(fr("Si tu continues, ce téléphone affichera l'autre espace. Rien n'est effacé ni mélangé : l'espace actuel reste intact, et tu pourras y revenir depuis les réglages."))}</p>
@@ -3417,15 +3541,14 @@ function syncMusic() {
 }
 const stx = s => esc(fr(s)).replace(/\{a\}/g, esc(nm("a"))).replace(/\{b\}/g, esc(nm("b")));
 function endCount(st) {
-  const all = Object.keys(st.nodes).filter(k => st.nodes[k].end), got = new Set(Store.meta.progress.endings || []);
+  const all = Object.keys(st.nodes).filter(k => st.nodes[k].end), got = endSet();
   return [all.filter(k => got.has(st.id + ":" + k)).length, all.length];
 }
 function storyGo(to) {
   const s = S.story, st = STORY[s.id];
   Object.assign(s, { node: to, steps: s.steps + 1, phase: "read", votes: {}, slot: 0, together: false, saved: false });
   if (st.nodes[to].end) {
-    const p = Store.meta.progress, key = st.id + ":" + to, e = p.endings || [];
-    if (!e.includes(key)) Store.setMeta("progress", { ...p, endings: [...e, key] });
+    addEnding(st.id + ":" + to);
   }
 }
 
@@ -3507,13 +3630,13 @@ function pzLoadPhotos() {
 function pzSaveImg(id, data) {
   PZ_CACHE[id] = data;
   if (!Store.db) lsSet("entre-nous:pz:" + id, data);
-  else Store.db.doc("pzimg/" + id).set({ data }).catch(e => Store.fail(e));
+  if (Store.backend !== "local") Store.write({ p: "pzimg/" + id, o: "set", d: { data } });
   Store.patchMeta("puzzle", { ["list/" + id]: Date.now() });
 }
 function pzDropImg(id) {
   delete PZ_CACHE[id];
   if (!Store.db) { try { localStorage.removeItem("entre-nous:pz:" + id); } catch (e) { /* stockage indisponible */ } }
-  else Store.db.doc("pzimg/" + id).delete().catch(() => {});
+  if (Store.backend !== "local") Store.write({ p: "pzimg/" + id, o: "remove" });
   Store.patchMeta("puzzle", { ["list/" + id]: null });
 }
 // Les photos rangées à l'ancienne (dans meta/puzzle) rejoignent l'album, une seule fois.
@@ -3648,6 +3771,16 @@ function puzzleView() {
    direct. Chacun n'écrit que sa propre réponse (live/game/ans/<clé>) : répondre en même temps
    n'écrase jamais la réponse de l'autre. Une seule partie à distance à la fois. */
 const whoAmI = pzMe;
+// Qui est qui : chaque téléphone note dans l'espace commun le rôle qu'il a pris (space/who/a ou b).
+// Si l'autre téléphone a déjà pris ce prénom, on demande avant, pour ne pas se retrouver tous les deux « a ».
+function claimMe(k, sure) {
+  if (k !== "a" && k !== "b") { lsSet("entre-nous:me", ""); return true; }
+  const who = (Store.meta.space || {}).who || {}, mine = deviceId();
+  if (Store.backend === "shared" && who[k] && who[k] !== mine && !sure) { S.claimBack = S.layer && S.layer.name !== "claim" ? S.layer : S.claimBack || null; S.claim = k; S.layer = { type: "sheet", name: "claim" }; return false; }
+  lsSet("entre-nous:me", k); S.claim = null;
+  if (Store.backend === "shared") { const patch = { ["who/" + k]: mine }; if (who[other(k)] === mine) patch["who/" + other(k)] = null; Store.patchMeta("space", patch); }
+  return true;
+}
 const Live = {
   state: null, unsub: null, lastStart: 0,
   open() {
@@ -3671,12 +3804,12 @@ const Live = {
   },
   close() { if (this.unsub) { try { this.unsub(); } catch (e) { /* déjà fermé */ } } this.unsub = null; this.state = null; },
   write(obj) {
-    if (!this.state) return;
+    if (!this.state || !Store.db) return;
     for (const k in obj) { if (obj[k] === null) delete this.state[k]; else this.state[k] = obj[k]; }
     Store.db.doc("live/game").update({ ...obj, updatedAt: Date.now() }).catch(e => Store.fail(e));
   },
   answer(path, key, val) {
-    if (!this.state) return;
+    if (!this.state || !Store.db) return;
     let o = this.state;
     path.split("/").forEach(p => { if (!o[p] || typeof o[p] !== "object") o[p] = {}; o = o[p]; });
     o[key] = val;
@@ -3684,6 +3817,7 @@ const Live = {
     Store.db.doc("live/game").update({ updatedAt: Date.now() }).catch(() => {});
   },
   start(state) {
+    if (!Store.db) { toast("Hors ligne : les parties à distance reviendront avec le réseau."); return; }
     const s = { ...state, by: whoAmI() || "a", startAt: Date.now(), updatedAt: Date.now(), ended: false };
     this.state = s; this.lastStart = s.startAt; S.lvRules = null; S.lvGuess = 50;
     Store.db.doc("live/game").set(s).catch(e => Store.fail(e));
@@ -3857,8 +3991,7 @@ function liveArcadeView(L, me, head) {
 function startLiveStory(id) { Live.start({ kind: "story", id, node: STORY[id].start, steps: 1 }); }
 function storyEnding(st, to) {
   if (!st.nodes[to] || !st.nodes[to].end) return;
-  const p = Store.meta.progress, key = st.id + ":" + to, e = p.endings || [];
-  if (!e.includes(key)) Store.setMeta("progress", { ...p, endings: [...e, key] });
+  addEnding(st.id + ":" + to);
 }
 function liveStoryView(L, me, head) {
   const st = STORY[L.id], n = st && st.nodes[L.node];
@@ -5117,11 +5250,23 @@ const Jeu = {
   activeToday() { return !!(this.g().days || {})[this.day()]; },
   stage() { const d = this.days(); let s = 0; STAGE_DAYS.forEach((t, i) => { if (d >= t) s = i; }); return s; },
   owns(id) { return !!(this.g().owned || {})[id]; },
-  hearts() {
+  rawHearts() {
     const g = this.g();
     const earned = Object.values(g.earn || {}).reduce((a, b) => a + (+b || 0), 0);
-    const spent = Object.keys(g.owned || {}).reduce((a, id) => a + ((SHOP_BY_ID[id] || {}).price || 0), 0) + this.chromaCount() * CHROMA_PRICE;
-    return Math.max(0, earned - spent);
+    const spent = Object.keys(g.owned || {}).reduce((a, id) => a + ((own(SHOP_BY_ID, id) && SHOP_BY_ID[id].price) || 0), 0) + this.chromaCount() * CHROMA_PRICE;
+    return earned - spent;
+  },
+  hearts() { return Math.max(0, this.rawHearts()); },
+  // Deux achats au même moment sur vos deux téléphones peuvent dépasser la cagnotte : le plus récent est remboursé.
+  refund() {
+    const g = this.g(), list = [];
+    Object.entries(g.owned || {}).forEach(([id, t]) => { if (own(SHOP_BY_ID, id)) list.push([+t || 0, "owned/" + id, fr(SHOP_BY_ID[id].name)]); });
+    Object.entries(g.chroma || {}).forEach(([o, m]) => { if (own(OUTFITS, o) && isObj(m)) Object.entries(m).forEach(([c, t]) => { if (t && OUTFITS[o].chromas.slice(1).some(x => x[0] === c)) list.push([+t || 0, `chroma/${o}/${c}`, "un chroma"]); }); });
+    list.sort((x, y) => y[0] - x[0] || (x[1] < y[1] ? 1 : -1));
+    const last = list[0];
+    if (!last || Date.now() - last[0] > 3600000) return;
+    Store.patchMeta("game", { [last[1]]: null });
+    toast(`Achat en même temps sur vos deux téléphones : « ${last[2]} » a été remboursé.`);
   },
   // Chromas débloqués en plus de ceux offerts avec chaque tenue (chroma/<tenue>/<coloris>).
   chromaCount() {
@@ -5145,10 +5290,10 @@ const Jeu = {
       days: Object.keys(g.days || {}).length,
       souvenirs: cap.filter(x => x.kind === "souvenir").length,
       mots: cap.filter(x => x.kind === "mot" || x.kind === "anecdote").length,
-      fins: (p.endings || []).length,
+      fins: endSet().size,
       aventuresDone: Store.cols.aventures.filter(a => a.statut === "realisee").length,
       cartes: Store.cols.cartes.length,
-      parties: p.parties || 0,
+      parties: nParties(),
       owned: Object.keys(g.owned || {}).length,
       chromas: this.chromaCount(),
       flags: g.flags || {}
@@ -5187,6 +5332,7 @@ const Jeu = {
       if (S.story && STORY[S.story.id] && (STORY[S.story.id].nodes[S.story.node] || {}).end) this.event("fin");
       if (S.pz && S.pz.done) { this.event("puzzle"); if (S.pz.n === 5) this.flag("puzzle25"); }
       if (S.pzRemote && S.pzLive && S.pzLive.done) { this.event("puzzle"); this.flag("distance"); if (S.pzLive.n === 5) this.flag("puzzle25"); }
+      if (Store.backend === "shared" && this.rawHearts() < 0) this.refund();
       const g = this.g(), s = this.stats(), patch = {}, got = [];
       ACH.forEach(a => { if (!(g.ach || {})[a.id] && a.test(s)) { patch["ach/" + a.id] = Date.now(); patch["earn/ach_" + a.id] = a.reward; got.push(a); } });
       if (got.length) {
@@ -5200,7 +5346,7 @@ const Jeu = {
     const it = SHOP_BY_ID[id];
     if (!it || this.owns(id)) return;
     if (this.hearts() < it.price) { toast(`Il vous manque ${it.price - this.hearts()} cœurs.`); return; }
-    const patch = { ["owned/" + id]: true };
+    const patch = { ["owned/" + id]: Date.now() };
     if (it.slot === "theme") patch.theme = id;
     Store.patchMeta("game", patch);
     Sfx.play("coin"); gainToast(`${fr(it.name)} : c'est à vous deux !`, null); Buddies.cheer();
@@ -5217,7 +5363,7 @@ const Jeu = {
   buyTint(o, c) {
     if (!this.owns(o) || this.ownsTint(o, c) || !OUTFITS[o] || !OUTFITS[o].chromas.some(x => x[0] === c)) return;
     if (this.hearts() < CHROMA_PRICE) { toast(`Il vous manque ${CHROMA_PRICE - this.hearts()} cœurs.`); return; }
-    Store.patchMeta("game", { [`chroma/${o}/${c}`]: true });
+    Store.patchMeta("game", { [`chroma/${o}/${c}`]: Date.now() });
     Sfx.play("coin"); gainToast(`Nouveau chroma : ${fr(OUTFITS[o].chromas.find(x => x[0] === c)[1])} !`, null); Buddies.cheer();
   },
   setTheme(id) { Store.patchMeta("game", { theme: this.theme() === id ? "" : id }); },
@@ -5924,13 +6070,13 @@ function cxSentences(t) {
   return out.length ? out : [t];
 }
 // L'histoire ouverte : la version de l'espace commun, ou celle qu'on vient d'enregistrer si elle est plus récente.
-const cxById = id => {
-  const a = Store.cols.contes.find(x => x.id === id), b = S.cx && S.cx.cache && S.cx.cache.id === id ? S.cx.cache : null;
-  return !a ? b : !b ? a : (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a;
-};
+const cxById = id => Store.cols.contes.find(x => x.id === id) || null;
+// Un seul téléphone écrit la suite à la fois : il pose un verrou (gen) que l'autre respecte 3 minutes au plus.
+const cxLockedBy = st => { const g = st && st.gen; return g && g.by !== deviceId() && g.n === cxSteps(st).length && Date.now() - g.at < 180000 ? g : null; };
 const cxStory = () => (S.cx && S.cx.id ? cxById(S.cx.id) : null);
 // Une suite en cours d'écriture appartient à une histoire précise : on ne l'affiche que sur celle-là.
-const cxBusy = () => !!(S.cx && S.cx.gen && S.cx.gen.id === S.cx.id);
+const cxBusy = () => !!(S.cx && ((S.cx.gen && S.cx.gen.id === S.cx.id) || cxLockedBy(cxStory())));
+const cxBusyMsg = () => cxLockedBy(cxStory()) ? "La suite s'écrit sur l'autre téléphone" : S.cx.busyMsg || "La suite s'écrit";
 const cxSteps = st => (st && Array.isArray(st.steps) ? st.steps : []);
 const cxCopy = o => JSON.parse(JSON.stringify(o));
 const SWORD = '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>';
@@ -6036,8 +6182,12 @@ function cxHeroesView() {
 function cxReadView() {
   const cx = S.cx, st = cxStory(), steps = cxSteps(st), replay = cx.view === "replay";
   const i = replay ? Math.max(0, Math.min(steps.length - 1, cx.ri || 0)) : steps.length - 1, s = steps[i];
+  // Un dé déjà lancé pour cette étape (ici ou sur l'autre téléphone) ne se relance pas.
+  if (!replay && s && s.roll && s.picked == null && s.choices[s.roll.ci]) { cx.check = { ci: s.roll.ci, n: steps.length }; cx.roll = s.roll; }
+  if (cx.check && cx.check.n !== steps.length) { cx.check = null; cx.roll = null; }
+  if (cxLockedBy(st)) { clearTimeout(cxReadView.tm); cxReadView.tm = setTimeout(() => render(), 181000); }
   const head = `<div class="g-head"><button class="icon-btn" data-a="cx-view" data-v="lib" aria-label="Retour à vos histoires">×</button><div class="g-prog"><span>${esc(st.title)}</span></div><span class="g-timer">${s && s.end ? "Fin" : `Étape ${i + 1} sur ${st.max}`}</span></div>`;
-  if (!s) return head + cxStage(CX_GENRES[st.genre].decor[0], st) + (cxBusy() ? cxLoader("L'histoire commence à s'écrire") : `<button class="btn wide" data-a="cx-begin">Commencer l'histoire</button>${cx.err ? `<p class="small muted">${esc(cx.err)}</p>` : ""}`);
+  if (!s) return head + cxStage(CX_GENRES[st.genre].decor[0], st) + (cxBusy() ? cxLoader(cxLockedBy(st) ? cxBusyMsg() : "L'histoire commence à s'écrire") : `<button class="btn wide" data-a="cx-begin">Commencer l'histoire</button>${cx.err ? `<p class="small muted">${esc(cx.err)}</p>` : ""}`);
   const col = cvar(st.mode === "rpg" ? 7 : 8);
   const paras = cxSentences(s.text).reduce((acc, p) => { const l = acc[acc.length - 1]; if (l && l.length < 160) acc[acc.length - 1] = l + " " + p; else acc.push(p); return acc; }, []);
   let page = `<article class="story-page cx-page${s.end ? " end" : ""}" style="${col}">${s.end ? `<p class="card-for">Fin</p><h2 class="sheet-title">${esc(s.end)}</h2>` : ""}${paras.map((p, n) => `<p class="story-text" style="animation-delay:${(n * 0.25).toFixed(2)}s">${esc(p)}</p>`).join("")}</article>`;
@@ -6047,7 +6197,7 @@ function cxReadView() {
     const pk = s.picked != null && s.choices[s.picked];
     tail = (pk ? `<div class="choice mine">${esc(pk.t)}${s.outcome ? `<small class="cx-out">${esc(s.outcome)}</small>` : ""}</div>` : "")
       + `<div class="row cx-nav"><button class="btn ghost" data-a="cx-ri" data-v="-1" ${i ? "" : "disabled"}>Précédente</button><button class="btn ghost" data-a="cx-ri" data-v="1" ${i < steps.length - 1 ? "" : "disabled"}>Suivante</button></div>`;
-  } else if (cxBusy()) tail = cxLoader(cx.busyMsg || "La suite s'écrit");
+  } else if (cxBusy()) tail = cxLoader(cxBusyMsg());
   else if (s.end) tail = `<div class="cx-endstats">${st.rpg ? `<span>${st.rpg.wins || 0} combat${(st.rpg.wins || 0) > 1 ? "s" : ""} gagné${(st.rpg.wins || 0) > 1 ? "s" : ""}</span><span>${st.rpg.bosses || 0} boss vaincu${(st.rpg.bosses || 0) > 1 ? "s" : ""}</span><span>Niveau ${Math.max(st.rpg.heroes.a.lvl, st.rpg.heroes.b.lvl)}</span>` : `<span>${steps.length} étapes</span><span>${steps.filter(x => x.picked != null).length} choix ensemble</span>`}</div>
     <div class="actions">${st.saved ? `<p class="small muted">Gardée dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="cx-album">Garder cette fin dans l'album</button>`}<button class="btn wide c" style="${col}" data-a="cx-replay">Relire depuis le début</button><button class="btn line wide" data-a="cx-view" data-v="lib">Une nouvelle histoire</button></div>`;
   else if (s.event && !s.done) {
@@ -6110,13 +6260,13 @@ function cxFightView() {
 function cxSave(st) {
   const { id, ...data } = st;
   data.updatedAt = Date.now();
-  if (S.cx.id === id) S.cx.cache = { id, ...data };
   return Store.put("contes", id, data);
 }
 // L'étape suivante s'écrit : l'IA (ou le générateur) reçoit l'histoire telle qu'elle est maintenant.
 async function cxGenerate(outcome) {
   const id = S.cx.id, base = cxStory(); if (!base || cxBusy()) return;
   const n = cxSteps(base).length, tok = { id }, here = () => S.cx.id === id && S.layer && S.layer.type === "conte";
+  Store.patchDoc("contes", id, { gen: { by: deviceId(), n, at: Date.now() } });
   S.cx.gen = tok; S.cx.err = ""; S.cx.busyMsg = n ? "La suite s'écrit" : "L'histoire commence à s'écrire"; cxWatchSlow(); render(true);
   let res;
   try { res = await cxNextStep(cxCopy(base), outcome); } catch (e) { res = null; }
@@ -6124,17 +6274,29 @@ async function cxGenerate(outcome) {
   // L'étape rejoint l'histoire qui l'a demandée, même si l'on en a ouvert une autre entre-temps.
   const cur = cxById(id);
   // Si l'autre téléphone a déjà écrit cette étape, on garde la sienne.
-  if (!res || !cur || cxSteps(cur).length !== n) { if (!res && S.cx.id === id) S.cx.err = "La suite n'a pas pu s'écrire. Réessayez dans un instant."; render(here()); return; }
-  const upd = cxCopy(cur);
-  upd.steps = [...cxSteps(cur), res.step];
-  if (res.step.end) { upd.status = "done"; upd.end = res.step.end; Jeu.event("fin"); Jeu.flag("conte"); }
-  cxSave(upd);
+  if (!res || !cur || cxSteps(cur).length !== n) {
+    if (cur && (cur.gen || {}).by === deviceId()) Store.patchDoc("contes", id, { gen: null });
+    if (!res && S.cx.id === id) S.cx.err = "La suite n'a pas pu s'écrire. Réessayez dans un instant.";
+    render(here()); return;
+  }
+  // Seule la nouvelle étape est envoyée : ce que l'autre téléphone a changé entre-temps reste.
+  Store.patchDoc("contes", id, { ["steps/" + n]: res.step, gen: null, ...(res.step.end ? { status: "done", end: res.step.end } : {}) });
+  if (res.step.end) { Jeu.event("fin"); Jeu.flag("conte"); }
   if (!here()) { render(); return; }
   Sfx.play(res.step.end ? "fanfare" : "page");
   render(true);
   const L = document.querySelector("#layer .layer"); if (L) L.scrollTo({ top: 0, behavior: reduceMotion() ? "auto" : "smooth" });
 }
-function cxCommit(mut) { const st = cxStory(); if (!st) return null; const upd = cxCopy(st); mut(upd, upd.steps[upd.steps.length - 1]); cxSave(upd); return upd; }
+// Modifie l'histoire ouverte, et n'envoie que ce qui a changé (champ par champ, étape par étape).
+function cxCommit(mut) {
+  const st = cxStory(); if (!st) return null;
+  const upd = cxCopy(st), same = (x, y) => JSON.stringify(x) === JSON.stringify(y), flat = {};
+  mut(upd, upd.steps[upd.steps.length - 1]);
+  new Set([...Object.keys(st), ...Object.keys(upd)]).forEach(k => { if (k !== "id" && k !== "steps" && k !== "updatedAt" && !same(st[k], upd[k])) flat[k] = upd[k] === undefined ? null : upd[k]; });
+  cxSteps(upd).forEach((s, i) => { if (!same(s, st.steps[i])) flat["steps/" + i] = s; });
+  if (Object.keys(flat).length) Store.patchDoc("contes", st.id, flat);
+  return upd;
+}
 // Les sons d'une action de combat : le dé d'abord, puis le coup, le soin ou le charme.
 function cxFxSfx(F) {
   const k = F.fx.map(f => f.kind), d = F.roll ? 320 : 0;
@@ -6197,7 +6359,7 @@ const CX_ACT = {
   },
   "cx-open"(d) {
     const st = Store.cols.contes.find(x => x.id === d.id); if (!st) return;
-    S.cx.id = d.id; S.cx.cache = st; S.cx.check = null; S.cx.roll = null; S.cx.err = "";
+    S.cx.id = d.id; S.cx.check = null; S.cx.roll = null; S.cx.err = "";
     if (st.mode === "rpg" && !st.rpg) { S.cx.heroes = { a: { cls: "", pts: {} }, b: { cls: "", pts: {} } }; S.cx.view = "heroes"; return; }
     if (st.status === "done") { S.cx.view = "replay"; S.cx.ri = 0; return; }
     S.cx.view = "read";
@@ -6206,19 +6368,23 @@ const CX_ACT = {
   "cx-begin"() { cxGenerate(null); },
   "cx-pick"(d) {
     const st = cxStory(), s = cxSteps(st)[cxSteps(st).length - 1], i = +d.i, c = s && s.choices[i]; if (!c || cxBusy()) return;
-    if (c.stat && st.rpg) { S.cx.check = { ci: i }; S.cx.roll = null; return; }
+    if (c.stat && st.rpg) { S.cx.check = { ci: i, n: cxSteps(st).length }; S.cx.roll = null; return; }
     cxCommit((u, last) => { last.picked = i; });
     cxGenerate([s.outcome, `ils choisissent « ${c.t} »`].filter(Boolean).join(" ; "));
   },
   "cx-roll"(d) {
-    const st = cxStory(), s = cxSteps(st)[cxSteps(st).length - 1], c = s.choices[S.cx.check.ci], h = st.rpg.heroes[d.v];
+    const st = cxStory(), k = S.cx.check, s = cxSteps(st)[cxSteps(st).length - 1], c = k && s && s.choices[k.ci], h = c && st.rpg && st.rpg.heroes[d.v];
+    if (!h || k.n !== cxSteps(st).length || s.roll) return;
     const r = d20(), stat = h.stats[c.stat], tot = r + stat + rpgBonus(st, "talisman");
-    S.cx.roll = { v: r, tot, ok: r === 20 || (r !== 1 && tot >= c.dc), who: d.v, stat };
+    S.cx.roll = { v: r, tot, ok: r === 20 || (r !== 1 && tot >= c.dc), who: d.v, stat, ci: k.ci };
+    // Le dé est gardé dans l'étape : pas de relance, et l'autre téléphone voit le même résultat.
+    cxCommit((u, last) => { last.roll = S.cx.roll; });
     Sfx.play("dice"); setTimeout(() => Sfx.play(S.cx.roll && S.cx.roll.ok ? "chime" : "soft"), 700);
   },
-  "cx-uncheck"() { S.cx.check = null; S.cx.roll = null; },
+  "cx-uncheck"() { const s = cxSteps(cxStory()).slice(-1)[0]; if (s && s.roll) return; S.cx.check = null; S.cx.roll = null; },
   "cx-after-roll"() {
-    const r = S.cx.roll, ci = S.cx.check.ci; if (!r) return;
+    const r = S.cx.roll, k = S.cx.check; if (!r || !k || k.n !== cxSteps(cxStory()).length) { S.cx.check = null; S.cx.roll = null; return; }
+    const ci = k.ci;
     let out = "";
     cxCommit((u, last) => { const c = last.choices[ci]; last.picked = ci; out = [last.outcome, `${nm(r.who)} tente « ${c.t} » : jet de ${CX_STATS[c.stat]} ${r.ok ? "réussi" : "raté"} (${r.tot} contre ${c.dc})`].filter(Boolean).join(" ; "); last.outcome = out; });
     S.cx.check = null; S.cx.roll = null;
@@ -6542,7 +6708,7 @@ const ACT = {
   },
   tab(d) { S.tab = d.tab; S.confirm = null; window.scrollTo(0, 0); },
   "open-mode"(d) {
-    if (d.mode === "conte" || d.mode === "epopee") { S.layer = { type: "conte" }; S.fight = null; S.cx = { ...S.cx, view: d.mode === "epopee" ? "new" : "lib", mode: d.mode === "epopee" ? "rpg" : "conte", id: null, help: false, check: null, roll: null, pitching: null, slow: false, err: "", cache: null }; return; }
+    if (d.mode === "conte" || d.mode === "epopee") { S.layer = { type: "conte" }; S.fight = null; S.cx = { ...S.cx, view: d.mode === "epopee" ? "new" : "lib", mode: d.mode === "epopee" ? "rpg" : "conte", id: null, help: false, check: null, roll: null, pitching: null, slow: false, err: "" }; return; }
     if (d.mode === "puzzle") { S.layer = { type: "puzzle" }; S.pz = null; S.pzSize = S.pzSize || 3; return; }
     if (d.mode === "arcade") { S.layer = { type: "arcade" }; S.arc = null; return; }
     if (d.mode === "recit") { S.layer = { type: "story" }; S.story = null; S.storyStyle = couple().style === "secret" ? "secret" : "ensemble"; return; }
@@ -6601,13 +6767,13 @@ const ACT = {
     lsSet(Shared.key, Shared.newCode());
     Shared.joining = d.v === "keep" ? snapshotLocal() : null;
     lsSet("entre-nous:owner", Shared.code());
-    Store.connect().then(() => { if (Store.backend === "shared") { Store.setMeta("space", { owner: deviceId() }); S.shLink = Shared.invite(); render(true); } });
+    Store.connect().then(() => { if (Store.backend === "shared") { const me = whoAmI(); Store.setMeta("space", { owner: deviceId(), ...(me ? { who: { [me]: deviceId() } } : {}) }); S.shLink = Shared.invite(); render(true); } });
   },
   "reset-ask"(d) { S.confirmReset = !!d.v; },
   async "reset-all"() {
     if (!isOwner()) return;
     S.confirmReset = false;
-    try { if (Store.backend === "shared" && Store.db && Store.db.wipe) { await Store.db.wipe(); await Store.db.doc("meta/space").set({ owner: deviceId() }); } } catch (e) { toast("L'espace commun n'a pas pu être vidé. Vérifie ta connexion puis réessaie."); return; }
+    try { if (Store.backend === "shared" && Store.db && Store.db.wipe) { await Store.db.wipe(); await Store.db.doc("meta/space").set({ owner: deviceId(), epoch: Date.now() }); } } catch (e) { toast("L'espace commun n'a pas pu être vidé. Vérifie ta connexion puis réessaie."); return; }
     // On garde seulement le lien vers l'espace commun ; tout le reste repart à zéro.
     const keep = lsGet(Shared.key), owner = lsGet("entre-nous:owner"), device = deviceId();
     try { Object.keys(localStorage).filter(k => k.startsWith("entre-nous:")).forEach(k => localStorage.removeItem(k)); } catch (e) { /* stockage indisponible */ }
@@ -6637,7 +6803,12 @@ const ACT = {
   "inv-yes"() { const code = S.invite; S.invite = null; S.layer = null; if (Shared.join(code, true)) { Shared.reconnect().then(() => toast("Ce téléphone est passé sur l'autre espace")); return false; } },
   "inv-no"() { S.invite = null; S.layer = null; toast("Ce téléphone reste dans votre espace"); },
   "sh-back"() { const p = prevSpace(); if (p && Shared.join(p, true)) { Shared.reconnect().then(() => toast("De retour dans l'espace précédent")); return false; } },
-  "sh-leave"() { lsSet(Shared.key, ""); Store.goLocal(); S.shLink = null; toast("Ce téléphone garde sa propre copie"); },
+  "sh-leave"() {
+    const ks = [Store.cacheKey(), Store.obKey()];
+    Store.goLocal(); lsSet(Shared.key, ""); S.shLink = null;
+    ks.forEach(k => { try { if (k) localStorage.removeItem(k); } catch (e) { /* stockage indisponible */ } });
+    toast("Ce téléphone garde sa propre copie");
+  },
   "sync-copy"() {
     S.syncCode = makeCode();
     try {
@@ -6731,7 +6902,7 @@ const ACT = {
   },
   "pzr-open"() { S.pzRemote = true; S.pzSel = null; S.pzrSetup = false; pzRemoteOpen(); },
   "pzr-close"() { pzRemoteClose(); },
-  "pzr-me"(d) { lsSet("entre-nous:me", d.v); },
+  "pzr-me"(d) { claimMe(d.v); },
   "pzr-new"() { S.pzrSetup = true; },
   "pzr-resume"() { S.pzrSetup = false; },
   "pzr-peek"() { S.pzPeek = !S.pzPeek; },
@@ -6740,12 +6911,13 @@ const ACT = {
     let order;
     do { order = shuffle([...Array(N).keys()]); } while (order.every((p, i) => p === i));
     const L = { n, photo: pzPhotoId(S.pzPhoto), order, turn: pzMe() || "a", moves: 0, startAt: Date.now(), done: false, time: 0 };
+    if (!Store.db) { toast("Hors ligne : le puzzle à distance reviendra avec le réseau."); return; }
     S.pzLive = L; S.pzrSetup = false; S.pzSel = null;
     Store.db.doc("live/puzzle").set(L).catch(e => Store.fail(e));
   },
   "pzr-tap"(d) {
     const L = S.pzLive, me = pzMe(), i = +d.i;
-    if (!L || L.done) return;
+    if (!L || L.done || !Store.db) return;
     if (L.turn !== me) { toast(`C'est au tour de ${nm(L.turn)}`); return; }
     if (S.pzSel == null) { S.pzSel = i; return; }
     if (S.pzSel === i) { S.pzSel = null; return; }
@@ -6756,7 +6928,7 @@ const ACT = {
     const next = { ...L, order, moves: L.moves + 1, turn: other(me), done, time: done ? Date.now() - L.startAt : 0 };
     S.pzLive = next; Sfx.play(done ? "fanfare" : "tick");
     Store.db.doc("live/puzzle").set(next).catch(e => Store.fail(e));
-    if (done) { const p = Store.meta.progress; Store.setMeta("progress", { ...p, puzzles: (p.puzzles || 0) + 1 }); }
+    if (done) addPuzzle();
   },
   "pz-size"(d) { S.pzSize = +d.v; },
   "pz-start"() { startPuzzle(); },
@@ -6775,7 +6947,7 @@ const ACT = {
     z.sel = null; z.moves++; z.turn = other(z.turn); Sfx.play("tick");
     if (z.order.every((p, k) => p === k)) {
       z.done = true; z.time = Date.now() - z.startAt; Sfx.play("fanfare");
-      const p = Store.meta.progress; Store.setMeta("progress", { ...p, puzzles: (p.puzzles || 0) + 1 });
+      addPuzzle();
     }
   },
   "arc-start"(d) { if (S.arcRemote && Store.backend === "shared") startLiveArcade(d.g); else startArc(d.g); },
@@ -6847,14 +7019,17 @@ const ACT = {
   "ob-names"() {
     const c = couple(), a = draft("ob-a", c.a).trim().slice(0, 24), b = draft("ob-b", c.b).trim().slice(0, 24);
     if (!a || !b) { toast("Indiquez vos deux prénoms."); return; }
-    // Seuls les prénoms changés sont envoyés : si l'autre remplit en même temps, rien ne s'écrase.
-    const patch = {}; if (a !== c.a) patch.a = a; if (b !== c.b) patch.b = b;
+    // Seuls les prénoms encore vides sont envoyés : si l'autre a rempli en même temps, ses prénoms restent.
+    const patch = {}; if (!c.a) patch.a = a; if (!c.b) patch.b = b;
+    if ((c.a && a !== c.a) || (c.b && b !== c.b)) toast(`L'autre téléphone avait déjà écrit ${nm("a")} et ${nm("b")}. Vous pourrez changer dans les réglages.`);
     const since = draft("ob-since", c.since || "");
     if (since !== (c.since || "") && /^\d{4}-\d{2}-\d{2}$/.test(since) && since <= todayStr()) patch.since = since;
     if (Object.keys(patch).length) Store.patchMeta("couple", patch);
     clearDrafts("ob-a", "ob-b", "ob-since");
   },
-  "ob-me"(d) { lsSet("entre-nous:me", d.v); },
+  "ob-me"(d) { claimMe(d.v); },
+  "claim-yes"() { const k = S.claim; S.layer = S.claimBack; S.claimBack = null; claimMe(k, true); },
+  "claim-other"() { const k = S.claim; S.layer = S.claimBack; S.claimBack = null; claimMe(other(k), true); },
   "ob-avatar"() { const me = whoAmI() || "a"; S.avWho = me; S.fromOb = true; S.layer = { type: "sheet", name: "avatars" }; },
   "ob-done"() { const me = whoAmI(); if (me) avPatch(me, {}); S.fromOb = false; S.layer = onboardStep() ? { type: "onboard" } : null; toast("Ton avatar est prêt !"); },
   "save-names"() {
@@ -6862,7 +7037,10 @@ const ACT = {
     const a = draft("na", c.a).trim(), b = draft("nb", c.b).trim();
     if (!a || !b) { toast("Indiquez vos deux prénoms."); return; }
     const since = draft("nsince", c.since || ""), okD = v => /^\d{4}-\d{2}-\d{2}$/.test(v), bda = draft("nbda", c.bda || ""), bdb = draft("nbdb", c.bdb || "");
-    Store.setMeta("couple", { a, b, style: draft("nstyle", c.style || "partage"), ...(okD(since) && since <= todayStr() ? { since } : {}), ...(okD(bda) ? { bda } : {}), ...(okD(bdb) ? { bdb } : {}) });
+    const next = { a: a.slice(0, 24), b: b.slice(0, 24), style: draft("nstyle", c.style || "partage"), since: okD(since) && since <= todayStr() ? since : null, bda: okD(bda) ? bda : null, bdb: okD(bdb) ? bdb : null };
+    // Seuls les champs modifiés partent : un changement fait en même temps sur l'autre téléphone reste.
+    const patch = {}; Object.entries(next).forEach(([k, v]) => { if ((v || null) !== (c[k] || null)) patch[k] = v; });
+    if (Object.keys(patch).length) Store.patchMeta("couple", patch);
     clearDrafts("na", "nb", "nstyle", "nsince", "nbda", "nbdb"); S.layer = null; toast("C'est noté, " + a + " et " + b);
   },
   "mood-edit"() { S.moodEdit = !S.moodEdit; },
@@ -7002,7 +7180,7 @@ function start(data) {
   if (!render(true) && Store.cacheKey()) {
     // La copie gardée sur ce téléphone empêche l'affichage : on la jette, l'espace commun la renverra.
     try { localStorage.removeItem(Store.cacheKey()); } catch (e) { /* stockage indisponible */ }
-    Store.cols = { capsule: [], aventures: [], lettres: [], favoris: [], cartes: [], contes: [] };
+    Store.cols = emptyCols();
     Store.meta = JSON.parse(JSON.stringify(DEFAULT_META));
     render(true);
   }
@@ -7010,7 +7188,7 @@ function start(data) {
   // Hors ligne : l'appli s'ouvre depuis le téléphone, et les changements partent au retour du réseau.
   if ("serviceWorker" in navigator && location.protocol === "https:" && /github\.io$/.test(location.hostname)) navigator.serviceWorker.register("sw.js").catch(() => {});
   window.addEventListener("offline", () => toast("Hors ligne : tout reste lisible, vos changements partiront au retour du réseau."));
-  window.addEventListener("online", () => toast("De retour en ligne"));
+  window.addEventListener("online", () => { toast("De retour en ligne"); if (Shared.code() && !Store.db) Store.retrySoon(true); });
   setInterval(() => { document.documentElement.setAttribute("data-sky", skyNow()); Jeu.applyTheme(); }, 300000);
 }
 const hot = window.claude && window.claude.hot;
