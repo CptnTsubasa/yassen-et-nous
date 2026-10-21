@@ -118,8 +118,22 @@ async function onEvent(env, code, type, id) {
     if (!(await once(env, `sent:${code}:mot:${id}`))) return 0;
     const from = x.from === "b" ? "b" : "a";
     return notify(env, code, other(from), "mot", x.kind === "mot"
-      ? { title: `💌 Un petit mot de ${nm(from)}`, body: x.text || "Ouvre Y&S pour le lire." }
-      : { title: `📖 ${nm(from)} a raconté une anecdote`, body: x.text || "" });
+      ? { title: `💌 Un petit mot de ${nm(from)}`, body: x.text || "Ouvre Y&S pour le lire.", tag: "mot-" + id }
+      : { title: `📖 ${nm(from)} a raconté une anecdote`, body: x.text || "", tag: "mot-" + id });
+  }
+  if (type === "geste2") {
+    // id = un geste précis (gestes/<id>) : exactement une notification par geste envoyé.
+    const path = `couples/${code}/gestes/${id}`, x = await rtdb(path), g = x && GESTES[x.kind];
+    if (!g || (x.to !== "a" && x.to !== "b") || Date.now() - (+x.t || 0) > 86400000) return 0;
+    const key = `sent:${code}:geste2:${id}`;
+    if (!(await once(env, key))) return 0;
+    const from = x.from === "b" ? "b" : "a";
+    const subs = Object.keys((await rtdb(`couples/${code}/push/${x.to}`)) || {}).length;
+    const n = await notify(env, code, x.to, "geste", { title: `${g[0]} ${g[1].replace("{f}", nm(from))}`, body: g[2], tag: "geste-" + id });
+    // Des téléphones abonnés mais rien n'est parti : l'appli réessaiera plus tard.
+    if (!n && subs && (await wants(code, x.to, "geste"))) { await env.KV.delete(key); throw new Error("retry"); }
+    await rtdb(path, { method: "DELETE" }).catch(() => {});
+    return n;
   }
   if (type === "geste") {
     // id = le destinataire (a ou b) : son dernier geste reçu, s'il est tout frais.
@@ -134,7 +148,7 @@ async function onEvent(env, code, type, id) {
     if (!(await once(env, `sent:${code}:lettre:${id}`))) return 0;
     const from = x.from === "b" ? "b" : "a";
     const d = new Date(x.openOn + "T12:00:00Z").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-    return notify(env, code, other(from), "lettre", { title: `✉️ ${nm(from)} a scellé une lettre pour toi`, body: `Elle s'ouvrira le ${d}. Patience…` });
+    return notify(env, code, other(from), "lettre", { title: `✉️ ${nm(from)} a scellé une lettre pour toi`, body: `Elle s'ouvrira le ${d}. Patience…`, tag: "lettre-" + id });
   }
   if (type === "partie") {
     const x = await rtdb(`couples/${code}/live/game`);
@@ -193,7 +207,7 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
       if (req.method === "GET" && url.pathname === "/vapid") return json({ key: (await vapid(env)).pub });
-      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 3, types: ["mot", "geste", "lettre", "partie", "test"] });
+      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 4, types: ["mot", "geste", "geste2", "lettre", "partie", "test"] });
       if (req.method !== "POST") return json({ error: "inconnu" }, 404);
       const b = await req.json().catch(() => ({}));
       if (!okCode(b.code)) return json({ error: "code" }, 400);
@@ -202,7 +216,7 @@ export default {
         return json({ ok: true });
       }
       if (url.pathname === "/notify") {
-        if (!["mot", "geste", "lettre", "partie", "test"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
+        if (!["mot", "geste", "geste2", "lettre", "partie", "test"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
         // Notification de test, envoyée à ses propres téléphones (une toutes les 20 secondes au plus).
         if (b.type === "test") {
           if ((b.id !== "a" && b.id !== "b") || !(await once(env, `test:${b.code}:${b.id}:${Math.floor(Date.now() / 20000)}`))) return json({ ok: true, sent: 0, test: true });

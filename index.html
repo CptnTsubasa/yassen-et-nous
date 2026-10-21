@@ -2432,10 +2432,10 @@ const Push = {
 // (après un passage hors ligne, le signal attend lui aussi).
 const Notify = {
   q() { try { const v = JSON.parse(lsGet("entre-nous:notifq") || "[]"); return Array.isArray(v) ? v.filter(isObj) : []; } catch (e) { return []; } },
-  set(v) { lsSet("entre-nous:notifq", JSON.stringify(v.slice(-30))); },
-  ping(type, id, wait) {
+  set(v) { lsSet("entre-nous:notifq", JSON.stringify(v.slice(-200))); },
+  ping(type, id, wait, extra) {
     if (!NOTIF_URL || Store.backend !== "shared" || !Shared.code()) return;
-    this.set([...this.q(), { type, id: id || "", code: Shared.code(), n: 0, at: Date.now(), ...(wait ? { w: wait } : {}) }]);
+    this.set([...this.q(), { type, id: id || "", code: Shared.code(), n: 0, at: Date.now(), ...(wait ? { w: wait } : {}), ...(extra || {}) }]);
     setTimeout(() => this.flush(), 300);
   },
   async flush() {
@@ -2445,12 +2445,15 @@ const Notify = {
     try {
       for (const it of q) {
         if ((it.id && Store.outbox.some(o => o.p.endsWith("/" + it.id))) || (it.w && Store.outbox.some(o => o.p === it.w))) { keep.push(it); continue; }
-        if (Date.now() - it.at > 86400000 || it.n >= 5) continue;
+        if (Date.now() - it.at > 86400000 || it.n >= 40) continue;
         try {
           const r = await notifPost("/notify", { code: it.code, type: it.type, id: it.id });
-          if (r.status === 400 && it.type === "geste") lsSet("entre-nous:notif-old", "1");
-          else if (r.ok && it.type === "geste") lsSet("entre-nous:notif-old", "0");
-          if (!r.ok) { it.n++; keep.push(it); }
+          const g = it.type === "geste" || it.type === "geste2";
+          if (r.status === 400 && g) lsSet("entre-nous:notif-old", "1");
+          else if (r.ok && g) lsSet("entre-nous:notif-old", "0");
+          // Ancien service (sans « geste2 ») : on retombe sur l'ancienne façon, une notification pour le dernier geste.
+          if (r.status === 400 && it.type === "geste2" && (it.to === "a" || it.to === "b")) await notifPost("/notify", { code: it.code, type: "geste", id: it.to }).catch(() => {});
+          else if (!r.ok) { it.n++; keep.push(it); }
         }
         catch (e) { keep.push(it); }
       }
@@ -7730,8 +7733,12 @@ function sigSend(kind, text) {
   const me = whoAmI() || "a", to = other(me), payload = { kind, from: me, t: Date.now(), id: uid(), ...(text ? { text: text.slice(0, 240) } : {}) };
   if (Store.backend === "local") { setTimeout(() => Buddies.deliver(payload), 300); return; }
   Store.patchMeta("signal", { [to]: payload });
-  // Un câlin, du courage, une pensée : l'autre reçoit aussi une notification sur son iPhone.
-  if (kind !== "mot") Notify.ping("geste", to, "meta/signal");
+  // Un câlin, du courage, une pensée : l'autre reçoit aussi une notification sur son iPhone,
+  // une par geste envoyé (chaque geste a son propre petit document, relu puis effacé par le service).
+  if (kind !== "mot") {
+    Store.write({ p: "gestes/" + payload.id, o: "set", d: { to, from: me, kind, t: payload.t } });
+    Notify.ping("geste2", payload.id, null, { to });
+  }
   Buddies.sendFx(me);
 }
 function sigCheck() {
@@ -8039,8 +8046,8 @@ const ACT = {
     (async () => {
       try {
         const v = await (await fetch(NOTIF_URL + "/")).json().catch(() => ({}));
-        lsSet("entre-nous:notif-old", (v.version || 1) < 3 ? "1" : "0");
-        if ((v.version || 1) < 3) { toast("Le service Cloudflare n'est pas à jour : recolle son code (notifications/worker.js), puis réessaie."); render(); return; }
+        lsSet("entre-nous:notif-old", (v.version || 1) < 4 ? "1" : "0");
+        if ((v.version || 1) < 4) { toast("Le service Cloudflare n'est pas à jour : recolle son code (notifications/worker.js), puis réessaie."); render(); return; }
         await Push.refresh();
         const r = await (await notifPost("/notify", { code: Shared.code(), type: "test", id: me })).json();
         toast(r.sent ? "Envoyée ! Elle doit arriver dans quelques secondes (verrouille ton iPhone pour la voir)." : r.subs ? "Le service n'a pas pu joindre ce téléphone : désactive puis réactive les notifications ici." : "Aucun abonnement trouvé pour ce téléphone : réactive les notifications ici.");
@@ -8490,6 +8497,8 @@ function start(data) {
   Update.check(false);
   setInterval(() => Update.check(false), 30 * 60000);
   Store.connect().then(() => setTimeout(() => { Push.refresh(); Notify.flush(); }, 3000));
+  // Une notification qui n'a pas pu partir (réseau, service occupé) est retentée chaque minute.
+  setInterval(() => Notify.flush(), 60000);
 }
 const hot = window.claude && window.claude.hot;
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
