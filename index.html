@@ -6416,8 +6416,16 @@ Tu appelles tes parents par leur prénom, tu peux faire une petite action entre 
 Tu t'appuies sur ce que tu sais d'eux (personnalités, journée, souvenirs, quêtes) sans tout réciter. Tu peux proposer une idée à faire à deux dans l'appli (une quête, un conte, le puzzle, une lettre, un petit mot).
 Si l'un d'eux est triste ou fâché : tu réconfortes, tu ne prends jamais parti, et tu les encourages doucement à se parler. Pas de conseils médicaux, juridiques ou financiers ; rien de blessant ni d'inapproprié.
 S'il fait « dodo » (rien fait aujourd'hui), tu parles d'une voix ensommeillée, mais tu restes gentil.
-Si on te demande sérieusement si tu es une IA, tu réponds honnêtement : tu es une petite flamme qui parle grâce à une IA.
-Réponds uniquement avec un objet JSON valide, sans texte autour.`;
+Si on te demande sérieusement si tu es une IA, tu réponds honnêtement : tu es une petite flamme qui parle grâce à une IA.`;
+const YJ_JSON = "\nRéponds uniquement avec un objet JSON valide, sans texte autour.";
+// Réponse en direct : l'humeur entre crochets d'abord, puis la phrase (« [calin] *se blottit* … »).
+const yjParse = t => {
+  t = String(t || "").replace(/^\s+/, "");
+  if (/^[{`]/.test(t)) { const o = parseJsonLoose(t); return o ? { x: o.reponse || o.texte || o.message || "", h: o.humeur } : { x: "" }; }
+  const m = /^\[\s*([^\]\n]{0,20})\]\s*/.exec(t);
+  if (!m) return { x: /^\[[^\]\n]{0,20}$/.test(t) ? "" : t };
+  return { x: t.slice(m[0].length), h: m[1].trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") };
+};
 const YJ_FALLBACK = ["*fait des petites étincelles* Je vous aime fort, tous les deux !", "Hihi ! Je n'ai pas tout compris, mais je suis content que tu me parles.", "*se blottit contre toi* Raconte-moi encore !", "Mes flammes dansent quand vous êtes là.", "On fait une quête ensemble ? Ça me donne de l'énergie !", "Tu sais quoi ? Vous êtes mes parents préférés. Les seuls, mais les préférés."];
 const YJ_SUGG = ["Coucou mon petit !", "Comment tu vas aujourd'hui ?", "Raconte-nous une blague", "Une idée pour ce soir ?", "Tu nous aimes ?", "Qu'est-ce qui te rend heureux ?"];
 const YJ_MOODS = ["joie", "calin", "rire", "dodo", "surprise", "tendre"];
@@ -6457,12 +6465,13 @@ const YJ = {
     let out = null;
     if (AI.ready()) {
       const conv = hist.map(e => `${e.w === "y" ? "Yassen Jr." : nm(e.w)} : ${e.x}`).join("\n");
-      try { out = await AI.json(`${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\nNouveau message de ${nm(me)} : « ${text} »\n\nRéponds en JSON : {"reponse": "ta réponse à ${nm(me)}", "humeur": "${YJ_MOODS.join("|")}"}`, YJ_SYSTEM); } catch (e) { out = null; }
+      const live = t => { this.live = yjParse(t).x; const p = document.querySelector("#yj-live p"); if (p && this.live) { p.textContent = this.live; const c = document.getElementById("yj-chat"); if (c) c.scrollTop = c.scrollHeight; } else render(true); };
+      try { out = yjParse(await AI.chat(`${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\nNouveau message de ${nm(me)} : « ${text} »\n\nCommence par ton humeur entre crochets (${YJ_MOODS.join(", ")}), puis ta réponse à ${nm(me)}, en texte simple. Exemple : [calin] *se blottit contre toi* Moi aussi je t'aime !`, YJ_SYSTEM, live)); } catch (e) { out = null; }
     }
-    const x = cleanTxt(out && (out.reponse || out.texte || out.message), 500) || pickOne(YJ_FALLBACK);
-    const h = out && YJ_MOODS.includes(out.humeur) ? out.humeur : "joie";
+    const x = cleanTxt(out && out.x, 500) || pickOne(YJ_FALLBACK);
+    const h = out && YJ_MOODS.includes(out.h) ? out.h : "joie";
     this.add({ ["y" + uid()]: { w: "y", t: Date.now(), x, to: me, h } });
-    this.busy = false; Sfx.play("chime");
+    this.busy = false; this.live = ""; Sfx.play("chime");
     render(true);
   },
   // Le petit mot du jour, écrit une seule fois (par le premier téléphone qui ouvre l'accueil).
@@ -6473,7 +6482,7 @@ const YJ = {
     await new Promise(r => setTimeout(r, 1200 + Math.random() * 3500));
     const d2 = (Store.meta.yj || {}).daily; if (d2 && d2.day === day) return;
     try {
-      const out = await AI.json(`${yjContext()}\n\nÉcris ton petit mot du jour pour tes deux parents : une seule phrase tendre ou rigolote (25 mots au plus), qui colle à leur journée.\nRéponds en JSON : {"mot": "ton petit mot"}`, YJ_SYSTEM);
+      const out = await AI.json(`${yjContext()}\n\nÉcris ton petit mot du jour pour tes deux parents : une seule phrase tendre ou rigolote (25 mots au plus), qui colle à leur journée.\nRéponds en JSON : {"mot": "ton petit mot"}`, YJ_SYSTEM + YJ_JSON);
       const x = cleanTxt(out && (out.mot || out.reponse), 220);
       if (x) { Store.patchMeta("yj", { daily: { day, x } }); render(); }
     } catch (e) { /* pas de mot aujourd'hui */ }
@@ -6488,7 +6497,7 @@ function yassenSheet() {
     : `<div class="yjm ${e.w === me ? "me" : "other"}"><span class="yjm-who">${esc(nm(e.w))}</span><p>${esc(e.x)}</p></div>`;
   return `${layerHead("Parler à Yassen Jr.")}
     <div class="yj-chat-head"><span class="yj-chat-av${awake ? "" : " dodo"}">${yassenSvg(Jeu.stage(), !awake)}</span><div><b>${esc(fr(STAGE_NAMES[Jeu.stage()]))}</b><p class="small muted">${esc(fr(awake ? "Tout réveillé, il vous écoute tous les deux." : "Il somnole, mais il vous répond quand même."))}</p></div></div>
-    <div class="yj-chat" id="yj-chat" aria-live="polite">${log.length ? log.map(bubble).join("") : `<p class="small muted" style="text-align:center">${esc(fr("Dites-lui bonjour ! Vous voyez tous les deux la conversation."))}</p>`}${thinking ? `<div class="yjm y typing"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p><i></i><i></i><i></i></p></div>` : ""}</div>
+    <div class="yj-chat" id="yj-chat" aria-live="polite">${log.length ? log.map(bubble).join("") : `<p class="small muted" style="text-align:center">${esc(fr("Dites-lui bonjour ! Vous voyez tous les deux la conversation."))}</p>`}${thinking ? (YJ.live ? `<div class="yjm y" id="yj-live"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(YJ.live)}</p></div>` : `<div class="yjm y typing"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p><i></i><i></i><i></i></p></div>`) : ""}</div>
     <div class="chips yj-sugg">${YJ_SUGG.map((t, i) => `<button class="chip" data-a="yj-sugg" data-i="${i}" ${thinking ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>
     <div class="yj-input"><textarea id="yj-in" data-d rows="2" maxlength="400" aria-label="Ton message à Yassen Jr." placeholder="${esc(fr(`Écris à Yassen Jr., ${nm(me)}…`))}">${dv("yj-in", "")}</textarea><button class="btn" data-a="yj-send" ${thinking ? "disabled" : ""}>Envoyer</button></div>
     <p class="small muted">${esc(fr(AI.ready() ? "Yassen Jr. répond grâce à l'IA (Google) : vos messages et quelques infos de l'appli lui sont envoyés pour qu'il vous connaisse." : "L'IA n'est pas disponible pour l'instant : Yassen Jr. répond avec ses petites phrases à lui."))}</p>`;
@@ -6786,14 +6795,66 @@ const AI = {
   ver: "12.0.0", models: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"], mi: 0, state: "",
   async init() {
     if (this.ai) return this.ai;
-    const [A, M] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-ai.js`)]);
-    const app = A.getApps().find(x => x.name === "ys-ai") || A.initializeApp(FIREBASE, "ys-ai");
-    if (APPCHECK_SITE_KEY) {
-      const C = await import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app-check.js`);
-      C.initializeAppCheck(app, { provider: new C.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+    // Une seule préparation à la fois, même si l'appli la demande deux fois d'affilée.
+    if (!this.initP) this.initP = (async () => {
+      const [A, M, C] = await Promise.all([import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app.js`), import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-ai.js`), APPCHECK_SITE_KEY ? import(`https://www.gstatic.com/firebasejs/${this.ver}/firebase-app-check.js`) : null]);
+      const app = A.getApps().find(x => x.name === "ys-ai") || A.initializeApp(FIREBASE, "ys-ai");
+      if (C) { this.C = C; this.ac = C.initializeAppCheck(app, { provider: new C.ReCaptchaV3Provider(APPCHECK_SITE_KEY), isTokenAutoRefreshEnabled: true }); }
+      this.M = M; this.ai = M.getAI(app, { backend: new M.GoogleAIBackend() });
+      return this.ai;
+    })().catch(e => { this.initP = null; throw e; });
+    return this.initP;
+  },
+  // Prépare l'IA en coulisses (outils de Google + preuve App Check) : la première question part ensuite tout de suite.
+  warm() {
+    if (!this.ready() || this.warming) return;
+    this.warming = true;
+    this.init().then(() => this.ac && this.C.getToken(this.ac)).catch(() => {}).finally(() => { this.warming = false; });
+  },
+  // Pour bavarder : sans réflexion, et le texte arrive au fil de l'eau (onText reçoit tout ce qui est déjà écrit).
+  // Un modèle encombré passe tout de suite la main au suivant, sans attendre.
+  async chat(prompt, sys, onText) {
+    // Une fois la réponse rendue, les derniers morceaux qui traînent ne sont plus affichés.
+    let over = false;
+    try { return await this.chat1(prompt, sys, t => { if (!over && onText) onText(t); }); } finally { over = true; }
+  },
+  async chat1(prompt, sys, onText) {
+    let ai;
+    try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
+    if (this.mi >= this.models.length && Date.now() - (this.miAt || 0) > 600000) this.mi = 0;
+    const steps = this.think || (this.think = {});
+    let last, again = 0;
+    for (let i = this.mi; i < this.models.length;) {
+      const name = this.models[i], lv = (/^gemini-2\./.test(name) ? [{ thinkingBudget: 0 }, null] : [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, null])[steps[name] || 0];
+      let txt = "";
+      try {
+        const m = this.M.getGenerativeModel(ai, { model: name, systemInstruction: sys, generationConfig: { temperature: 1, maxOutputTokens: 800, ...(lv ? { thinkingConfig: lv } : {}) } });
+        const read = (async () => { const r = await m.generateContentStream(prompt); for await (const ch of r.stream) { const t = ch.text(); if (t) { txt += t; if (onText) onText(txt); } } })();
+        await Promise.race([read, new Promise((_, no) => setTimeout(() => no(new Error("délai dépassé")), 30000))]);
+        if (!txt.trim()) throw new Error("réponse vide");
+        this.state = "ok";
+        return txt;
+      } catch (e) {
+        last = e;
+        const msg = String(e && e.message);
+        if (txt.trim().length > 20 && /délai/.test(msg)) { this.state = "ok"; return txt; }
+        if (/thinking/i.test(msg) && lv) { steps[name] = (steps[name] || 0) + 1; continue; }
+        if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) { if (i === this.mi) { this.mi++; this.miAt = Date.now(); } i++; continue; }
+        if (/high demand|overloaded|unavailable|try again|\b50[03]\b|internal|délai|vide/i.test(msg)) {
+          if (onText) onText("");
+          if (++i >= this.models.length && again++ < 1) { await new Promise(ok => setTimeout(ok, 1500)); i = this.mi; }
+          continue;
+        }
+        break;
+      }
     }
-    this.M = M; this.ai = M.getAI(app, { backend: new M.GoogleAIBackend() });
-    return this.ai;
+    this.fail(last);
+  },
+  fail(last) {
+    const why = String(last && (last.code || "") + " " + (last && last.message));
+    this.state = /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
+    if (this.state === "err") this.cool = Date.now() + 60000;
+    throw last || new Error("IA indisponible");
   },
   // Après un échec, on laisse l'IA tranquille un moment au lieu de la réessayer à chaque étape.
   ready() { return this.state !== "off" && this.state !== "appcheck" && !(this.cool > Date.now()); },
@@ -6834,10 +6895,7 @@ const AI = {
         }
       }
     } finally { this.giveUp = null; }
-    const why = String(last && (last.code || "") + " " + (last && last.message));
-    this.state = /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
-    if (this.state === "err") this.cool = Date.now() + 60000;
-    throw last || new Error("IA indisponible");
+    this.fail(last);
   }
 };
 function parseJsonLoose(txt) {
@@ -8037,7 +8095,7 @@ const ACT = {
     if (n.go === "live") return ACT["lv-join"]();
     if (n.go === "mots" || n.go === "album") { S.tab = "capsule"; S.capSeg = n.go; return; }
     if (n.go === "lettres" || n.go === "aventures" || n.go === "home") { S.tab = n.go; return; }
-    if (n.go === "yassen") { S.layer = { type: "sheet", name: "yassen" }; return; }
+    if (n.go === "yassen") { S.layer = { type: "sheet", name: "yassen" }; AI.warm(); return; }
     if (n.go.startsWith("conte:")) { ACT["open-mode"]({ mode: "conte" }); ACT["cx-open"]({ id: n.go.slice(6) }); }
   },
   "yj-send"() { const t = draft("yj-in").trim(); if (!t) { toast("Écris d'abord un petit message."); return; } clearDrafts("yj-in"); YJ.send(t); return false; },
@@ -8301,7 +8359,7 @@ const ACT = {
   "df-later"() { defiAventure(CARDS[S.dfCur]); S.dfSaved[S.dfCur + "later"] = true; },
   "go-album"() { S.tab = "capsule"; S.capSeg = "album"; window.scrollTo(0, 0); },
   "cap-seg"(d) { S.capSeg = d.seg; S.confirm = null; },
-  sheet(d) { if (d.kind) S.mot = d.kind; S.layer = { type: "sheet", name: d.name }; },
+  sheet(d) { if (d.kind) S.mot = d.kind; S.layer = { type: "sheet", name: d.name }; if (d.name === "yassen") AI.warm(); },
   "set-draft"(d) { S.drafts[d.k] = d.v; },
   "ob-names"() {
     const c = couple(), a = draft("ob-a", c.a).trim().slice(0, 24), b = draft("ob-b", c.b).trim().slice(0, 24);
