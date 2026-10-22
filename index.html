@@ -2445,7 +2445,9 @@ const Notify = {
     try {
       for (const it of q) {
         if ((it.id && Store.outbox.some(o => o.p.endsWith("/" + it.id))) || (it.w && Store.outbox.some(o => o.p === it.w))) { keep.push(it); continue; }
-        if (Date.now() - it.at > 86400000 || it.n >= 40) continue;
+        if (Date.now() - it.at > 86400000 || it.n >= 12) continue;
+        // Après un échec, on attend de plus en plus longtemps : 1 min, 2, 4, 8… jusqu'à 30 min.
+        if (it.next > Date.now()) { keep.push(it); continue; }
         try {
           const r = await notifPost("/notify", { code: it.code, type: it.type, id: it.id });
           const g = it.type === "geste" || it.type === "geste2";
@@ -2453,9 +2455,9 @@ const Notify = {
           else if (r.ok && g) lsSet("entre-nous:notif-old", "0");
           // Ancien service (sans « geste2 ») : on retombe sur l'ancienne façon, une notification pour le dernier geste.
           if (r.status === 400 && it.type === "geste2" && (it.to === "a" || it.to === "b")) await notifPost("/notify", { code: it.code, type: "geste", id: it.to }).catch(() => {});
-          else if (!r.ok) { it.n++; keep.push(it); }
+          else if (!r.ok) { it.n++; it.next = Date.now() + Math.min(1800000, 60000 * 2 ** (it.n - 1)); keep.push(it); }
         }
-        catch (e) { keep.push(it); }
+        catch (e) { it.next = Date.now() + 60000; keep.push(it); }
       }
     } finally {
       this.set([...keep, ...this.q().filter(x => !q.some(y => same(x, y)))]);
@@ -8107,8 +8109,8 @@ const ACT = {
     (async () => {
       try {
         const v = await (await fetch(NOTIF_URL + "/")).json().catch(() => ({}));
-        lsSet("entre-nous:notif-old", (v.version || 1) < 4 ? "1" : "0");
-        if ((v.version || 1) < 4) { toast("Le service Cloudflare n'est pas à jour : recolle son code (notifications/worker.js), puis réessaie."); render(); return; }
+        lsSet("entre-nous:notif-old", (v.version || 1) < 5 ? "1" : "0");
+        if ((v.version || 1) < 5) { toast("Le service Cloudflare n'est pas à jour : recolle son code (notifications/worker.js), puis réessaie."); render(); return; }
         await Push.refresh();
         const r = await (await notifPost("/notify", { code: Shared.code(), type: "test", id: me })).json();
         toast(r.sent ? "Envoyée ! Elle doit arriver dans quelques secondes (verrouille ton iPhone pour la voir)." : r.subs ? "Le service n'a pas pu joindre ce téléphone : désactive puis réactive les notifications ici." : "Aucun abonnement trouvé pour ce téléphone : réactive les notifications ici.");

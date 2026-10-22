@@ -35,7 +35,10 @@ async function hmac(key, data) {
 }
 
 /* ───── Clés VAPID (créées une fois, gardées dans KV) ───── */
-async function vapid(env) {
+// Gardées en mémoire après la première lecture (une seule préparation, même pour des envois simultanés).
+let VAPID = null;
+function vapid(env) { return VAPID || (VAPID = loadVapid(env).catch(e => { VAPID = null; throw e; })); }
+async function loadVapid(env) {
   const saved = await env.KV.get("vapid", "json");
   if (saved) return saved;
   const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
@@ -86,7 +89,8 @@ async function wants(code, who, type) {
   return typeof v === "boolean" ? v : DEFAULTS[type];
 }
 // Envoie à tous les téléphones de « who » ; les abonnements disparus sont retirés.
-async function notify(env, code, who, type, msg) {
+// st.soft compte les échecs passagers (Apple occupé, réseau) : seuls ceux-là valent un nouvel essai.
+async function notify(env, code, who, type, msg, st = {}) {
   if (who !== "a" && who !== "b" || !(await wants(code, who, type))) return 0;
   const subs = (await rtdb(`couples/${code}/push/${who}`)) || {};
   const text = JSON.stringify({ title: cut(msg.title, 80), body: cut(msg.body, 180), tag: msg.tag || type, url: "./" });
@@ -97,15 +101,18 @@ async function notify(env, code, who, type, msg) {
       const r = await fetch(s.e, { method: "POST", headers: { Authorization: await vapidHeader(env, s.e), "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream", TTL: "86400", Urgency: "high" }, body: await encrypt(s, text) });
       if (r.status === 404 || r.status === 410) await rtdb(`couples/${code}/push/${who}/${k}`, { method: "DELETE" });
       else if (r.ok) n++;
-      else console.log("push", r.status, await r.text());
-    } catch (e) { console.log("push", e.message); }
+      else { if (r.status === 429 || r.status >= 500) st.soft = (st.soft || 0) + 1; console.log("push", r.status, await r.text()); }
+    } catch (e) { st.soft = (st.soft || 0) + 1; console.log("push", e.message); }
   }
   return n;
 }
 // Une même nouvelle n'est envoyée qu'une fois, même si l'appli la signale deux fois.
-async function once(env, key) {
-  if (await env.KV.get(key)) return false;
-  await env.KV.put(key, "1", { expirationTtl: 3 * 86400 });
+// La trace est gardée dans l'espace commun (couples/<code>/notifsent), pas dans KV : l'offre gratuite
+// de KV n'autorise que 1 000 écritures par jour. Les traces de plus de 3 jours sont effacées le matin.
+async function once(code, key) {
+  const path = `couples/${code}/notifsent/${key.replace(/[^A-Za-z0-9_-]/g, "_")}`;
+  if (await rtdb(path)) return false;
+  await rtdb(path, { method: "PUT", body: JSON.stringify(Date.now()) });
   return true;
 }
 
@@ -115,7 +122,7 @@ async function onEvent(env, code, type, id) {
   if (type === "mot") {
     const x = await rtdb(`couples/${code}/capsule/${id}`);
     if (!x || (x.kind !== "mot" && x.kind !== "anecdote") || Date.now() - (+x.createdAt || 0) > 86400000) return 0;
-    if (!(await once(env, `sent:${code}:mot:${id}`))) return 0;
+    if (!(await once(code, `mot_${id}`))) return 0;
     const from = x.from === "b" ? "b" : "a";
     return notify(env, code, other(from), "mot", x.kind === "mot"
       ? { title: `💌 Un petit mot de ${nm(from)}`, body: x.text || "Ouvre Y&S pour le lire.", tag: "mot-" + id }
@@ -123,29 +130,28 @@ async function onEvent(env, code, type, id) {
   }
   if (type === "geste2") {
     // id = un geste précis (gestes/<id>) : exactement une notification par geste envoyé.
+    // Le petit document du geste sert de trace : il est effacé dès que la notification est partie,
+    // donc un second signalement du même geste ne trouve plus rien à envoyer.
     const path = `couples/${code}/gestes/${id}`, x = await rtdb(path), g = x && GESTES[x.kind];
-    if (!g || (x.to !== "a" && x.to !== "b") || Date.now() - (+x.t || 0) > 86400000) return 0;
-    const key = `sent:${code}:geste2:${id}`;
-    if (!(await once(env, key))) return 0;
-    const from = x.from === "b" ? "b" : "a";
-    const subs = Object.keys((await rtdb(`couples/${code}/push/${x.to}`)) || {}).length;
-    const n = await notify(env, code, x.to, "geste", { title: `${g[0]} ${g[1].replace("{f}", nm(from))}`, body: g[2], tag: "geste-" + id });
-    // Des téléphones abonnés mais rien n'est parti : l'appli réessaiera plus tard.
-    if (!n && subs && (await wants(code, x.to, "geste"))) { await env.KV.delete(key); throw new Error("retry"); }
+    if (!g || (x.to !== "a" && x.to !== "b") || Date.now() - (+x.t || 0) > 86400000) { if (x) await rtdb(path, { method: "DELETE" }).catch(() => {}); return 0; }
+    const from = x.from === "b" ? "b" : "a", st = {};
+    const n = await notify(env, code, x.to, "geste", { title: `${g[0]} ${g[1].replace("{f}", nm(from))}`, body: g[2], tag: "geste-" + id }, st);
+    // Rien n'est parti à cause d'un souci passager : l'appli réessaiera plus tard. Sinon, le geste est réglé.
+    if (!n && st.soft) return -1;
     await rtdb(path, { method: "DELETE" }).catch(() => {});
     return n;
   }
   if (type === "geste") {
     // id = le destinataire (a ou b) : son dernier geste reçu, s'il est tout frais.
     const x = await rtdb(`couples/${code}/meta/signal/${id}`), g = x && GESTES[x.kind];
-    if (!g || (id !== "a" && id !== "b") || Date.now() - (+x.t || 0) > 600000 || !(await once(env, `sent:${code}:geste:${x.id}`))) return 0;
+    if (!g || (id !== "a" && id !== "b") || Date.now() - (+x.t || 0) > 600000 || !(await once(code, `geste_${x.id}`))) return 0;
     const from = x.from === "b" ? "b" : "a";
     return notify(env, code, id, "geste", { title: `${g[0]} ${g[1].replace("{f}", nm(from))}`, body: g[2], tag: "geste" });
   }
   if (type === "lettre") {
     const x = await rtdb(`couples/${code}/lettres/${id}`);
     if (!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.openOn || "") || Date.now() - (+x.createdAt || 0) > 86400000) return 0;
-    if (!(await once(env, `sent:${code}:lettre:${id}`))) return 0;
+    if (!(await once(code, `lettre_${id}`))) return 0;
     const from = x.from === "b" ? "b" : "a";
     const d = new Date(x.openOn + "T12:00:00Z").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
     return notify(env, code, other(from), "lettre", { title: `✉️ ${nm(from)} a scellé une lettre pour toi`, body: `Elle s'ouvrira le ${d}. Patience…`, tag: "lettre-" + id });
@@ -153,7 +159,7 @@ async function onEvent(env, code, type, id) {
   if (type === "partie") {
     const x = await rtdb(`couples/${code}/live/game`);
     if (!x || x.ended || Date.now() - (+x.startAt || 0) > 600000) return 0;
-    if (!(await once(env, `sent:${code}:partie:${x.startAt}`))) return 0;
+    if (!(await once(code, `partie_${x.startAt}`))) return 0;
     const by = x.by === "b" ? "b" : "a", what = x.kind === "story" ? "une histoire à deux" : x.kind === "arcade" ? "un jeu d'arcade" : "une partie de cartes";
     return notify(env, code, other(by), "partie", { title: `🎲 ${nm(by)} t'invite à jouer`, body: `On t'attend pour ${what}, à distance.`, tag: "partie" });
   }
@@ -174,6 +180,10 @@ async function morning(env, day) {
   const md = day.slice(5);
   for (const code of await couples(env)) {
     try {
+      // Les traces d'envoi de plus de 3 jours ne servent plus.
+      const sent = (await rtdb(`couples/${code}/notifsent`)) || {}, old = {};
+      for (const [k, t] of Object.entries(sent)) if (!(Date.now() - (+t || 0) < 3 * 86400000)) old[k] = null;
+      if (Object.keys(old).length) await rtdb(`couples/${code}/notifsent`, { method: "PATCH", body: JSON.stringify(old) });
       const { c, nm } = await names(code), lettres = (await rtdb(`couples/${code}/lettres`)) || {};
       for (const l of Object.values(lettres)) {
         if (l && l.openOn === day) { const from = l.from === "b" ? "b" : "a"; await notify(env, code, other(from), "lettre", { title: `💌 Une lettre de ${nm(from)} s'ouvre aujourd'hui`, body: l.title ? `« ${cut(l.title, 60)} »` : "Elle t'attend dans Y&S.", tag: "lettre-" + day }); }
@@ -207,24 +217,25 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
       if (req.method === "GET" && url.pathname === "/vapid") return json({ key: (await vapid(env)).pub });
-      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 4, types: ["mot", "geste", "geste2", "lettre", "partie", "test"] });
+      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 5, types: ["mot", "geste", "geste2", "lettre", "partie", "test"] });
       if (req.method !== "POST") return json({ error: "inconnu" }, 404);
       const b = await req.json().catch(() => ({}));
       if (!okCode(b.code)) return json({ error: "code" }, 400);
       if (url.pathname === "/register") {
-        if (!(await env.KV.get("couple:" + b.code))) await env.KV.put("couple:" + b.code, "1");
+        if (!(await env.KV.get("couple:" + b.code))) await env.KV.put("couple:" + b.code, "1").catch(e => console.log("kv", e.message));
         return json({ ok: true });
       }
       if (url.pathname === "/notify") {
         if (!["mot", "geste", "geste2", "lettre", "partie", "test"].includes(b.type) || (b.type !== "partie" && !okId(b.id))) return json({ error: "type" }, 400);
         // Notification de test, envoyée à ses propres téléphones (une toutes les 20 secondes au plus).
         if (b.type === "test") {
-          if ((b.id !== "a" && b.id !== "b") || !(await once(env, `test:${b.code}:${b.id}:${Math.floor(Date.now() / 20000)}`))) return json({ ok: true, sent: 0, test: true });
+          if ((b.id !== "a" && b.id !== "b") || !(await once(b.code, `test_${b.id}_${Math.floor(Date.now() / 20000)}`))) return json({ ok: true, sent: 0, test: true });
           const subs = Object.keys((await rtdb(`couples/${b.code}/push/${b.id}`)) || {}).length;
           const sent = await notify(env, b.code, b.id, "test", { title: "🔔 Test réussi !", body: "Les notifications de Y&S arrivent bien sur ce téléphone.", tag: "test" });
           return json({ ok: true, sent, subs, test: true });
         }
-        return json({ ok: true, sent: await onEvent(env, b.code, b.type, b.id) });
+        const sent = await onEvent(env, b.code, b.type, b.id);
+        return sent < 0 ? json({ error: "réessayer" }, 503) : json({ ok: true, sent });
       }
       return json({ error: "inconnu" }, 404);
     } catch (e) { return json({ error: e.message }, 500); }
