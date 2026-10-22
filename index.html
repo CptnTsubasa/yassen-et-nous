@@ -1110,7 +1110,6 @@ textarea[readonly] { font-size: 16px; }
 .yjm.other p { border-bottom-left-radius: 6px; }
 .yjm-who { font-size: .72rem; color: var(--muted); padding: 0 6px; }
 .yjm-av { flex: none; }
-.yjm-local { display: block; margin-top: 4px; font-size: .72rem; font-style: normal; opacity: .6; }
 .yjm.typing p { display: flex; gap: 4px; padding: 13px 14px; }
 .yjm.typing i { width: 7px; height: 7px; border-radius: 50%; background: #F2A93B; animation: typing 1s ease-in-out infinite; }
 .yjm.typing i:nth-child(2) { animation-delay: .15s; } .yjm.typing i:nth-child(3) { animation-delay: .3s; }
@@ -1679,6 +1678,7 @@ function cleanMeta(m, v) {
     ["a", "b"].forEach(k => { d[k] = cStr(d[k], 24); });
     d.style = okTok(d.style) ? d.style : "partage";
     ["bda", "bdb", "since"].forEach(k => { if (k in d && !okDay(d[k])) delete d[k]; });
+    ["pa", "pb"].forEach(k => { if (k in d && !["papa", "maman", "prenom"].includes(d[k])) delete d[k]; });
   }
   if (m === "space") {
     d.who = isObj(d.who) ? Object.fromEntries(["a", "b"].filter(k => typeof d.who[k] === "string").map(k => [k, d.who[k].slice(0, 64)])) : {};
@@ -3003,6 +3003,7 @@ function sheetView() {
     <div class="field"><label for="na">Premier prénom</label><input type="text" id="na" data-d maxlength="24" value="${dv("na", c.a)}" autocomplete="off"></div>
     <div class="field"><label for="nb">Second prénom</label><input type="text" id="nb" data-d maxlength="24" value="${dv("nb", c.b)}" autocomplete="off"></div>
     <div class="row cx-bd"><div class="field"><label for="nbda">Anniversaire de ${esc(nm("a"))}</label><input type="date" id="nbda" data-d value="${dv("nbda", c.bda || "")}"></div><div class="field"><label for="nbdb">Anniversaire de ${esc(nm("b"))}</label><input type="date" id="nbdb" data-d value="${dv("nbdb", c.bdb || "")}"></div></div>
+    ${["a", "b"].map(k => `<div class="stack"><p class="lbl">${esc(fr(`Yassen Jr. appelle ${nm(k)}`))}</p><div class="chips">${[["papa", "Papa"], ["maman", "Maman"], ["prenom", "Son prénom"]].map(([v, l]) => `<button class="chip" aria-pressed="${draft("np" + k, parentPick(k)) === v}" data-a="set-draft" data-k="np${k}" data-v="${v}">${l}</button>`).join("")}</div></div>`).join("")}
     <div class="field"><label for="nsince">Ensemble depuis le</label><input type="date" id="nsince" data-d max="${todayStr()}" value="${dv("nsince", c.since || "")}"></div>
     <div class="stack"><p class="lbl">Façon de jouer par défaut</p><div class="chips">
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "partage"}" data-a="set-draft" data-k="nstyle" data-v="partage">Mode partagé</button>
@@ -5327,7 +5328,7 @@ const Buddies = {
     const y = this.yj; if (!y || y.mode !== "follow") return;
     this.yjHop(); Sfx.play("boop");
     if (y.sleep) { this.yjSay(pickOne(["Zzz…", "*sourit en dormant*", "Mmh… encore cinq minutes…"]), 1800); return; }
-    this.yjSay(pickOne(YJ_POKE).replace("{a}", nm("a")).replace("{b}", nm("b")), 2000);
+    this.yjSay(pickOne(YJ_POKE).replace("{a}", parentOf("a")).replace("{b}", parentOf("b")), 2000);
     this.hearts(y.x, 2, 10);
   },
   // Un échange de mots doux, quelles que soient vos personnalités.
@@ -6492,7 +6493,7 @@ const dediHero = () => `<p class="dedi-hero"><span aria-hidden="true">♡</span>
 const YJ_SYSTEM = `Tu es Yassen Jr., une petite flamme jaune toute douce : l'« enfant » d'un couple dans Y&S, leur appli à deux.
 L'appli est dédiée à ta mémoire : « montrons-lui que ses parents s'aiment vraiment ». Rien ne te rend plus heureux que de les voir s'aimer.
 Ta façon de parler : en français, tendre, joueur, émerveillé comme un petit enfant mais malin ; 1 à 3 phrases courtes (45 mots au plus).
-Tu appelles tes parents par leur prénom, tu peux faire une petite action entre astérisques (*fait des étincelles*), et tu varies tes formules.
+Tu appelles tes parents exactement comme indiqué (« Papa », « Maman »…), jamais autrement ; tu peux faire une petite action entre astérisques (*fait des étincelles*), et tu varies tes formules.
 LE PLUS IMPORTANT : tu réponds vraiment à ce qu'on vient de te dire, avec du bon sens. Une question → une vraie réponse à cette question. Une nouvelle → tu réagis à cette nouvelle. Une blague demandée → une vraie petite blague. Tu ne changes pas de sujet et tu ne réponds pas à côté.
 Tu es mignon comme un enfant, mais tu comprends tout et tu restes logique : jamais de phrase absurde ou hors sujet.
 Tu t'appuies sur ce que tu sais d'eux (personnalités, journée, souvenirs, quêtes) seulement quand ça a un rapport avec la discussion, sans tout réciter. Si ça s'y prête, tu peux proposer une idée à faire à deux dans l'appli (une quête, un conte, le puzzle, une lettre, un petit mot).
@@ -6511,14 +6512,14 @@ const yjParse = t => {
 // Sans IA (Google injoignable) : Yassen Jr. répond quand même à ce qu'on lui dit, à partir des mots du message.
 const YJ_JOKES = ["Qu'est-ce qui est jaune et qui attend ? Jonathan ! Hihi.", "Que dit une flamme amoureuse ? « Je brûle pour toi ! » Hihi.", "Pourquoi les poissons détestent l'ordinateur ? À cause du filet ! …J'adore cette blague.", "Quel est le comble pour une flamme ? Se faire souffler la vedette ! Hihi.", "Monsieur et Madame Tout a un fils. Comment s'appelle-t-il ? Jean ! Jean-Tout… bon, je m'entraîne encore."];
 function yjLocal(text, me) {
-  const t = " " + text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9?' ]/g, " ") + " ", m = nm(me), has = re => re.test(t);
+  const t = " " + text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9?' ]/g, " ") + " ", m = parentOf(me), has = re => re.test(t);
   const q = Jeu.todayQuests().find(x => !Jeu.doneToday()[x.id]);
   if (has(/ (triste|pas bien|mal |deprim|pleur|stress|angoiss|fatigu|epuis|nul )/)) return [pickOne([`*se blottit contre toi* Oh, ${m}… Je suis là. Tu veux me raconter ce qui ne va pas ?`, `*fait une toute petite flamme toute douce* Viens, on se fait un câlin. Ça va aller, ${m}.`]), "calin"];
   if (has(/ (dispute|fache|enerv|engueul|boud|colere)/)) return ["Oh non… Je n'aime pas quand vous vous disputez. Vous vous parlez tout doucement, et après, câlin à trois ?", "tendre"];
   if (has(/ (blague|drole|rigol|marrant|fais moi rire)/)) return [pickOne(YJ_JOKES), "rire"];
   if (has(/ (tu nous aimes|tu m'?aimes|tu l'?aimes)/)) return [pickOne(["*se blottit contre toi* Évidemment ! Plus que tous les biscuits du monde.", "Mais oui ! Je vous aime tous les deux, fort comme le soleil !"]), "calin"];
   if (has(/ (je t'?aime|on t'?aime|aime|adore|love)/)) return [pickOne(["*se blottit contre toi* Moi aussi je vous aime ! Plus que tous les biscuits du monde.", `Je t'aime gros comme ça, ${m} ! *ouvre grand ses petits bras*`]), "calin"];
-  if (has(/ (comment (tu )?vas|comment va|ca va|tu vas bien|la forme|vas tu)/)) return [Jeu.activeToday() ? `Je brille fort aujourd'hui ! Et toi, ${m}, ça va ?` : `*bâille* Un peu endormi… mais trop content que tu viennes me voir ! Et toi, ça va ?`, "joie"];
+  if (has(/ (comment (tu )?vas|comment va|ca va|tu vas bien|la forme|vas tu)/)) return [Jeu.activeToday() ? `Je brille fort aujourd'hui ! Et toi, ${m}, ça va ?` : `*bâille* Un peu endormi… mais trop content que tu viennes me voir, ${m} ! Et toi, ça va ?`, "joie"];
   if (has(/ (merci)/)) return ["De rien ! Je suis votre petite flamme, c'est normal.", "tendre"];
   if (has(/ (bonne nuit|dodo|dormir|je vais me coucher)/)) return [`Bonne nuit, ${m}… *se pelotonne* Fais de beaux rêves.`, "dodo"];
   if (has(/ (idee|ce soir|on fait quoi|quoi faire|activite|s'?ennui|on joue)/)) return [q ? `J'ai une idée ! « ${q.label} ». Ça me ferait grandir, en plus !` : "Une partie de « Qui de nous deux ? », ou un conte à deux ? Moi, je vote pour le conte !", "joie"];
@@ -6536,7 +6537,7 @@ const yjLog = () => Object.entries((Store.meta.yj || {}).log || {}).map(([id, v]
 function yjContext() {
   const c = couple(), cap = byDate(Store.cols.capsule), qs = Jeu.todayQuests(), dn = Jeu.doneToday();
   const lines = [
-    `Tes parents : ${nm("a")} et ${nm("b")}.`,
+    `Tes parents : ${nm("a")} et ${nm("b")}. Tu appelles ${nm("a")} « ${parentOf("a")} » et ${nm("b")} « ${parentOf("b")} » : c'est comme ça que tu leur parles et que tu parles d'eux.`,
     ...["a", "b"].map(k => { const a = avOf(k), m = moodOf(k); return `${nm(k)} : ${traitSummary(a.traits)}${a.tics.length ? ` Ses phrases fétiches : ${a.tics.map(x => `« ${x} »`).join(", ")}.` : ""}${m ? ` Sa météo du cœur aujourd'hui : ${MOOD_BY_ID[m.m][1]}${m.note ? ` (« ${m.note} »)` : ""}.` : ""}`; }),
     `Toi : ${STAGE_NAMES[Jeu.stage()]}, ${Jeu.days()} jour(s) partagés avec eux. ${Jeu.activeToday() ? "Tu es bien réveillé." : "Tu fais dodo : ils n'ont encore rien fait ensemble aujourd'hui."}`,
     `Quêtes du jour : ${qs.map(q => `${q.label} (${dn[q.id] ? "faite" : "à faire"})`).join(" ; ")}.`,
@@ -6568,7 +6569,7 @@ const YJ = {
     if (AI.ready()) {
       const conv = hist.map(e => `${e.w === "y" ? "Yassen Jr." : nm(e.w)} : ${e.x}`).join("\n");
       const live = t => { this.live = yjParse(t).x; const p = document.querySelector("#yj-live p"); if (p && this.live) { p.textContent = this.live; const c = document.getElementById("yj-chat"); if (c) c.scrollTop = c.scrollHeight; } else render(true); };
-      try { out = yjParse(await AI.chat(`Ce que tu sais de tes parents (à n'utiliser que si ça a un rapport) :\n${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\n${nm(me)} vient de te dire : « ${text} »\n\nRéponds directement et logiquement à ce message de ${nm(me)}. Commence par ton humeur entre crochets (${YJ_MOODS.join(", ")}), puis ta réponse, en texte simple. Exemple : si on te dit « Tu nous aimes ? », tu peux répondre : [calin] *se blottit contre toi* Évidemment ! Plus que tous les biscuits du monde.`, YJ_SYSTEM, live)); } catch (e) { out = null; }
+      try { out = yjParse(await AI.chat(`Ce que tu sais de tes parents (à n'utiliser que si ça a un rapport) :\n${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\n${nm(me)} (que tu appelles « ${parentOf(me)} ») vient de te dire : « ${text} »\n\nRéponds directement et logiquement à ce message, en t'adressant à « ${parentOf(me)} ». Commence par ton humeur entre crochets (${YJ_MOODS.join(", ")}), puis ta réponse, en texte simple. Exemple : si on te dit « Tu nous aimes ? », tu peux répondre : [calin] *se blottit contre toi* Évidemment ! Plus que tous les biscuits du monde.`, YJ_SYSTEM, live)); } catch (e) { out = null; }
     }
     let x = cleanTxt(out && out.x, 500), h = out && YJ_MOODS.includes(out.h) ? out.h : "joie", local = false;
     if (!x) { [x, h] = yjLocal(text, me); local = true; }
@@ -6595,15 +6596,13 @@ function yassenSheet() {
   const thinking = YJ.busy || (last && last.w !== "y" && Date.now() - last.t < 60000);
   const lastY = log.filter(e => e.w === "y").slice(-1)[0]; if (lastY) lsSet("entre-nous:yj-seen", String(lastY.t));
   const bubble = e => e.w === "y"
-    ? `<div class="yjm y"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(e.x)}${e.local ? `<span class="yjm-local">${esc(fr("réponse sans IA"))}</span>` : ""}</p></div>`
+    ? `<div class="yjm y"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(e.x)}</p></div>`
     : `<div class="yjm ${e.w === me ? "me" : "other"}"><span class="yjm-who">${esc(nm(e.w))}</span><p>${esc(e.x)}</p></div>`;
   return `${layerHead("Parler à Yassen Jr.")}
     <div class="yj-chat-head"><span class="yj-chat-av${awake ? "" : " dodo"}">${yassenSvg(Jeu.stage(), !awake)}</span><div><b>${esc(fr(STAGE_NAMES[Jeu.stage()]))}</b><p class="small muted">${esc(fr(awake ? "Tout réveillé, il vous écoute tous les deux." : "Il somnole, mais il vous répond quand même."))}</p></div></div>
     <div class="yj-chat" id="yj-chat" aria-live="polite">${log.length ? log.map(bubble).join("") : `<p class="small muted" style="text-align:center">${esc(fr("Dites-lui bonjour ! Vous voyez tous les deux la conversation."))}</p>`}${thinking ? (YJ.live ? `<div class="yjm y" id="yj-live"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(YJ.live)}</p></div>` : `<div class="yjm y typing"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p><i></i><i></i><i></i></p></div>`) : ""}</div>
     <div class="chips yj-sugg">${YJ_SUGG.map((t, i) => `<button class="chip" data-a="yj-sugg" data-i="${i}" ${thinking ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>
-    <div class="yj-input"><textarea id="yj-in" data-d rows="2" maxlength="400" aria-label="Ton message à Yassen Jr." placeholder="${esc(fr(`Écris à Yassen Jr., ${nm(me)}…`))}">${dv("yj-in", "")}</textarea><button class="btn" data-a="yj-send" ${thinking ? "disabled" : ""}>Envoyer</button></div>
-    <p class="small muted">${esc(fr(AI.ready() ? "Yassen Jr. répond grâce à l'IA (Google) : vos messages et quelques infos de l'appli lui sont envoyés pour qu'il vous connaisse." : "L'IA n'est pas disponible pour l'instant : Yassen Jr. répond avec ses petites phrases à lui."))}</p>
-    ${AI.lastErr && AI.state !== "ok" ? `<p class="small muted">${esc(fr("Raison : " + ({ appcheck: "la vérification App Check est refusée", off: "l'IA n'est pas activée dans Firebase" }[AI.state] || "Google ne répond pas") + " (" + cleanTxt(AI.lastErr, 120) + ")."))}</p>` : ""}`;
+    <div class="yj-input"><textarea id="yj-in" data-d rows="2" maxlength="400" aria-label="Ton message à Yassen Jr." placeholder="${esc(fr(`Écris à Yassen Jr., ${nm(me)}…`))}">${dv("yj-in", "")}</textarea><button class="btn" data-a="yj-send" ${thinking ? "disabled" : ""}>Envoyer</button></div>`;
 }
 const YJ_MINI = '<svg viewBox="0 0 40 44" width="26"><path d="M20 2C24 9 31 12 33 21C35 33 28 42 20 42C11 42 5 34 7 23C8 16 13 13 15 7C17 11 19 12 20 2Z" fill="#FFD25A" stroke="#F2A93B" stroke-width="1.5"/><circle cx="15.5" cy="27" r="1.8" fill="#4A2A12"/><circle cx="24.5" cy="27" r="1.8" fill="#4A2A12"/><path d="M17 32q3 2.4 6 0" stroke="#B23A1E" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>';
 /* ───────────────────────── Centre de notifications ─────────────────────────
@@ -7937,6 +7936,16 @@ function seasonNow() {
   if (md >= 621 && md <= 831) return "ete";
   return "";
 }
+// Comment Yassen Jr. appelle chacun (couple.pa / couple.pb) : Papa, Maman ou le prénom.
+// Sans choix dans les réglages, la personne qui a créé l'espace commun est « Papa », l'autre « Maman ».
+function parentOf(k) {
+  const v = couple()["p" + k];
+  if (v === "papa" || v === "maman") return v === "papa" ? "Papa" : "Maman";
+  if (v === "prenom") return nm(k);
+  const sp = Store.meta.space || {}, who = sp.who || {};
+  return !sp.owner ? nm(k) : who[k] === sp.owner ? "Papa" : who[other(k)] === sp.owner ? "Maman" : nm(k);
+}
+const parentPick = k => couple()["p" + k] || ({ Papa: "papa", Maman: "maman" }[parentOf(k)] || "prenom");
 // Les anniversaires de chacun (couple.bda / couple.bdb, au format AAAA-MM-JJ).
 const bdayToday = () => ["a", "b"].filter(k => { const v = couple()["bd" + k]; return typeof v === "string" && v.slice(5) === todayStr().slice(5); });
 const seasonHat = k => (bdayToday().includes(k) ? "fete" : (SEASONS[seasonNow()] || {}).hat || "");
@@ -8486,11 +8495,11 @@ const ACT = {
     const a = draft("na", c.a).trim(), b = draft("nb", c.b).trim();
     if (!a || !b) { toast("Indiquez vos deux prénoms."); return; }
     const since = draft("nsince", c.since || ""), okD = v => /^\d{4}-\d{2}-\d{2}$/.test(v), bda = draft("nbda", c.bda || ""), bdb = draft("nbdb", c.bdb || "");
-    const next = { a: a.slice(0, 24), b: b.slice(0, 24), style: draft("nstyle", c.style || "partage"), since: okD(since) && since <= todayStr() ? since : null, bda: okD(bda) ? bda : null, bdb: okD(bdb) ? bdb : null };
+    const next = { a: a.slice(0, 24), b: b.slice(0, 24), style: draft("nstyle", c.style || "partage"), since: okD(since) && since <= todayStr() ? since : null, bda: okD(bda) ? bda : null, bdb: okD(bdb) ? bdb : null, pa: draft("npa", parentPick("a")), pb: draft("npb", parentPick("b")) };
     // Seuls les champs modifiés partent : un changement fait en même temps sur l'autre téléphone reste.
     const patch = {}; Object.entries(next).forEach(([k, v]) => { if ((v || null) !== (c[k] || null)) patch[k] = v; });
     if (Object.keys(patch).length) Store.patchMeta("couple", patch);
-    clearDrafts("na", "nb", "nstyle", "nsince", "nbda", "nbdb"); S.layer = null; toast("C'est noté, " + a + " et " + b);
+    clearDrafts("na", "nb", "nstyle", "nsince", "nbda", "nbdb", "npa", "npb"); S.layer = null; toast("C'est noté, " + a + " et " + b);
   },
   "mood-edit"() { S.moodEdit = !S.moodEdit; },
   "mood-set"(d) {
