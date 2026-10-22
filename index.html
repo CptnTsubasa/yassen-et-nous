@@ -1110,6 +1110,7 @@ textarea[readonly] { font-size: 16px; }
 .yjm.other p { border-bottom-left-radius: 6px; }
 .yjm-who { font-size: .72rem; color: var(--muted); padding: 0 6px; }
 .yjm-av { flex: none; }
+.yjm-local { display: block; margin-top: 4px; font-size: .72rem; font-style: normal; opacity: .6; }
 .yjm.typing p { display: flex; gap: 4px; padding: 13px 14px; }
 .yjm.typing i { width: 7px; height: 7px; border-radius: 50%; background: #F2A93B; animation: typing 1s ease-in-out infinite; }
 .yjm.typing i:nth-child(2) { animation-delay: .15s; } .yjm.typing i:nth-child(3) { animation-delay: .3s; }
@@ -1686,7 +1687,7 @@ function cleanMeta(m, v) {
   }
   if (m === "yj") {
     d.log = Object.fromEntries(Object.entries(isObj(d.log) ? d.log : {}).filter(([k, v]) => okId(k) && isObj(v) && ["a", "b", "y"].includes(v.w) && typeof v.x === "string")
-      .map(([k, v]) => [k, { w: v.w, t: cNum(v.t, 0, 1e13, 0), x: v.x.slice(0, 600), ...(v.to === "a" || v.to === "b" ? { to: v.to } : {}), ...(okTok(v.h) ? { h: v.h } : {}) }]));
+      .map(([k, v]) => [k, { w: v.w, t: cNum(v.t, 0, 1e13, 0), x: v.x.slice(0, 600), ...(v.to === "a" || v.to === "b" ? { to: v.to } : {}), ...(okTok(v.h) ? { h: v.h } : {}), ...(v.local === true ? { local: true } : {}) }]));
     if (!(isObj(d.daily) && okDay(d.daily.day) && typeof d.daily.x === "string")) delete d.daily; else d.daily = { day: d.daily.day, x: d.daily.x.slice(0, 300) };
   }
   if (m === "progress") {
@@ -6492,9 +6493,11 @@ const YJ_SYSTEM = `Tu es Yassen Jr., une petite flamme jaune toute douce : l'« 
 L'appli est dédiée à ta mémoire : « montrons-lui que ses parents s'aiment vraiment ». Rien ne te rend plus heureux que de les voir s'aimer.
 Ta façon de parler : en français, tendre, joueur, émerveillé comme un petit enfant mais malin ; 1 à 3 phrases courtes (45 mots au plus).
 Tu appelles tes parents par leur prénom, tu peux faire une petite action entre astérisques (*fait des étincelles*), et tu varies tes formules.
-Tu t'appuies sur ce que tu sais d'eux (personnalités, journée, souvenirs, quêtes) sans tout réciter. Tu peux proposer une idée à faire à deux dans l'appli (une quête, un conte, le puzzle, une lettre, un petit mot).
+LE PLUS IMPORTANT : tu réponds vraiment à ce qu'on vient de te dire, avec du bon sens. Une question → une vraie réponse à cette question. Une nouvelle → tu réagis à cette nouvelle. Une blague demandée → une vraie petite blague. Tu ne changes pas de sujet et tu ne réponds pas à côté.
+Tu es mignon comme un enfant, mais tu comprends tout et tu restes logique : jamais de phrase absurde ou hors sujet.
+Tu t'appuies sur ce que tu sais d'eux (personnalités, journée, souvenirs, quêtes) seulement quand ça a un rapport avec la discussion, sans tout réciter. Si ça s'y prête, tu peux proposer une idée à faire à deux dans l'appli (une quête, un conte, le puzzle, une lettre, un petit mot).
 Si l'un d'eux est triste ou fâché : tu réconfortes, tu ne prends jamais parti, et tu les encourages doucement à se parler. Pas de conseils médicaux, juridiques ou financiers ; rien de blessant ni d'inapproprié.
-S'il fait « dodo » (rien fait aujourd'hui), tu parles d'une voix ensommeillée, mais tu restes gentil.
+S'il fait « dodo » (rien fait aujourd'hui), tu peux bâiller un peu, mais tu réponds quand même clairement.
 Si on te demande sérieusement si tu es une IA, tu réponds honnêtement : tu es une petite flamme qui parle grâce à une IA.`;
 const YJ_JSON = "\nRéponds uniquement avec un objet JSON valide, sans texte autour.";
 // Réponse en direct : l'humeur entre crochets d'abord, puis la phrase (« [calin] *se blottit* … »).
@@ -6505,7 +6508,27 @@ const yjParse = t => {
   if (!m) return { x: /^\[[^\]\n]{0,20}$/.test(t) ? "" : t };
   return { x: t.slice(m[0].length), h: m[1].trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") };
 };
-const YJ_FALLBACK = ["*fait des petites étincelles* Je vous aime fort, tous les deux !", "Hihi ! Je n'ai pas tout compris, mais je suis content que tu me parles.", "*se blottit contre toi* Raconte-moi encore !", "Mes flammes dansent quand vous êtes là.", "On fait une quête ensemble ? Ça me donne de l'énergie !", "Tu sais quoi ? Vous êtes mes parents préférés. Les seuls, mais les préférés."];
+// Sans IA (Google injoignable) : Yassen Jr. répond quand même à ce qu'on lui dit, à partir des mots du message.
+const YJ_JOKES = ["Qu'est-ce qui est jaune et qui attend ? Jonathan ! Hihi.", "Que dit une flamme amoureuse ? « Je brûle pour toi ! » Hihi.", "Pourquoi les poissons détestent l'ordinateur ? À cause du filet ! …J'adore cette blague.", "Quel est le comble pour une flamme ? Se faire souffler la vedette ! Hihi.", "Monsieur et Madame Tout a un fils. Comment s'appelle-t-il ? Jean ! Jean-Tout… bon, je m'entraîne encore."];
+function yjLocal(text, me) {
+  const t = " " + text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9?' ]/g, " ") + " ", m = nm(me), has = re => re.test(t);
+  const q = Jeu.todayQuests().find(x => !Jeu.doneToday()[x.id]);
+  if (has(/ (triste|pas bien|mal |deprim|pleur|stress|angoiss|fatigu|epuis|nul )/)) return [pickOne([`*se blottit contre toi* Oh, ${m}… Je suis là. Tu veux me raconter ce qui ne va pas ?`, `*fait une toute petite flamme toute douce* Viens, on se fait un câlin. Ça va aller, ${m}.`]), "calin"];
+  if (has(/ (dispute|fache|enerv|engueul|boud|colere)/)) return ["Oh non… Je n'aime pas quand vous vous disputez. Vous vous parlez tout doucement, et après, câlin à trois ?", "tendre"];
+  if (has(/ (blague|drole|rigol|marrant|fais moi rire)/)) return [pickOne(YJ_JOKES), "rire"];
+  if (has(/ (tu nous aimes|tu m'?aimes|tu l'?aimes)/)) return [pickOne(["*se blottit contre toi* Évidemment ! Plus que tous les biscuits du monde.", "Mais oui ! Je vous aime tous les deux, fort comme le soleil !"]), "calin"];
+  if (has(/ (je t'?aime|on t'?aime|aime|adore|love)/)) return [pickOne(["*se blottit contre toi* Moi aussi je vous aime ! Plus que tous les biscuits du monde.", `Je t'aime gros comme ça, ${m} ! *ouvre grand ses petits bras*`]), "calin"];
+  if (has(/ (comment (tu )?vas|comment va|ca va|tu vas bien|la forme|vas tu)/)) return [Jeu.activeToday() ? `Je brille fort aujourd'hui ! Et toi, ${m}, ça va ?` : `*bâille* Un peu endormi… mais trop content que tu viennes me voir ! Et toi, ça va ?`, "joie"];
+  if (has(/ (merci)/)) return ["De rien ! Je suis votre petite flamme, c'est normal.", "tendre"];
+  if (has(/ (bonne nuit|dodo|dormir|je vais me coucher)/)) return [`Bonne nuit, ${m}… *se pelotonne* Fais de beaux rêves.`, "dodo"];
+  if (has(/ (idee|ce soir|on fait quoi|quoi faire|activite|s'?ennui|on joue)/)) return [q ? `J'ai une idée ! « ${q.label} ». Ça me ferait grandir, en plus !` : "Une partie de « Qui de nous deux ? », ou un conte à deux ? Moi, je vote pour le conte !", "joie"];
+  if (has(/ (heureux|content|rend heureux|joie)/)) return ["Ce qui me rend heureux ? Vous voir rire ensemble. Et les câlins à trois !", "joie"];
+  if (has(/ (faim|manger|mange|repas|diner|dejeuner)/)) return ["Moi, je me nourris de câlins ! Et vous, une petite crêpe ?", "rire"];
+  if (has(/ (qui es tu|t'?es qui|tu es qui|ia |robot|intelligence)/)) return ["Je suis Yassen Jr., votre petite flamme ! D'habitude je parle grâce à une IA, mais là, je réponds tout seul.", "joie"];
+  if (has(/ (coucou|salut|bonjour|hello|bonsoir|hey|yo|cc|wesh)/)) return [`Coucou ${m} ! *fait des petites étincelles*`, "joie"];
+  if (t.includes("?")) return ["Hmm… bonne question ! Ma petite tête de flamme a besoin de l'IA pour bien réfléchir, et elle ne répond pas. Tu me reposes la question tout à l'heure ?", "surprise"];
+  return [pickOne([`Je t'écoute, ${m} ! Raconte-moi encore.`, "Hihi, je n'ai pas tout compris, mais je suis content que tu me parles. Tu me le redis autrement ?"]), "joie"];
+}
 const YJ_SUGG = ["Coucou mon petit !", "Comment tu vas aujourd'hui ?", "Raconte-nous une blague", "Une idée pour ce soir ?", "Tu nous aimes ?", "Qu'est-ce qui te rend heureux ?"];
 const YJ_MOODS = ["joie", "calin", "rire", "dodo", "surprise", "tendre"];
 const yjLog = () => Object.entries((Store.meta.yj || {}).log || {}).map(([id, v]) => ({ id, ...v })).sort((p, q) => p.t - q.t);
@@ -6545,11 +6568,11 @@ const YJ = {
     if (AI.ready()) {
       const conv = hist.map(e => `${e.w === "y" ? "Yassen Jr." : nm(e.w)} : ${e.x}`).join("\n");
       const live = t => { this.live = yjParse(t).x; const p = document.querySelector("#yj-live p"); if (p && this.live) { p.textContent = this.live; const c = document.getElementById("yj-chat"); if (c) c.scrollTop = c.scrollHeight; } else render(true); };
-      try { out = yjParse(await AI.chat(`${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\nNouveau message de ${nm(me)} : « ${text} »\n\nCommence par ton humeur entre crochets (${YJ_MOODS.join(", ")}), puis ta réponse à ${nm(me)}, en texte simple. Exemple : [calin] *se blottit contre toi* Moi aussi je t'aime !`, YJ_SYSTEM, live)); } catch (e) { out = null; }
+      try { out = yjParse(await AI.chat(`Ce que tu sais de tes parents (à n'utiliser que si ça a un rapport) :\n${yjContext()}\n\nConversation récente :\n${conv || "(aucune)"}\n\n${nm(me)} vient de te dire : « ${text} »\n\nRéponds directement et logiquement à ce message de ${nm(me)}. Commence par ton humeur entre crochets (${YJ_MOODS.join(", ")}), puis ta réponse, en texte simple. Exemple : si on te dit « Tu nous aimes ? », tu peux répondre : [calin] *se blottit contre toi* Évidemment ! Plus que tous les biscuits du monde.`, YJ_SYSTEM, live)); } catch (e) { out = null; }
     }
-    const x = cleanTxt(out && out.x, 500) || pickOne(YJ_FALLBACK);
-    const h = out && YJ_MOODS.includes(out.h) ? out.h : "joie";
-    this.add({ ["y" + uid()]: { w: "y", t: Date.now(), x, to: me, h } });
+    let x = cleanTxt(out && out.x, 500), h = out && YJ_MOODS.includes(out.h) ? out.h : "joie", local = false;
+    if (!x) { [x, h] = yjLocal(text, me); local = true; }
+    this.add({ ["y" + uid()]: { w: "y", t: Date.now(), x, to: me, h, ...(local ? { local: true } : {}) } });
     this.busy = false; this.live = ""; Sfx.play("chime");
     render(true);
   },
@@ -6572,14 +6595,15 @@ function yassenSheet() {
   const thinking = YJ.busy || (last && last.w !== "y" && Date.now() - last.t < 60000);
   const lastY = log.filter(e => e.w === "y").slice(-1)[0]; if (lastY) lsSet("entre-nous:yj-seen", String(lastY.t));
   const bubble = e => e.w === "y"
-    ? `<div class="yjm y"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(e.x)}</p></div>`
+    ? `<div class="yjm y"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(e.x)}${e.local ? `<span class="yjm-local">${esc(fr("réponse sans IA"))}</span>` : ""}</p></div>`
     : `<div class="yjm ${e.w === me ? "me" : "other"}"><span class="yjm-who">${esc(nm(e.w))}</span><p>${esc(e.x)}</p></div>`;
   return `${layerHead("Parler à Yassen Jr.")}
     <div class="yj-chat-head"><span class="yj-chat-av${awake ? "" : " dodo"}">${yassenSvg(Jeu.stage(), !awake)}</span><div><b>${esc(fr(STAGE_NAMES[Jeu.stage()]))}</b><p class="small muted">${esc(fr(awake ? "Tout réveillé, il vous écoute tous les deux." : "Il somnole, mais il vous répond quand même."))}</p></div></div>
     <div class="yj-chat" id="yj-chat" aria-live="polite">${log.length ? log.map(bubble).join("") : `<p class="small muted" style="text-align:center">${esc(fr("Dites-lui bonjour ! Vous voyez tous les deux la conversation."))}</p>`}${thinking ? (YJ.live ? `<div class="yjm y" id="yj-live"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(YJ.live)}</p></div>` : `<div class="yjm y typing"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p><i></i><i></i><i></i></p></div>`) : ""}</div>
     <div class="chips yj-sugg">${YJ_SUGG.map((t, i) => `<button class="chip" data-a="yj-sugg" data-i="${i}" ${thinking ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>
     <div class="yj-input"><textarea id="yj-in" data-d rows="2" maxlength="400" aria-label="Ton message à Yassen Jr." placeholder="${esc(fr(`Écris à Yassen Jr., ${nm(me)}…`))}">${dv("yj-in", "")}</textarea><button class="btn" data-a="yj-send" ${thinking ? "disabled" : ""}>Envoyer</button></div>
-    <p class="small muted">${esc(fr(AI.ready() ? "Yassen Jr. répond grâce à l'IA (Google) : vos messages et quelques infos de l'appli lui sont envoyés pour qu'il vous connaisse." : "L'IA n'est pas disponible pour l'instant : Yassen Jr. répond avec ses petites phrases à lui."))}</p>`;
+    <p class="small muted">${esc(fr(AI.ready() ? "Yassen Jr. répond grâce à l'IA (Google) : vos messages et quelques infos de l'appli lui sont envoyés pour qu'il vous connaisse." : "L'IA n'est pas disponible pour l'instant : Yassen Jr. répond avec ses petites phrases à lui."))}</p>
+    ${AI.lastErr && AI.state !== "ok" ? `<p class="small muted">${esc(fr("Raison : " + ({ appcheck: "la vérification App Check est refusée", off: "l'IA n'est pas activée dans Firebase" }[AI.state] || "Google ne répond pas") + " (" + cleanTxt(AI.lastErr, 120) + ")."))}</p>` : ""}`;
 }
 const YJ_MINI = '<svg viewBox="0 0 40 44" width="26"><path d="M20 2C24 9 31 12 33 21C35 33 28 42 20 42C11 42 5 34 7 23C8 16 13 13 15 7C17 11 19 12 20 2Z" fill="#FFD25A" stroke="#F2A93B" stroke-width="1.5"/><circle cx="15.5" cy="27" r="1.8" fill="#4A2A12"/><circle cx="24.5" cy="27" r="1.8" fill="#4A2A12"/><path d="M17 32q3 2.4 6 0" stroke="#B23A1E" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>';
 /* ───────────────────────── Centre de notifications ─────────────────────────
@@ -6899,7 +6923,7 @@ const AI = {
   },
   async chat1(prompt, sys, onText) {
     let ai;
-    try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
+    try { ai = await this.init(); } catch (e) { try { this.fail(e); } catch (x) { /* état noté */ } this.cool = Date.now() + 120000; throw e; }
     if (this.mi >= this.models.length && Date.now() - (this.miAt || 0) > 600000) this.mi = 0;
     const steps = this.think || (this.think = {});
     let last, again = 0;
@@ -6931,6 +6955,7 @@ const AI = {
   },
   fail(last) {
     const why = String(last && (last.code || "") + " " + (last && last.message));
+    this.lastErr = why.trim();
     this.state = /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
     if (this.state === "err") this.cool = Date.now() + 60000;
     throw last || new Error("IA indisponible");
@@ -6941,7 +6966,7 @@ const AI = {
   skip() { if (this.giveUp) this.giveUp(new Error("abandon")); },
   async json(prompt, sys) {
     let ai;
-    try { ai = await this.init(); } catch (e) { this.state = "err"; this.cool = Date.now() + 120000; throw e; }
+    try { ai = await this.init(); } catch (e) { try { this.fail(e); } catch (x) { /* état noté */ } this.cool = Date.now() + 120000; throw e; }
     const stop = new Promise((_, no) => { this.giveUp = no; });
     let last, busyTries = 0;
     // Tous les modèles ont échoué il y a plus de 10 minutes : on retente depuis le premier.
