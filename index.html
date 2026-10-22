@@ -4695,6 +4695,73 @@ const fillPair = (p, f, s) => {
   if ((p.join("").includes("{tic1}") && !avOf(f).tics.length) || (p.join("").includes("{tic2}") && !avOf(s).tics.length)) return null;
   return p.map(l => l.replace("{tic1}", () => pickOne(avOf(f).tics)).replace("{tic2}", () => pickOne(avOf(s).tics)));
 };
+// Phrases à deux voix : l'un commence, l'autre termine, et le premier réagit.
+// Parfois l'autre devine juste, parfois complètement à côté (c'est encore plus mignon).
+const FINISH_LINES = [
+  ["Tu sais ce dont j'ai envie ?", "…d'un câlin de trois heures ?", "Comment tu as deviné ?!"],
+  ["On devrait peut-être…", "…sortir manger ensemble ce soir ?", "Tu lis dans mes pensées."],
+  ["Tu ne trouves pas que…", "…tu es magnifique aujourd'hui ? Si, carrément.", "Ce n'était pas ma question… mais je prends !"],
+  ["Ce soir, on se fait…", "…des pâtes au fromage devant un film ?", "On a un seul cerveau pour deux, c'est officiel."],
+  ["J'ai une idée géniale !", "…on commande des sushis ?", "J'avais une autre idée. Mais la tienne est meilleure."],
+  ["Tu te souviens de notre premier rendez-vous ?", "Bien sûr. Mon cœur battait si fort que…", "…tu as renversé ton verre. Je m'en souviens aussi."],
+  ["Si on partait en vacances…", "…quelque part au soleil, rien que nous deux ?", "Je fais les valises. Tout de suite."],
+  ["Je t'ai déjà dit que…", "…tu m'aimes plus que tout ? Dix fois aujourd'hui.", "Alors, onze."],
+  ["Tu veux qu'on…", "…se fasse un câlin ? Oui. La réponse est toujours oui.", "J'allais dire « range la cuisine »… mais d'accord, câlin."],
+  ["On fait une petite pause…", "…crêpes ?", "Pause crêpes. Validée à l'unanimité."],
+  ["Tu sais ce qui me manque ?", "…moi ? Je suis juste là.", "Justement. Viens plus près."],
+  ["Ce week-end, on pourrait…", "…ne rien faire, en pyjama, toute la journée ?", "Le plan parfait existe, et c'est le tien."],
+  ["J'ai rêvé de toi cette nuit…", "…et je t'ai encore volé la couette ?", "Même dans mes rêves. Incroyable."],
+  ["Tu sais pourquoi je t'aime ?", "…parce que je fais les meilleurs câlins ?", "Entre autres. La liste est très longue."],
+  ["Il fait froid, c'est le moment parfait pour…", "…un plaid à deux et un chocolat chaud ?", "Exactement ce que j'allais dire."],
+  ["Promets-moi qu'on…", "…vieillira ensemble, avec plein de photos de nous ?", "Et des plaids. Beaucoup de plaids."],
+  ["Je voulais te dire…", "…que j'ai encore mangé le dernier cookie ? Pardon.", "…Non, que je t'aime. Mais on reparlera du cookie."],
+  ["Devine à quoi je pense.", "…à moi ?", "Gagné. Tu triches, c'est sûr."],
+  ["Ce soir, c'est moi qui choisis…", "…le film ? Pas d'horreur, alors.", "Zut. Mon plan est découvert."],
+  ["Tu me prêtes…", "…ton sweat ? Tu le portes déjà depuis trois jours.", "Ah. Bon. Il est à nous deux, maintenant."],
+  ["Un jour, on aura…", "…une maison avec un jardin, et une balançoire pour Yassen Jr. ?", "Et un chat. On en reparlera."],
+  ["On se fait un resto…", "…italien ? Pizza pour toi, pâtes pour moi, et on partage ?", "Tu me connais par cœur."],
+  ["Quand je te regarde, je me dis…", "…« quelle chance j'ai » ?", "Exactement. Enfin, quelle chance on a."],
+  ["Tu as remarqué que Yassen Jr. …", "…a encore grandi ? Oui ! Il brille plus fort.", "Il tient de nous deux."],
+  ["On devrait faire plus souvent…", "…des petites danses dans la cuisine ?", "J'allais dire « du sport », mais ta version est mieux."]
+];
+// Petites conversations : chaque réponse est écrite pour sa question (fini les réponses tirées au hasard).
+const DUO_TALKS = {
+  all: [
+    ["Tu as bien mangé aujourd'hui ?", "Oui, et je t'ai gardé un peu de dessert."],
+    ["On fait une petite partie ?", "D'accord. Si je gagne, tu me dois un câlin."],
+    ["J'ai envie d'un câlin.", "Viens là, il y en a plein en stock."],
+    ["Tu sais que tu es ma personne préférée ?", "Je sais. Mais redis-le quand même."],
+    ["Je pense à toi. Comme d'habitude.", "Pareil. C'est devenu une habitude."],
+    ["On part en voyage ? N'importe où, mais avec toi.", "Je prépare les valises. Et les snacks."],
+    ["Tu veux un bisou ou un bisou ?", "Hmm… je prends les deux."],
+    ["Si tu étais un gâteau, tu serais mon préféré.", "Un fondant au chocolat, j'espère."],
+    ["Je crois en toi, tu sais.", "Merci… ça me donne des ailes."],
+    ["Promis, je te laisse la dernière part. Peut-être.", "Je note. Témoin : Yassen Jr."],
+    ["Plaid, série et toi : le programme parfait.", "Je lance l'épisode, tu ramènes le plaid ?"],
+    ["Je t'ai déjà dit que tu sentais bon ?", "Trois fois aujourd'hui. Continue."],
+    ["On se fait un petit resto bientôt ?", "Ce week-end ? C'est moi qui invite."],
+    ["Raconte-moi ta journée, je veux tout savoir.", "Elle était bien. Mais elle est encore mieux maintenant."],
+    ["{o}, tu m'as manqué !", "Toi aussi ! Même cinq minutes, c'est long."],
+    ["On commande des sushis ce soir ?", "Oui ! Avec des makis en plus."],
+    ["Je t'ai gardé le dernier carré de chocolat.", "Tu es la meilleure personne du monde."],
+    ["On fait une super équipe, non ?", "La meilleure. Yassen Jr. est d'accord."],
+    ["Yassen Jr. serait fier de nous.", "Il l'est. Regarde comme il brille."],
+    ["Tu as souri ? Je l'ai vu.", "C'est ta faute. Tu me fais toujours sourire."],
+    ["J'aime quand tu ris. Recommence.", "Alors raconte-moi une blague. Une bien nulle."],
+    ["Mon cœur fait des petits bonds quand tu es là.", "Le mien fait carrément du trampoline."],
+    ["Tu es magnifique aujourd'hui. Enfin, comme tous les jours.", "Arrête, tu me fais rougir."],
+    ["Un câlin de trois heures, ça te tente ?", "Trois heures minimum. Je ne négocie pas."],
+    ["Tu as un sourire qui répare tout.", "Alors je souris pour toi, tout le temps."],
+    ["On va faire de belles choses ensemble, {o}.", "On en fait déjà. Tous les jours."]
+  ],
+  home: [["Le rendez-vous du jour nous attend !", "J'arrive ! Pose-moi la question."], ["Un petit défi aujourd'hui ?", "Défi accepté. Comme toujours."]],
+  play: [["Je te défie à « Qui de nous deux ? ».", "Défi accepté. Prépare-toi à perdre."], ["Revanche au puzzle ?", "Tu vas encore perdre. Avec amour."], ["Une histoire avant de dormir ?", "Oui ! Une avec un dragon gentil."]],
+  capsule: [["Regarde tous nos souvenirs…", "On en a déjà fait, des choses, nous deux."], ["On en garde un de plus ?", "Toujours. Il reste de la place."]],
+  aventures: [["On part où, la prochaine fois ?", "Surprends-moi."], ["J'ai une idée de sortie !", "Dis-moi tout, je te suis."]],
+  lettres: [["J'ai hâte d'ouvrir la prochaine lettre.", "Pas d'indice. Patience !"], ["Pas touche aux lettres scellées !", "Je regarde juste l'enveloppe… promis."]],
+  matin: [["Bien dormi ?", "Oui… j'ai rêvé de toi."], ["Café d'abord, câlin ensuite ?", "Câlin d'abord. Le café peut attendre."]],
+  nuit: [["Il est tard… un dernier jeu ?", "Un dernier. Enfin… un avant-dernier."], ["On dort ?", "Encore cinq minutes avec toi, et après oui."]]
+};
 const YJ_CARRY = ["Viens là, toi !", "Qui c'est le plus mignon ? C'est toi !", "Mon petit Yassen Jr. !", "Tu as encore grandi, toi.", "Un câlin pour notre petite flamme."];
 const YJ_POKE = ["Coucou !", "Hihi, ça chatouille !", "Câlin ?", "{a} ! {b} ! Je vous aime !", "On joue ?", "Je grandis, vous avez vu ?", "Vous êtes trop mignons, tous les deux.",
   "J'ai faim de câlins !", "Je vous ai vus vous faire un bisou !", "C'est moi le plus mignon ? Oui ?", "Je brille encore plus quand vous riez.", "On fait une course ?"];
@@ -4715,7 +4782,7 @@ const RM_Q = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: red
 const reduceMotion = () => !!(RM_Q && RM_Q.matches);
 const HUG_LINES = ["Câlin !", "Viens là, toi.", "Je ne te lâche plus.", "Recharge de câlins : 100 %.", "Le meilleur endroit du monde, c'est ici.", "Encore dix secondes… ou dix minutes.",
   "Tu sens la maison.", "Je pourrais rester comme ça toute la journée.", "Câlin officiel, tamponné, validé.", "Ne bouge plus, je suis bien.", "Je te serre fort fort fort.", "Mon câlin préféré, c'est le tien."];
-const HUG_BACK = ["Moi aussi, je suis bien.", "Encore un peu…", "Tu me fais fondre.", "Je ne te lâche pas non plus.", "Mmh… parfait.", "Reste là.", "Mon cœur fait boum.", "On ne bouge plus jamais."];
+const HUG_BACK = ["Je suis tellement bien, là.", "Encore un peu…", "Tu me fais fondre.", "Et moi, je te garde.", "Mmh… parfait.", "Reste là.", "Mon cœur fait boum.", "On ne bouge plus jamais."];
 const HUG_WHISPER = ["Câlin tout doux… il dort.", "Chut… câlin silencieux.", "Pas de bruit, juste un câlin.", "Tout doucement, pour ne pas le réveiller."];
 const HUG_WHISPER_BACK = ["*câlin en chuchotant*", "Tout doux…", "Le plus doux des câlins.", "*sourit sans un bruit*"];
 const LIFT_LINES = ["Et hop, dans les airs !", "Je te soulève !", "Et hop, comme une plume !", "Viens là, toi !"];
@@ -4724,7 +4791,7 @@ const BACKHUG_LINES = ["Devine qui c'est…", "Câlin surprise !", "Coucou toi, 
 const BACKHUG_REPLY = ["Je reconnais ce câlin entre mille.", "Oh, toi…", "Mmh, quelle bonne surprise.", "Reste comme ça.", "Mon câlin surprise préféré."];
 const HMPH = ["Hmph.", "Je boude.", "Je ne te parle plus. Pendant deux minutes.", "Pff.", "Même pas mal."];
 const SORRY_LINES = ["Bon… pardon.", "Pardon, j'ai exagéré.", "On fait la paix ? J'ai une fleur.", "Je t'aime plus que j'ai raison.", "Tu me manques déjà. Pardon ?", "Câlin d'excuse ?", "J'avais tort. Un peu. Beaucoup."];
-const TEASE_SORRY = ["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, c'est toi la star."];
+const TEASE_SORRY = ["Pardon, pardon, pardon !", "Je retire tout. Sauf le « je t'aime ».", "Bon OK, tu as gagné. Cette fois."];
 const FORGIVE_LINES = ["…Bon, d'accord. Viens là.", "Comment te résister ?", "C'est oublié. Câlin ?", "Je n'arrive jamais à bouder longtemps avec toi.", "Une fleur ? Bon, tu as gagné.", "Moi aussi, pardon."];
 const RUN_LINES = ["On court jusqu'au bout ?", "Main dans la main, c'est parti !", "Le dernier arrivé fait la vaisselle !", "Cours avec moi !", "On s'envole !"];
 const RUN_END = ["Encore !", "Plus vite que le vent !", "*souffle*… c'était trop bien !", "On a gagné ! …contre qui ?", "Avec toi, je courrais jusqu'au bout du monde."];
@@ -4743,8 +4810,6 @@ const KISS_LINES = ["Smack !", "Un bisou, juste comme ça.", "Mmh, encore un ?",
 const SQUABBLES = [["C'est moi qui ai raison !", "Même pas vrai !"], ["Le dernier cookie était à moi !", "Prouve-le !"], ["Tu ronfles.", "Et toi, tu voles la couette !"],
   ["Ce soir, c'est moi qui choisis le film.", "Dans tes rêves !"], ["Tu triches au puzzle !", "Quelle mauvaise foi !"], ["C'est ton tour de faire la vaisselle.", "Pierre-feuille-ciseaux ?"]];
 const PEACE_LINES = ["Bon… on fait la paix ?", "Je t'aime quand même.", "Égalité !", "Câlin de la paix ?", "On oublie tout ?"];
-const REPLIES = ["Moi aussi !", "Oh, c'est mignon.", "Arrête, tu me fais rougir.", "Évidemment.", "Hihi.", "Tu dis ça à tout le monde ?", "Toi aussi, tu sais.", "Arrête, je vais fondre.",
-  "Note-le quelque part, ça.", "Je garde ça précieusement.", "Mmh, redis-le ?", "Tu triches, c'est trop mignon.", "Je sais. Mais redis-le quand même.", "Toujours.", "Pareil, puissance mille.", "*rougit jusqu'aux oreilles*"];
 const FX_HEART = '<svg viewBox="0 0 16 16"><path d="M8 14 2.5 8.6A3.2 3.2 0 0 1 8 4a3.2 3.2 0 0 1 5.5 4.6Z" fill="#FF6E89"/></svg>';
 const FX_CLOUD = '<svg viewBox="0 0 74 50"><g fill="#F4EFE9" stroke="#C9BFD0" stroke-width="1.5"><circle cx="20" cy="30" r="14"/><circle cx="37" cy="22" r="17"/><circle cx="54" cy="30" r="14"/><circle cx="37" cy="36" r="13"/></g><path d="M14 10l2 4 4 1-4 1-2 4-2-4-4-1 4-1z M60 6l1.6 3 3 1.4-3 1.4L60 15l-1.6-3.2-3-1.4 3-1.4z" fill="#F2B544"/><text x="37" y="31" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="14" fill="#B0506C">!#@</text></svg>';
 // Accessoires des petites scènes.
@@ -5075,6 +5140,7 @@ const Buddies = {
       [0.3 + avg("energy") * 0.25, () => this.chase(), 1],
       [0.4 + avg("mood") * 0.15 + avg("energy") * 0.1, () => this.dance()],
       [1.2, () => this.faceTalk()],
+      [1.6, () => this.finishSentence()],
       [this.shyDuo() ? 1.6 : 0, () => this.banter()],
       [this.most("energy", 3) ? 0.7 : 0, () => this.zoomies(), 1],
       [this.least("soc", 1) ? 0.6 : 0, () => this.shyMoment()],
@@ -5270,8 +5336,7 @@ const Buddies = {
     const duo = this.shyDuo();
     let pairs = SWEET_PAIRS.map(p => fillPair(p, f, s)).filter(Boolean);
     if (duo) { const [T] = duo; pairs = pairs.concat(T.k === f ? withTic(SHY_TO_BOLD, s) : withTic(BOLD_TO_SHY, f)); }
-    let [l1, l2] = pickOne(pairs);
-    if (avOf(s).tics.length && RAND() < 0.25) l2 = pickOne(avOf(s).tics);
+    const [l1, l2] = pickOne(pairs);
     if (trait(f, "soc") <= 1) this.b[f].el.classList.add("blush");
     this.say(f, l1, 2600);
     this.at(() => { this.say(s, l2, 2800); this.b[s].el.classList.add("happy"); this.hop(this.b[s]); this.hearts((A.x + B.x) / 2, 4, 20); }, 2700);
@@ -5775,10 +5840,11 @@ const Buddies = {
   makeUp(L, R, first, second, teasing) {
     const sorry = trait(first.k, "mood") <= trait(second.k, "mood") ? second : first, O = sorry === L ? R : L, mid = (L.x + R.x) / 2;
     sorry.face = O.x > sorry.x ? 1 : -1; this.pose(sorry, "p-cross", false); this.pose(sorry, "e-pout", false); sorry.el.classList.add("blush");
-    this.talk(sorry.k, pickOne(teasing && sorry === first ? TEASE_SORRY : SORRY_LINES), 2200);
-    if (Math.random() < 0.55) this.at(() => this.prop("fx-flower", FX_FLOWER, sorry.x + sorry.face * 14 - 8, 30, 2400), 500);
+    const sl = pickOne(teasing && sorry === first ? TEASE_SORRY : SORRY_LINES), flower = /fleur/.test(sl) || RAND() < 0.45;
+    this.talk(sorry.k, sl, 2200);
+    if (flower) this.at(() => this.prop("fx-flower", FX_FLOWER, sorry.x + sorry.face * 14 - 8, 30, 2400), 500);
     this.at(() => { O.el.classList.add("blush"); O.tilt = -5; }, 1500);
-    this.at(() => { O.face = -sorry.face; O.tilt = 0; this.pose(O, "p-cross", false); this.pose(O, "e-pout", false); O.el.classList.add("e-joy"); this.talk(O.k, pickOne(FORGIVE_LINES), 2200); }, 2600);
+    this.at(() => { O.face = -sorry.face; O.tilt = 0; this.pose(O, "p-cross", false); this.pose(O, "e-pout", false); O.el.classList.add("e-joy"); this.talk(O.k, pickOne(FORGIVE_LINES.filter(l => flower || !/fleur/.test(l))), 2200); }, 2600);
     this.at(() => {
       L.face = 1; R.face = -1; this.pose([L, R], "e-joy", false); this.pose([L, R], "p-hug", true); this.pose([L, R], "e-heart", true); L.tilt = R.tilt = 9;
       this.walkTo(L, L.x + 6); this.walkTo(R, R.x - 6);
@@ -6090,11 +6156,22 @@ const Buddies = {
   },
   spin(o) { o.el.classList.remove("spin"); void o.el.offsetWidth; o.el.classList.add("spin"); },
   faceTalk() {
-    const A = this.b.a, B = this.b.b, k = RAND() < 0.5 ? "a" : "b";
+    const A = this.b.a, B = this.b.b, k = RAND() < 0.5 ? "a" : "b", h = new Date().getHours();
     A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
-    this.say(k, buddyLine(k), 2600);
-    this.at(() => { this.say(other(k), pickOne(REPLIES), 2400); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
-    this.at(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5300);
+    const tab = this.synced() ? [] : DUO_TALKS[S.tab] || [], when = h >= 5 && h < 11 ? DUO_TALKS.matin : h >= 22 || h < 5 ? DUO_TALKS.nuit : [];
+    const [l1, l2] = pickOne([...DUO_TALKS.all, ...tab, ...tab, ...when, ...when]).map(l => l.replace(/\{o\}/g, nm(other(k))));
+    this.say(k, l1, 2600);
+    this.at(() => { this.say(other(k), l2, 2600); this.b[other(k)].el.classList.add("happy"); this.hearts(this.b[other(k)].x, 2, 16); }, 2700);
+    this.at(() => { this.b[other(k)].el.classList.remove("happy"); this.done(); }, 5500);
+  },
+  // L'un commence une phrase, l'autre la termine, le premier réagit.
+  finishSentence() {
+    const A = this.b.a, B = this.b.b, k = RAND() < 0.5 ? "a" : "b", o = other(k), [l1, l2, l3] = pickOne(FINISH_LINES);
+    A.face = B.x > A.x ? 1 : -1; B.face = -A.face;
+    this.talk(k, l1, 2300);
+    this.at(() => { this.talk(o, l2, 2700); this.hop(this.b[o]); this.expr(this.b[o], "e-wink", 1400); }, 2200);
+    this.at(() => { this.talk(k, l3, 2600); this.b[k].el.classList.add("happy"); this.expr(this.b[k], /deviné|pensées|cerveau|par cœur|exactement/i.test(l3) ? "e-wow" : "e-laugh", 1600); this.hearts((A.x + B.x) / 2, 4, 18); }, 5000);
+    this.at(() => { this.b[k].el.classList.remove("happy"); if (RAND() < 0.3) this.kiss(); else this.done(); }, 7700);
   },
   lookAround(o) { this.at(() => { o.face *= -1; }, 400); this.at(() => { o.face *= -1; }, 1300); },
   hop(o) { o.el.classList.remove("hop"); void o.el.offsetWidth; o.el.classList.add("hop"); },
