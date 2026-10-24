@@ -8,15 +8,19 @@
    - POST /notify { code, type, id }     : quelque chose vient d'arriver (petit mot, geste, lettre, partie)
    - POST /rescue { op, key, code }      : le code de secours (6 mots) d'un espace, enregistré ou retrouvé
      Le Worker relit lui-même l'élément dans l'espace commun : il n'envoie que ce qui existe vraiment.
-   - Tâches programmées : 9 h (lettres qui s'ouvrent, anniversaires) et 20 h 30 (rappel, si demandé).
+   - POST /ai { code, p, m, sys, prompt, json } : une réponse d'IA gratuite (Groq ou Workers AI) pour l'appli
+   - GET /ai/models                      : les modèles disponibles en ce moment
+   - Tâches programmées : 9 h (lettres qui s'ouvrent, anniversaires), 20 h 30 (rappel, si demandé)
+     et, chaque heure de 12 h à 21 h, le happening de la semaine (Yassen Jr. disparaît dans une salle d'évasion).
 
-   Réglages dans Cloudflare : une liaison KV nommée « KV », et deux déclencheurs Cron :
-   « 0 7,8 * * * » et « 30 18,19 * * * » (heure UTC : le code ne garde que 9 h et 20 h 30 à Paris). */
+   Réglages dans Cloudflare : une liaison KV nommée « KV », une liaison Workers AI nommée « AI », un secret
+   « GROQ_KEY » (clé gratuite de console.groq.com), et trois déclencheurs Cron :
+   « 0 7,8 * * * », « 30 18,19 * * * » et « 5 10-20 * * * » (heure UTC : le code garde la bonne heure à Paris). */
 
 const DB = "https://y-s-14d43-default-rtdb.europe-west1.firebasedatabase.app";
 const SITE = "https://cptntsubasa.github.io/yassen-et-nous/";
 const TZ = "Europe/Paris";
-const DEFAULTS = { mot: true, geste: true, lettre: true, partie: true, fete: true, quetes: false, test: true };
+const DEFAULTS = { mot: true, geste: true, lettre: true, partie: true, fete: true, quetes: false, escape: true, test: true };
 const GESTES = { calin: ["🤗", "{f} t'envoie un câlin", "Un gros câlin à distance."], courage: ["💪", "{f} t'envoie plein de courage", "Tu vas y arriver."], pense: ["💭", "{f} pense à toi", "Juste comme ça, parce que."], espace: ["🌙", "{f} est là si tu as besoin", "Prends ton temps."] };
 const okCode = c => typeof c === "string" && /^[A-Za-z0-9]{24,64}$/.test(c);
 const okId = v => typeof v === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(v);
@@ -212,13 +216,111 @@ async function evening(env, day) {
   }
 }
 
+/* ───── Le happening de la semaine ─────
+   Une fois par semaine, à un jour et une heure tirés au sort (entre 12 h et 21 h), Yassen Jr. s'enferme dans une
+   salle d'évasion. Le tirage dépend seulement du code de l'espace et de la semaine : l'appli fait exactement le même
+   sur les deux téléphones. La notification part à cette heure-là, pas avant, et seulement si l'espace connaît déjà
+   le jeu (meta/escape/since), pour ne rien annoncer le jour où il arrive. */
+const ROOMS = { grenier: "le grenier aux souvenirs", cuisine: "la cuisine des biscuits volants", observatoire: "l'observatoire des étoiles filantes" };
+const hapHash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+const dayAdd = (day, n) => { const d = new Date(day + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const hapWeek = day => dayAdd(day, -((new Date(day + "T12:00:00Z").getUTCDay() + 6) % 7));
+// Jamais moins de 3 jours d'écart avec celui de la semaine d'avant.
+function hapOf(code, week) {
+  const h = hapHash(code + ":" + week), prev = hapHash(code + ":" + dayAdd(week, -7)) % 7;
+  return { week, day: dayAdd(week, Math.max(h % 7, prev - 4)), hour: 12 + (h >>> 8) % 10 };
+}
+async function happening(env, day, hour) {
+  for (const code of await couples(env)) {
+    try {
+      const h = hapOf(code, hapWeek(day));
+      if (h.day !== day || h.hour !== hour) continue;
+      const e = (await rtdb(`couples/${code}/meta/escape`)) || {};
+      if (!(+e.since < Date.now() - 600000) || (e.seen && e.seen[h.week]) || !(await once(code, `hap_${h.week}`))) continue;
+      const room = ROOMS[e.next] || ROOMS.grenier;
+      for (const k of ["a", "b"]) await notify(env, code, k, "escape", { title: "🔥 Yassen Jr. a disparu…", body: `Il s'est enfermé dans ${room}. Il compte sur vous deux !`, tag: "hap-" + h.week });
+    } catch (e) { console.log(code, e.message); }
+  }
+}
+
+/* ───── L'IA gratuite : Groq et Workers AI ─────
+   Les clés restent dans Cloudflare. L'appli choisit le modèle ; si son quota est épuisé, l'erreur lui revient
+   telle quelle (429) et elle passe au suivant. Rien n'est écrit dans KV. Seul un espace qui existe vraiment
+   peut s'en servir, et pas plus de AI_MAX fois par heure. */
+const AI_MAX = 150;
+const aiUse = new Map(), aiKnown = new Set();
+let groqList = null;
+async function aiCheck(code) {
+  if (!aiKnown.has(code)) { if (!(await rtdb(`couples/${code}/meta/couple`))) return json({ error: "espace inconnu" }, 403); aiKnown.add(code); }
+  const h = Math.floor(Date.now() / 3600000), u = aiUse.get(code);
+  if (u && u.h === h && u.n >= AI_MAX) return json({ error: "[429] limite de l'espace atteinte, try again in 10m" }, 429);
+  aiUse.set(code, { h, n: u && u.h === h ? u.n + 1 : 1 });
+  return null;
+}
+const CF_MODELS = ["@cf/qwen/qwen3.8-27b", "@cf/openai/gpt-oss-120b", "@cf/openai/gpt-oss-20b"];
+async function aiModels(env) {
+  if (env.GROQ_KEY && (!groqList || Date.now() - groqList.t > 3600000)) {
+    const r = await fetch("https://api.groq.com/openai/v1/models", { headers: { Authorization: "Bearer " + env.GROQ_KEY } }).catch(() => null);
+    const d = r && r.ok ? await r.json().catch(() => null) : null;
+    if (d && Array.isArray(d.data)) groqList = { t: Date.now(), ids: d.data.filter(m => m && m.active !== false).map(m => m.id) };
+  }
+  return { groq: env.GROQ_KEY ? (groqList ? groqList.ids : []) : [], cf: env.AI ? CF_MODELS : [] };
+}
+// Réglages propres à chaque famille : réflexion au plus court, et pas de pensées dans la réponse.
+const groqExtra = m => /gpt-oss/.test(m) ? { reasoning_effort: "low" } : /qwen/.test(m) ? { reasoning_format: "hidden" } : {};
+async function aiGroq(env, b, msgs) {
+  if (!env.GROQ_KEY) return json({ error: "Groq n'est pas configuré (secret GROQ_KEY)" }, 404);
+  // En continu par défaut ; d'un bloc pour le JSON, ou si on le demande (stream: false).
+  const flow = !b.json && b.stream !== false;
+  const send = extra => fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: "Bearer " + env.GROQ_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: b.m, messages: msgs, temperature: 1, max_completion_tokens: b.json ? 4096 : 800, stream: flow, ...(b.json ? { response_format: { type: "json_object" } } : {}), ...extra }) });
+  let r = await send(groqExtra(b.m));
+  if (r.status === 400) { const t = await r.text(); if (!/reasoning/i.test(t)) return json({ error: t }, 400); r = await send({}); }
+  if (!r.ok) return json({ error: `[${r.status}] ` + (await r.text()).slice(0, 600) }, r.status);
+  // En continu : le flux de Groq passe tel quel, sans travail pour le Worker.
+  if (flow) return new Response(r.body, { headers: { "Content-Type": "text/event-stream", ...CORS } });
+  const d = await r.json().catch(() => null);
+  return json({ text: d && d.choices && d.choices[0] && d.choices[0].message ? d.choices[0].message.content || "" : "" });
+}
+// Workers AI répond sous plusieurs formes selon le modèle : on en tire le texte.
+function cfText(o) {
+  if (!o) return "";
+  if (typeof o === "string") return o;
+  if (typeof o.response === "string") return o.response;
+  if (o.response && typeof o.response === "object") return JSON.stringify(o.response);
+  if (o.choices && o.choices[0]) return (o.choices[0].message && o.choices[0].message.content) || o.choices[0].text || "";
+  if (typeof o.output_text === "string") return o.output_text;
+  if (Array.isArray(o.output)) return o.output.flatMap(x => Array.isArray(x && x.content) ? x.content : []).filter(c => c && typeof c.text === "string" && c.type !== "reasoning_text").map(c => c.text).join("");
+  return "";
+}
+async function aiCf(env, b, msgs) {
+  if (!env.AI) return json({ error: "Workers AI n'est pas relié (liaison AI)" }, 404);
+  const opts = { temperature: 1, max_tokens: b.json ? 4096 : 800, ...(b.json ? { response_format: { type: "json_object" } } : {}) };
+  try {
+    let out;
+    try { out = await env.AI.run(b.m, { messages: msgs, ...opts }); }
+    catch (e) { if (!/input|messages|schema/i.test(String(e && e.message))) throw e; out = await env.AI.run(b.m, { instructions: b.sys || undefined, input: b.prompt, reasoning: { effort: "low" } }); }
+    return json({ text: cfText(out) });
+  } catch (e) {
+    const m = String(e && e.message);
+    return json({ error: m.slice(0, 600) }, /neuron|allocation|quota|rate|limit|429|4006/i.test(m) ? 429 : /no such model|not found|5007/i.test(m) ? 404 : 502);
+  }
+}
+async function onAi(env, b) {
+  if (!["groq", "cf"].includes(b.p) || typeof b.m !== "string" || !/^[@\w./:-]{2,80}$/.test(b.m) || typeof b.prompt !== "string" || !b.prompt || b.prompt.length > 40000 || (b.sys != null && (typeof b.sys !== "string" || b.sys.length > 12000))) return json({ error: "demande" }, 400);
+  const no = await aiCheck(b.code); if (no) return no;
+  const msgs = [...(b.sys ? [{ role: "system", content: b.sys }] : []), { role: "user", content: b.prompt }];
+  return b.p === "groq" ? aiGroq(env, b, msgs) : aiCf(env, b, msgs);
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
       if (req.method === "GET" && url.pathname === "/vapid") return json({ key: (await vapid(env)).pub });
-      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 6, types: ["mot", "geste", "geste2", "lettre", "partie", "test"] });
+      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 7, types: ["mot", "geste", "geste2", "lettre", "partie", "test"], ai: { groq: !!env.GROQ_KEY, cf: !!env.AI } });
+      if (req.method === "GET" && url.pathname === "/ai/models") return json(await aiModels(env));
       if (req.method !== "POST") return json({ error: "inconnu" }, 404);
       const b = await req.json().catch(() => ({}));
       // Code de secours : l'empreinte des 6 mots (calculée sur le téléphone) → le code de l'espace.
@@ -238,6 +340,7 @@ export default {
         return json({ ok: true });
       }
       if (!okCode(b.code)) return json({ error: "code" }, 400);
+      if (url.pathname === "/ai") return await onAi(env, b);
       if (url.pathname === "/register") {
         if (!(await env.KV.get("couple:" + b.code))) await env.KV.put("couple:" + b.code, "1").catch(e => console.log("kv", e.message));
         return json({ ok: true });
@@ -259,7 +362,9 @@ export default {
   },
   async scheduled(event, env, ctx) {
     const { day, hour } = parisNow();
-    if (hour === 9) ctx.waitUntil(morning(env, day));
+    // « 5 10-20 * * * » : le happening de la semaine, s'il tombe à cette heure-ci.
+    if (/^5 /.test(event.cron || "")) { if (hour >= 12 && hour <= 21) ctx.waitUntil(happening(env, day, hour)); }
+    else if (hour === 9) ctx.waitUntil(morning(env, day));
     else if (hour === 20) ctx.waitUntil(evening(env, day));
   }
 };

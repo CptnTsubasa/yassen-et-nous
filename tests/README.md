@@ -32,13 +32,18 @@ Un `FAIL`, une erreur de page (`errors [...]`) ou un plantage font échouer le s
 |---|---|
 | `worker/notifications` | Service Cloudflare : clés VAPID, chiffrement, petit mot, lettres et anniversaires du matin |
 | `worker/gestes` | Un câlin = une notification, étiquettes uniques, réessai sur échec passager, aucune écriture KV |
+| `worker/ai` | IA gratuite par le service : Groq en continu, Workers AI, quota renvoyé à l'appli, espaces inconnus refusés, limite horaire |
+| `worker/happening` | Le happening de la semaine : un tirage par semaine, 3 jours d'écart au moins, notification à l'heure dite, une seule fois |
 | `e2e` | De bout en bout : abonnement, mot, câlin, pensée, centre de notifications, notification de test |
 | `gestes-e2e` | 10 câlins → 10 notifications, appli fermée tout de suite, pas de doublon |
 | `notif` | Centre de notifications (« Rejoindre » une partie, tout vu après consultation) |
 | `push` | Activation des notifications, préférences, mise à jour de l'appli au retour |
 | `lvcards`, `lvother`, `live3`, `lvstop` | Jeux à distance sur deux téléphones, arrêt d'un commun accord |
 | `lot1` … `lot4` | Vérifications générales (synchro, jeux, interface, hors ligne) |
-| `yjchat`, `yjfast`, `yjsens`, `yjmem` | Yassen Jr. : discussion, réponse en continu, sans IA, mémoire et actualités |
+| `yjchat`, `yjfast`, `yjsens`, `yjmem` | Yassen Jr. : discussion, réponse en continu, sans IA, mémoire et actualités, quota épuisé |
+| `ia3` | IA en relais : Gemini épuisé → Groq → Workers AI, Gemini injoignable, tâches légères |
+| `escape` | L'évasion de Yassen Jr. : une partie complète du grenier sur deux téléphones, jusqu'à la victoire |
+| `hap` | Le happening : même tirage que le service, animation à l'heure dite, carte d'accueil |
 | `papa` | Papa / Maman et le réglage correspondant |
 | `duo` | Phrases à deux voix des chibis |
 | `backup` | Fichier « nos souvenirs », restauration sans doublon, copies automatiques |
@@ -53,3 +58,9 @@ Un `FAIL`, une erreur de page (`errors [...]`) ou un plantage font échouer le s
 | `tap`, `snd` | Sons et retours au toucher |
 
 Les captures d'écran prises par les scénarios atterrissent dans `tests/.build/`.
+
+## Démo jouable
+
+`node tests/apercu.mjs` fabrique `tests/.build/apercu.html` : l'appli sur deux téléphones (Papa et Maman) reliés
+par une base en mémoire, sans Firebase, IA ni notifications. Pour montrer une nouveauté avant de la publier.
+`YS_VERBOSE=1 node tests/run.mjs nom` affiche toute la sortie d'un scénario.
