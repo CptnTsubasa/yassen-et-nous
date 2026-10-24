@@ -2,8 +2,8 @@
    si le réseau ne répond pas en 3 secondes, la copie gardée s'affiche, et la nouvelle version
    prendra sa place à la prochaine ouverture. Le reste (icônes, polices, modules Firebase) sert la copie
    en cache et se met à jour en arrière-plan. Les données et l'IA ne sont jamais mises en cache. */
-const V = "ys-v5", LIB = "ys-lib-v1";
-const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "yassen.jpg"];
+const V = "ys-v6", LIB = "ys-lib-v1";
+const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "favicon.svg", "yassen.jpg"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== LIB).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 const keep = (name, req, res) => { if (res && (res.ok || res.type === "opaque")) { const cp = res.clone(); caches.open(name).then(c => c.put(req, cp)); } return res; };
