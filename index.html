@@ -2094,6 +2094,131 @@ function sharedPanel() {
     ${joinField("sh-in")}${back}</section>`;
 }
 
+/* ───────────────────────── Sauvegarde de vos souvenirs ─────────────────────────
+   1. « Télécharger nos souvenirs » : un fichier .html qui s'ouvre dans n'importe quel navigateur (vos mots,
+      lettres, souvenirs, aventures, conversations avec Yassen Jr., photos) et qui contient aussi toutes les
+      données, pour les réimporter.
+   2. Une copie automatique par jour sur chaque téléphone (les 7 dernières), dans le stockage de l'appli.
+   Restaurer ajoute ce qui manque et ne supprime ni n'écrase rien. */
+const IDB = {
+  open() {
+    return this.p || (this.p = new Promise((ok, no) => {
+      const r = indexedDB.open("ys-backup", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("snap");
+      r.onsuccess = () => ok(r.result); r.onerror = () => { this.p = null; no(r.error); };
+    }));
+  },
+  async run(mode, fn) {
+    const db = await this.open();
+    return new Promise((ok, no) => { const tx = db.transaction("snap", mode), r = fn(tx.objectStore("snap")); tx.oncomplete = () => ok(r && r.result); tx.onerror = () => no(tx.error); });
+  },
+  put(k, v) { return this.run("readwrite", st => st.put(v, k)); },
+  get(k) { return this.run("readonly", st => st.get(k)); },
+  keys() { return this.run("readonly", st => st.getAllKeys()); },
+  del(k) { return this.run("readwrite", st => st.delete(k)); }
+};
+// Une photo du puzzle, même si elle n'a pas encore été chargée sur ce téléphone.
+const pzFetch = id => {
+  if (PZ_CACHE[id]) return Promise.resolve(PZ_CACHE[id]);
+  if (!Store.db) { const v = lsGet("entre-nous:pz:" + id); return Promise.resolve(okImg(v) ? v : ""); }
+  return new Promise(ok => {
+    let un = null, done = false;
+    const end = v => { if (done) return; done = true; setTimeout(() => { try { un && un(); } catch (e) { /* déjà fermé */ } }, 0); ok(v); };
+    setTimeout(() => end(""), 8000);
+    un = Store.db.doc("pzimg/" + id).onSnapshot(sn => { const v = sn.exists && sn.data() && sn.data().data; if (okImg(v)) PZ_CACHE[id] = v; end(okImg(v) ? v : ""); }, () => end(""));
+  });
+};
+const Backup = {
+  key(day) { return (Shared.code() || "local").slice(0, 12) + ":" + day; },
+  empty() { return !Object.values(Store.cols).some(l => l.length) && !couple().a; },
+  async snapshot() {
+    const photos = {};
+    for (const id of pzList()) { const d = await pzFetch(id); if (d) photos[id] = d; }
+    return { v: 2, app: "Y&S", at: Date.now(), cols: JSON.parse(JSON.stringify(Store.cols)), meta: JSON.parse(JSON.stringify(Store.meta)), photos };
+  },
+  // Le fichier lisible : une page simple, avec toutes les données cachées dedans pour la restauration.
+  html(d) {
+    const c = d.meta.couple || {}, n = k => esc(cStr(c[k], 24) || (k === "a" ? "Partenaire 1" : "Partenaire 2")), day = todayStr();
+    const cap = byDate(d.cols.capsule || []), sec = (t, body) => body ? `<h2>${t}</h2>${body}` : "";
+    const mots = cap.filter(x => x.kind === "mot" || x.kind === "anecdote").map(x => `<div class="c"><p class="h">${esc(x.text || "")}</p><p class="m">${x.kind === "mot" ? "Petit mot" : "Anecdote"} de ${n(x.from)} · ${fmtTs(x.createdAt)}</p></div>`).join("");
+    const souv = cap.filter(x => x.kind === "souvenir").map(x => `<div class="c"><p class="q">${esc(x.question || "")}</p>${(x.entries || []).map(e => `<p class="h">${esc(e.text || "")}</p><p class="m">${esc(e.label || (c[e.who] || ""))}</p>`).join("")}<p class="m">${fmtTs(x.createdAt)}</p></div>`).join("");
+    const defis = cap.filter(x => x.kind === "defi").map(x => `<li>${esc(x.text || "")} <span class="m">· ${fmtTs(x.doneAt || x.createdAt)}</span></li>`).join("");
+    const lettres = byDate(d.cols.lettres || []).map(l => `<div class="c"><p class="q">${esc(l.title || "Une lettre")}</p>${l.openOn > day ? `<p class="m">Scellée jusqu'au ${fmtDay(l.openOn)} : son contenu est gardé dans ce fichier, sans être affiché.</p>` : `<p class="h">${esc(l.message || "")}</p>`}<p class="m">De ${n(l.from)} · écrite le ${fmtTs(l.createdAt)}</p></div>`).join("");
+    const avs = byDate(d.cols.aventures || []).map(a => `<li>${esc(a.title || "")} <span class="m">· ${{ afaire: "à faire", planifiee: "planifiée", realisee: "réalisée" }[a.statut || "afaire"] || ""}${a.date ? " · " + fmtDay(a.date) : ""}</span></li>`).join("");
+    const yj = Object.values(((d.meta.yj || {}).log) || {}).sort((p, q) => p.t - q.t).map(e => `<p class="y${e.w === "y" ? " yj" : ""}"><b>${e.w === "y" ? "Yassen Jr." : n(e.w)}</b> ${esc(e.x || "")}</p>`).join("");
+    const contes = (d.cols.contes || []).map(x => `<li>${esc(x.title || x.titre || "Une histoire")}</li>`).join("");
+    const photos = Object.values(d.photos || {}).map(src => `<img src="${src}" alt="">`).join("");
+    const data = JSON.stringify(d).replace(/</g, "\\u003c");
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nos souvenirs — Y&amp;S — ${fmtDay(day)}</title>
+<style>body{margin:0;background:#F6F2F5;color:#3A2F40;font:16px/1.5 Georgia,serif}main{max-width:640px;margin:0 auto;padding:28px 18px 60px}h1{font-size:2rem;margin:0}h1 span{color:#B0506C}h2{margin:34px 0 10px;font-size:1.3rem;color:#B0506C}.c{background:#fff;border-radius:16px;padding:14px 16px;margin:10px 0}.q{font-weight:bold;margin:0 0 6px}.h{margin:6px 0 0;white-space:pre-wrap;font-style:italic}.m{margin:2px 0 0;color:#6C6173;font:13px system-ui,sans-serif}li{margin:6px 0}.y{margin:6px 0;padding:8px 12px;border-radius:14px;background:#fff}.yj{background:#FFF1C9}img{width:100%;border-radius:14px;margin:8px 0}.d{font:italic 1.1rem Georgia,serif;color:#6C6173}</style></head>
+<body><main><h1>Nos souvenirs — ${n("a")} <span>&amp;</span> ${n("b")}</h1><p class="d">À la mémoire de Yassen Jr. · sauvegarde du ${fmtDay(day)}</p>
+${sec("Petits mots et anecdotes", mots)}${sec("L'album", souv)}${sec("Les lettres", lettres)}${sec("Nos aventures", avs && `<ul>${avs}</ul>`)}${sec("Défis relevés", defis && `<ul>${defis}</ul>`)}${sec("Nos histoires", contes && `<ul>${contes}</ul>`)}${sec("Avec Yassen Jr.", yj)}${sec("Nos photos", photos)}
+<p class="m" style="margin-top:40px">Pour tout retrouver dans l'appli : Réglages → Nos souvenirs en sécurité → Restaurer depuis un fichier.</p></main>
+<script type="application/json" id="ys-backup">${data}<\/script></body></html>`;
+  },
+  fileName() { return `Y&S - nos souvenirs - ${todayStr()}.html`; },
+  // Prépare le fichier (photos comprises) ; l'enregistrement se fait ensuite d'un toucher.
+  async prepare() {
+    S.bk = { busy: true }; render();
+    try { const d = await this.snapshot(); S.bk = { file: new File([this.html(d)], this.fileName(), { type: "text/html" }) }; }
+    catch (e) { S.bk = null; toast("La sauvegarde n'a pas pu être préparée. Réessaie dans un instant."); }
+    render();
+  },
+  // Sur iPhone : la feuille de partage (« Enregistrer dans Fichiers », AirDrop, mail…) ; ailleurs, un téléchargement.
+  save(file) {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: file.name }).then(() => true, () => false);
+    const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+    return Promise.resolve(true);
+  },
+  parse(text) {
+    text = String(text || "").trim();
+    if (text.startsWith("{")) return JSON.parse(text);
+    const m = /<script type="application\/json" id="ys-backup">([\s\S]*?)<\/script>/.exec(text);
+    return m ? JSON.parse(m[1]) : null;
+  },
+  // Ajoute ce qui manque : rien n'est supprimé ni écrasé par une version plus ancienne.
+  async restore(d) {
+    if (!isObj(d) || !isObj(d.cols) || !isObj(d.meta)) { toast("Ce fichier n'est pas une sauvegarde de Y&S."); return; }
+    await mergeData(d, true);
+    const log = ((Store.meta.yj || {}).log) || {}, patch = {};
+    Object.entries(isObj(d.meta.yj) && isObj(d.meta.yj.log) ? d.meta.yj.log : {}).forEach(([k, v]) => { if (okId(k) && !log[k] && isObj(v) && ["a", "b", "y"].includes(v.w) && typeof v.x === "string") patch["log/" + k] = v; });
+    if (Object.keys(patch).length) await Store.patchMeta("yj", patch);
+    const have = pzList();
+    Object.entries(isObj(d.photos) ? d.photos : {}).forEach(([id, src]) => { if (/^[a-z0-9]{1,24}$/.test(id) && okImg(src) && !have.includes(id) && pzList().length < PZ_MAX_PHOTOS) pzSaveImg(id, src); });
+    toast("Sauvegarde restaurée : ce qui manquait est revenu.");
+  },
+  async restoreFile(f) {
+    try { await this.restore(this.parse(await f.text())); } catch (e) { toast("Ce fichier n'a pas pu être lu."); }
+    render(true);
+  },
+  // Une copie par jour sur ce téléphone, les 7 dernières gardées.
+  async auto() {
+    if (!window.indexedDB || !Store.ready || this.empty()) return;
+    try {
+      const k = this.key(todayStr());
+      if (!(await IDB.get(k))) await IDB.put(k, await this.snapshot());
+      const pre = this.key(""), mine = (await IDB.keys()).filter(x => String(x).startsWith(pre)).sort();
+      for (const x of mine.slice(0, Math.max(0, mine.length - 7))) await IDB.del(x);
+      this.list = mine.slice(-7).map(x => String(x).slice(pre.length)).reverse();
+    } catch (e) { /* stockage indisponible : pas de copie automatique */ }
+  },
+  async refreshList() { try { const pre = this.key(""); this.list = (await IDB.keys()).filter(x => String(x).startsWith(pre)).map(x => String(x).slice(pre.length)).sort().reverse().slice(0, 7); } catch (e) { this.list = []; } render(); }
+};
+function backupPanel() {
+  const bk = S.bk || {}, list = Backup.list || [];
+  return `<section class="panel" aria-labelledby="h-backup"><h2 class="sec" id="h-backup">Nos souvenirs en sécurité</h2>
+    <p class="small">${esc(fr("Tout votre espace dans un fichier à garder (dans Fichiers, iCloud ou par mail) : petits mots, lettres, souvenirs, aventures, conversations avec Yassen Jr. et photos. Il s'ouvre dans n'importe quel navigateur."))}</p>
+    ${bk.file ? `<button class="btn wide" data-a="bk-save">Enregistrer le fichier</button><p class="small muted">${esc(bk.file.name)} · ${Math.max(1, Math.round(bk.file.size / 1024))} Ko</p>`
+      : `<button class="btn wide" data-a="bk-make" ${bk.busy ? "disabled" : ""}>${bk.busy ? "Préparation…" : "Télécharger nos souvenirs"}</button>`}
+    <div class="field"><label for="bk-file">Restaurer depuis un fichier de sauvegarde</label><input type="file" id="bk-file" accept=".html,.json,text/html,application/json"></div>
+    <p class="small muted">${esc(fr("Restaurer ajoute ce qui manque : rien n'est supprimé ni écrasé."))}</p>
+    ${list.length ? `<details class="join-more"><summary class="small">${esc(fr(`Copies automatiques sur ce téléphone (${list.length})`))}</summary>
+      <div class="stack">${list.map(dy => `<div class="row" style="justify-content:space-between;align-items:center"><span class="small">${esc(fmtDay(dy))}</span><button class="btn ghost" data-a="bk-restore" data-v="${esc(dy)}">Restaurer</button></div>`).join("")}</div>
+      <p class="small muted">${esc(fr("Une copie par jour, les 7 dernières, gardées dans l'appli sur ce téléphone."))}</p></details>` : ""}
+  </section>`;
+}
+
 /* ───────────────────────── Code de transfert ─────────────────────────
    Pour rassembler deux progressions sans compte : un code à s'envoyer par message.
    Les éléments gardent leur identifiant, donc fusionner deux fois ne crée pas de doublons. */
@@ -3080,6 +3205,7 @@ function sheetView() {
     ${!isInstalled() ? `<div class="row"><button class="btn ghost" data-a="install">${SHARE_ICO} Installer Y&amp;S sur l'écran d'accueil</button></div>` : ""}
     ${notifPanel()}
     ${Shared.available() ? sharedPanel() : ""}
+    ${backupPanel()}
     ${Store.backend !== "local" ? "" : `<section class="panel" aria-labelledby="h-sync">
       <h2 class="sec" id="h-sync">Rassembler nos progressions</h2>
       <p class="small">${esc(fr("Si vous jouez chacun sur votre téléphone, chaque progression reste sur le sien. Pour tout réunir : l'un copie son code et l'envoie par message, l'autre le colle ici. Faites-le dans les deux sens pour avoir la même chose des deux côtés."))}</p>
@@ -8526,7 +8652,7 @@ const ACT = {
   "df-later"() { defiAventure(CARDS[S.dfCur]); S.dfSaved[S.dfCur + "later"] = true; },
   "go-album"() { S.tab = "capsule"; S.capSeg = "album"; window.scrollTo(0, 0); },
   "cap-seg"(d) { S.capSeg = d.seg; S.confirm = null; },
-  sheet(d) { if (d.kind) S.mot = d.kind; S.layer = { type: "sheet", name: d.name }; if (d.name === "yassen") AI.warm(); },
+  sheet(d) { if (d.kind) S.mot = d.kind; S.layer = { type: "sheet", name: d.name }; if (d.name === "yassen") AI.warm(); if (d.name === "names" && window.indexedDB) Backup.refreshList(); },
   "set-draft"(d) { S.drafts[d.k] = d.v; },
   "ob-names"() {
     const c = couple(), a = draft("ob-a", c.a).trim().slice(0, 24), b = draft("ob-b", c.b).trim().slice(0, 24);
@@ -8624,6 +8750,9 @@ const ACT = {
   "shop-tint"(d) { S.prevTint = { ...(S.prevTint || {}), [d.o]: d.v }; },
   "shop-tint-buy"(d) { Jeu.buyTint(d.o, d.v); },
   "shop-theme"(d) { Jeu.setTheme(d.v); },
+  "bk-make"() { Backup.prepare(); return false; },
+  "bk-save"() { const f = S.bk && S.bk.file; if (!f) return; Backup.save(f).then(ok => { if (ok) { S.bk = null; toast("Sauvegarde enregistrée"); render(); } }); return false; },
+  async "bk-restore"(d) { try { const v = await IDB.get(Backup.key(d.v)); if (v) await Backup.restore(v); else toast("Cette copie n'existe plus."); } catch (e) { toast("Cette copie n'a pas pu être lue."); } render(true); },
   "scheme-flip"() { Scheme.set(Scheme.dark() ? "light" : "dark"); },
   "scheme-set"(d) { Scheme.set(d.v || ""); },
   "yj-poke"() {
@@ -8670,6 +8799,7 @@ document.addEventListener("input", e => {
 document.addEventListener("change", e => {
   if (e.target.matches("[data-d]")) { S.drafts[e.target.id] = e.target.value; saveDrafts(); }
   if (e.target.id === "pz-file" && e.target.files && e.target.files[0]) pzUpload(e.target.files[0]);
+  if (e.target.id === "bk-file" && e.target.files && e.target.files[0]) Backup.restoreFile(e.target.files[0]);
   if (e.target.id === "av-s") render(true);
 });
 // Un lien d'invitation ouvert alors que le site est déjà affiché ne recharge pas la page.
@@ -8727,6 +8857,8 @@ function start(data) {
   Update.check(false);
   setInterval(() => Update.check(false), 30 * 60000);
   Store.connect().then(() => setTimeout(() => { Push.refresh(); Notify.flush(); }, 3000));
+  // La copie automatique du jour, une fois l'espace bien chargé.
+  setTimeout(() => Backup.auto(), 15000);
   // Une notification qui n'a pas pu partir (réseau, service occupé) est retentée chaque minute.
   setInterval(() => Notify.flush(), 60000);
 }
