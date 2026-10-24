@@ -28,8 +28,18 @@ const last = await A.evaluate(() => yjLog().slice(-1)[0]);
 ok(`réponse finale enregistrée, humeur « ${last.h} »`, last.w === 'y' && /^\*fait des étincelles\* Coucou/.test(last.x) && last.h === 'calin');
 ok('plus de bulle en direct à la fin', await A.evaluate(() => !document.querySelector('#yj-live') && !document.querySelector('.yjm.typing')));
 // Modèle principal encombré : on passe au suivant sans attendre
-await A.evaluate(() => { window.__busyModel = AI.models[AI.mi]; window.__chunkMs = 50; });
+await A.evaluate(() => { window.__busyModel = AI.order('chat')[0]; window.__chunkMs = 50; });
 const t1 = Date.now(); await A.evaluate(() => YJ.send('Tu nous aimes ?')); const dt = Date.now() - t1;
-ok(`modèle encombré → le suivant répond (${await A.evaluate(() => window.__streamModel)}, ${dt} ms)`, dt < 1500 && await A.evaluate(() => /Coucou/.test(yjLog().slice(-1)[0].x) && AI.mi === 0));
-ok('modèle 2.5 : réflexion coupée', await A.evaluate(() => JSON.stringify(window.__streamCfg.thinkingConfig) === '{"thinkingBudget":0}'));
+ok(`modèle encombré → le suivant répond (${await A.evaluate(() => window.__streamModel)}, ${dt} ms)`, dt < 1500 && await A.evaluate(() => /Coucou/.test(yjLog().slice(-1)[0].x) && AI.order('chat')[0] === window.__busyModel));
+await A.evaluate(() => { window.__busyModel = ''; });
+// Quota gratuit épuisé sur le premier modèle : le suivant répond, et le premier est mis de côté (sans éteindre l'IA)
+const q1 = await A.evaluate(async () => { const first = AI.order('chat')[0]; window.__quotaModels = [first]; await YJ.send('Tu fais quoi ?'); return { first, used: window.__streamModel, x: yjLog().slice(-1)[0].x, next: AI.order('chat')[0], ready: AI.ready(), st: AI.state, saved: JSON.parse(localStorage.getItem('entre-nous:ai-quota') || '{}') }; });
+ok(`quota épuisé sur ${q1.first} → ${q1.used} répond`, q1.used !== q1.first && /Coucou/.test(q1.x) && q1.ready && q1.st === 'ok');
+ok('le modèle épuisé est mis de côté jusqu\'au lendemain', q1.next !== q1.first && q1.saved[q1.first] > Date.now() + 15 * 3600000);
+const h1 = await A.evaluate(async () => { window.__quotaHits = 0; await YJ.send('Et maintenant ?'); return window.__quotaHits; });
+ok('il n\'est plus redemandé ensuite', h1 === 0);
+// Plus aucun quota : Yassen répond quand même, de façon logique, sans parler d'IA
+const q2 = await A.evaluate(async () => { window.__quotaModels = [...AI.models]; localStorage.removeItem('entre-nous:ai-quota'); await YJ.send('Tu peux me dire ce que tu penses de notre week-end ?'); const e = yjLog().slice(-1)[0]; return { x: e.x, local: e.local, st: AI.state, ready: AI.ready() }; });
+console.log('  réponse de secours :', q2.x);
+ok('tout épuisé → réponse de secours cohérente, état « quota »', q2.local && q2.st === 'quota' && !q2.ready && !/\bIA\b/.test(q2.x) && /question/.test(q2.x));
 console.log('errors', JSON.stringify(errs)); await b.close();

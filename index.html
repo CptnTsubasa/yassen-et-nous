@@ -7004,8 +7004,9 @@ function yjLocal(text, me) {
   if (has(/ (faim|manger|mange|repas|diner|dejeuner)/)) return ["Moi, je me nourris de câlins ! Et vous, une petite crêpe ?", "rire"];
   if (has(/ (qui es tu|t'?es qui|tu es qui|ia |robot|intelligence)/)) return ["Je suis Yassen Jr., votre petite flamme ! D'habitude je parle grâce à une IA, mais là, je réponds tout seul.", "joie"];
   if (has(/ (coucou|salut|bonjour|hello|bonsoir|hey|yo|cc|wesh)/)) return [`Coucou ${m} ! *fait des petites étincelles*`, "joie"];
-  if (t.includes("?")) return ["Hmm… bonne question ! Ma petite tête de flamme a besoin de l'IA pour bien réfléchir, et elle ne répond pas. Tu me reposes la question tout à l'heure ?", "surprise"];
-  return [pickOne([`Je t'écoute, ${m} ! Raconte-moi encore.`, "Hihi, je n'ai pas tout compris, mais je suis content que tu me parles. Tu me le redis autrement ?"]), "joie"];
+  // Le reste : il ne fait pas semblant d'avoir compris, il dit franchement qu'il est à plat pour l'instant.
+  if (t.includes("?")) return [pickOne([`*bâille* J'ai tellement bavardé aujourd'hui que ma flamme est toute petite, ${m}… Je garde ta question au chaud et je te réponds comme il faut dans quelques heures, promis.`, `Ta question mérite une vraie réponse, ${m}, et là ma petite flamme est à plat d'avoir trop parlé. Repose-la-moi un peu plus tard ?`]), "dodo"];
+  return [pickOne([`*se pelotonne* Je t'ai bien lu, ${m}. J'ai trop papoté aujourd'hui, ma flamme recharge… Je te réponds mieux tout à l'heure, d'accord ?`, `Merci de me raconter ça, ${m}. Je suis un peu épuisé d'avoir tant parlé : laisse-moi recharger ma flamme et on en reparle plus tard !`]), "dodo"];
 }
 const YJ_SUGG = ["Coucou mon petit !", "Comment tu vas aujourd'hui ?", "Raconte-nous une blague", "Une idée pour ce soir ?", "Tu nous aimes ?", "Qu'est-ce qui te rend heureux ?"];
 const YJ_MOODS = ["joie", "calin", "rire", "dodo", "surprise", "tendre"];
@@ -7084,7 +7085,7 @@ const YJ = {
     this.learning = true;
     try {
       const known = yjMem(), conv = fresh.slice(-16).map(e => `${e.w === "y" ? "Yassen Jr." : `${nm(e.w)} (${parentOf(e.w)})`} : ${e.x}`).join("\n");
-      const out = await AI.json(`Voici une conversation récente entre Yassen Jr. et ses parents :\n${conv}\n\nCe qu'il sait déjà :\n${known.map(m => "- " + m.x).join("\n") || "(rien)"}\n\nNote au plus 3 NOUVEAUX faits durables à retenir sur les parents (goûts, projets, événements à venir, choses importantes qu'ils ont racontées), en phrases courtes à la troisième personne, avec leur prénom. Rien d'anodin, rien de déjà connu. Réponds en JSON : {"faits": ["…"]}`, YJ_SYSTEM + YJ_JSON);
+      const out = await AI.json(`Voici une conversation récente entre Yassen Jr. et ses parents :\n${conv}\n\nCe qu'il sait déjà :\n${known.map(m => "- " + m.x).join("\n") || "(rien)"}\n\nNote au plus 3 NOUVEAUX faits durables à retenir sur les parents (goûts, projets, événements à venir, choses importantes qu'ils ont racontées), en phrases courtes à la troisième personne, avec leur prénom. Rien d'anodin, rien de déjà connu. Réponds en JSON : {"faits": ["…"]}`, YJ_SYSTEM + YJ_JSON, "light");
       const facts = (Array.isArray(out && out.faits) ? out.faits : []).map(f => cleanTxt(f, 160)).filter(Boolean).slice(0, 3), patch = { memAt: log.length ? log[log.length - 1].t : Date.now() };
       facts.forEach(f => { patch["mem/f" + uid()] = { x: f, t: Date.now() }; });
       const all = [...known, ...facts.map(x => ({ x }))];
@@ -7101,7 +7102,7 @@ const YJ = {
     await new Promise(r => setTimeout(r, 1200 + Math.random() * 3500));
     const d2 = (Store.meta.yj || {}).daily; if (d2 && d2.day === day) return;
     try {
-      const out = await AI.json(`${yjContext()}\n\nÉcris ton petit mot du jour pour tes deux parents : une seule phrase tendre ou rigolote (25 mots au plus), qui colle à leur journée.\nRéponds en JSON : {"mot": "ton petit mot"}`, YJ_SYSTEM + YJ_JSON);
+      const out = await AI.json(`${yjContext()}\n\nÉcris ton petit mot du jour pour tes deux parents : une seule phrase tendre ou rigolote (25 mots au plus), qui colle à leur journée.\nRéponds en JSON : {"mot": "ton petit mot"}`, YJ_SYSTEM + YJ_JSON, "light");
       const x = cleanTxt(out && (out.mot || out.reponse), 220);
       if (x) { Store.patchMeta("yj", { daily: { day, x } }); render(); }
     } catch (e) { /* pas de mot aujourd'hui */ }
@@ -7437,8 +7438,38 @@ const CX_IDEAS = ["On se rencontre pour la première fois dans un train de nuit"
 // La clé du site reCAPTCHA v3 est publique par nature ; la clé secrète reste dans la console Firebase.
 const APPCHECK_SITE_KEY = "6Leta_gtAAAAAELfFwPvU9yqXCUvBIGTSuZOwx3l";
 // L'IA : Gemini par Firebase AI Logic. Son SDK est chargé à part, à la demande.
+// Quota gratuit de Google : chaque modèle a le sien (une vingtaine de demandes par jour pour le plus récent).
+// Un modèle épuisé est mis de côté jusqu'à l'heure donnée par Google, et le suivant prend le relais.
+const AI_QUOTA = /\b429\b|quota|RESOURCE_EXHAUSTED|rate.?limit|too many requests/i;
+const AI_GONE = /not.?found|404|no longer available|unsupported model|is not supported/i;
+const AI_BUSY = /high demand|overloaded|unavailable|try again|\b50[03]\b|internal|délai|vide/i;
 const AI = {
-  ver: "12.0.0", models: ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"], mi: 0, state: "",
+  ver: "12.0.0", models: ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"], state: "",
+  // Le plus rapide pour bavarder, le plus doué pour les histoires, le plus léger pour les petites tâches.
+  pref: { chat: "gemini-3.5-flash", json: "gemini-3.8-flash", light: "gemini-3.5-flash-lite" },
+  dead: {},
+  spent() { try { return JSON.parse(lsGet("entre-nous:ai-quota") || "{}") || {}; } catch (e) { return {}; } },
+  // Les modèles à essayer, dans l'ordre, sans ceux qui sont retirés ou à court de quota.
+  order(kind) {
+    const q = this.spent(), now = Date.now(), p = this.pref[kind] || this.pref.json;
+    return [p, ...this.models.filter(m => m !== p)].filter(m => this.models.includes(m) && !this.dead[m] && !(q[m] > now));
+  },
+  // Modèle hors jeu (retiré ou quota épuisé) : on le note et on passe au suivant.
+  out(name, msg) {
+    if (AI_QUOTA.test(msg)) {
+      const r = /retry in (?:(\d+)h)?(?:(\d+)m)?([\d.]+)?s?/i.exec(msg) || [], wait = ((+r[1] || 0) * 3600 + (+r[2] || 0) * 60 + (+r[3] || 0)) * 1000;
+      const q = this.spent(); q[name] = Date.now() + (wait || (/per ?day|PerDay/i.test(msg) ? 3 * 3600000 : 60000)) + 5000;
+      lsSet("entre-nous:ai-quota", JSON.stringify(q));
+      return true;
+    }
+    if (AI_GONE.test(msg)) {
+      this.dead[name] = 1;
+      const rec = /use (?:models\/)?(gemini-[\w.-]+)/i.exec(msg);
+      if (rec && !this.models.includes(rec[1])) this.models.push(rec[1]);
+      return true;
+    }
+    return false;
+  },
   async init() {
     if (this.ai) return this.ai;
     // Une seule préparation à la fois, même si l'appli la demande deux fois d'affilée.
@@ -7467,11 +7498,10 @@ const AI = {
   async chat1(prompt, sys, onText) {
     let ai;
     try { ai = await this.init(); } catch (e) { try { this.fail(e); } catch (x) { /* état noté */ } this.cool = Date.now() + 120000; throw e; }
-    if (this.mi >= this.models.length && Date.now() - (this.miAt || 0) > 600000) this.mi = 0;
-    const steps = this.think || (this.think = {});
+    const steps = this.think || (this.think = {}), list = this.order("chat");
     let last, again = 0;
-    for (let i = this.mi; i < this.models.length;) {
-      const name = this.models[i], lv = (/^gemini-2\./.test(name) ? [{ thinkingBudget: 0 }, null] : [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, null])[steps[name] || 0];
+    for (let i = 0; i < list.length;) {
+      const name = list[i], lv = [{ thinkingLevel: "minimal" }, { thinkingLevel: "low" }, null][steps[name] || 0];
       let txt = "";
       try {
         const m = this.M.getGenerativeModel(ai, { model: name, systemInstruction: sys, generationConfig: { temperature: 1, maxOutputTokens: 800, ...(lv ? { thinkingConfig: lv } : {}) } });
@@ -7485,10 +7515,10 @@ const AI = {
         const msg = String(e && e.message);
         if (txt.trim().length > 20 && /délai/.test(msg)) { this.state = "ok"; return txt; }
         if (/thinking/i.test(msg) && lv) { steps[name] = (steps[name] || 0) + 1; continue; }
-        if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) { if (i === this.mi) { this.mi++; this.miAt = Date.now(); } i++; continue; }
-        if (/high demand|overloaded|unavailable|try again|\b50[03]\b|internal|délai|vide/i.test(msg)) {
+        if (this.out(name, msg)) { if (onText) onText(""); i++; continue; }
+        if (AI_BUSY.test(msg)) {
           if (onText) onText("");
-          if (++i >= this.models.length && again++ < 1) { await new Promise(ok => setTimeout(ok, 1500)); i = this.mi; }
+          if (++i >= list.length && again++ < 1) { await new Promise(ok => setTimeout(ok, 1500)); i = 0; }
           continue;
         }
         break;
@@ -7499,27 +7529,26 @@ const AI = {
   fail(last) {
     const why = String(last && (last.code || "") + " " + (last && last.message));
     this.lastErr = why.trim();
-    this.state = /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
+    // Quota épuisé partout : Yassen se repose, l'IA revient dès qu'un modèle retrouve son quota.
+    this.state = !this.order("chat").length || AI_QUOTA.test(why) ? "quota" : /app.?check/i.test(why) ? "appcheck" : /api-not-enabled|not been used|disabled|PERMISSION_DENIED|403|api key|billing|not enabled/i.test(why) ? "off" : "err";
     if (this.state === "err") this.cool = Date.now() + 60000;
     throw last || new Error("IA indisponible");
   },
   // Après un échec, on laisse l'IA tranquille un moment au lieu de la réessayer à chaque étape.
-  ready() { return this.state !== "off" && this.state !== "appcheck" && !(this.cool > Date.now()); },
+  ready() { return this.state !== "off" && this.state !== "appcheck" && !(this.cool > Date.now()) && this.order("chat").length > 0; },
   // Bouton « Continuer sans attendre » : on lâche la demande en cours et le générateur prend le relais.
   skip() { if (this.giveUp) this.giveUp(new Error("abandon")); },
-  async json(prompt, sys) {
+  async json(prompt, sys, kind) {
     let ai;
     try { ai = await this.init(); } catch (e) { try { this.fail(e); } catch (x) { /* état noté */ } this.cool = Date.now() + 120000; throw e; }
-    const stop = new Promise((_, no) => { this.giveUp = no; });
+    const stop = new Promise((_, no) => { this.giveUp = no; }), list = this.order(kind || "json");
     let last, busyTries = 0;
-    // Tous les modèles ont échoué il y a plus de 10 minutes : on retente depuis le premier.
-    if (this.mi >= this.models.length && Date.now() - (this.miAt || 0) > 600000) this.mi = 0;
     try {
-      while (this.mi < this.models.length) {
+      for (let i = 0; i < list.length;) {
         try {
           // Réflexion réduite au minimum : les réponses arrivent bien plus vite.
           const cfg = { responseMimeType: "application/json", temperature: 1, maxOutputTokens: 4096, ...(this.noThink ? {} : { thinkingConfig: { thinkingLevel: "low" } }) };
-          const m = this.M.getGenerativeModel(ai, { model: this.models[this.mi], systemInstruction: sys || CX_SYSTEM, generationConfig: cfg });
+          const m = this.M.getGenerativeModel(ai, { model: list[i], systemInstruction: sys || CX_SYSTEM, generationConfig: cfg });
           const r = await Promise.race([m.generateContent(prompt), stop, new Promise((_, no) => setTimeout(() => no(new Error("délai dépassé")), 150000))]);
           const out = parseJsonLoose(r.response.text());
           if (!out) throw new Error("réponse illisible");
@@ -7530,14 +7559,10 @@ const AI = {
           const msg = String(e && e.message);
           if (msg === "abandon") throw e;
           if (/thinking/i.test(msg) && !this.noThink) { this.noThink = true; continue; }
+          // Modèle retiré ou à court de quota : le suivant prend le relais.
+          if (this.out(list[i], msg)) { i++; continue; }
           // Google surchargé : on patiente un peu et on réessaie, deux fois au plus.
-          if (/high demand|overloaded|unavailable|try again|\b50[03]\b|internal/i.test(msg) && busyTries++ < 2) { await Promise.race([new Promise(ok => setTimeout(ok, 4000 * busyTries)), stop]); continue; }
-          // Modèle retiré ou inconnu : on prend celui que Google recommande, sinon le suivant. Toute autre erreur remonte.
-          if (/not.?found|404|no longer available|unsupported model|is not supported/i.test(msg)) {
-            const rec = /use (?:models\/)?(gemini-[\w.-]+)/i.exec(msg);
-            if (rec && !this.models.includes(rec[1])) this.models.splice(this.mi + 1, 0, rec[1]);
-            this.mi++; this.miAt = Date.now(); continue;
-          }
+          if (AI_BUSY.test(msg) && busyTries++ < 2) { await Promise.race([new Promise(ok => setTimeout(ok, 4000 * busyTries)), stop]); continue; }
           break;
         }
       }
@@ -7948,10 +7973,11 @@ const cxCopy = o => JSON.parse(JSON.stringify(o));
 const SWORD = '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>';
 function cxAiPill() {
   const st = AI.state;
-  const label = st === "ok" ? "Écrit par l'IA" : st === "appcheck" ? "IA bloquée par App Check" : st === "off" ? "Générateur intégré" : st === "err" ? "IA momentanément indisponible" : "IA Gemini";
+  const label = st === "ok" ? "Écrit par l'IA" : st === "appcheck" ? "IA bloquée par App Check" : st === "off" ? "Générateur intégré" : st === "quota" ? "IA au repos pour aujourd'hui" : st === "err" ? "IA momentanément indisponible" : "IA Gemini";
   return `<button class="cx-pill ${st || "idle"}" data-a="cx-aihelp" aria-expanded="${!!S.cx.help}"><span class="dot" aria-hidden="true"></span>${label}</button>
-  ${S.cx.help ? `<div class="panel cx-help"><p><b>${st === "ok" ? "L'IA est activée." : "Pour des histoires vraiment uniques, activez l'IA (gratuit) :"}</b></p>
-    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : st === "appcheck" ? `<p class="small">${esc(fr("L'IA est activée, mais la protection App Check de Firebase refuse les demandes de l'appli : il faut enregistrer le site dans App Check avec une clé reCAPTCHA v3."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
+  ${S.cx.help ? `<div class="panel cx-help"><p><b>${st === "ok" ? "L'IA est activée." : st === "quota" ? "L'IA se repose." : "Pour des histoires vraiment uniques, activez l'IA (gratuit) :"}</b></p>
+    ${st === "ok" ? `<p class="small">${esc(fr("Vos histoires sont écrites par Gemini, à partir de votre contexte, de vos détails et de vos personnalités."))}</p>` : st === "appcheck" ? `<p class="small">${esc(fr("L'IA est activée, mais la protection App Check de Firebase refuse les demandes de l'appli : il faut enregistrer le site dans App Check avec une clé reCAPTCHA v3."))}</p>` : st === "quota" ? `<p class="small">${esc(fr("L'IA gratuite de Google a atteint sa limite du jour (elle est partagée entre vos deux téléphones). Elle revient toute seule dans quelques heures."))}</p>
+    <p class="small muted">${esc(fr("En attendant, le générateur intégré prend le relais."))}</p>` : `<ol class="rules small"><li>Ouvrez la console Firebase de votre projet (y-s-14d43).</li><li>Dans le menu, choisissez « AI Logic », puis « Commencer ».</li><li>Choisissez « Gemini Developer API » (l'offre gratuite) et activez-la.</li></ol>
     <p class="small muted">${esc(fr("En attendant, le générateur intégré écrit vos histoires avec vos prénoms, votre contexte et vos détails. Les textes envoyés à l'IA passent par Google."))}</p>`}</div>` : ""}`;
 }
 function cxLoader(msg) {
