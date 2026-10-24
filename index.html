@@ -373,6 +373,24 @@ body { background: var(--bg); }
 .nav button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .wrap { padding-block: 20px 160px; }
 .wrap.enter { animation: pagein .35s ease both; }
+@media (prefers-reduced-motion: no-preference) {
+  .wrap.enter.from-r { animation: tabin-r .32s cubic-bezier(.2, .8, .2, 1) both; }
+  .wrap.enter.from-l { animation: tabin-l .32s cubic-bezier(.2, .8, .2, 1) both; }
+  .layer.in { animation: layerin .32s cubic-bezier(.2, .8, .2, 1) both; }
+  .layer.out { animation: layerout .22s ease-in both; pointer-events: none; }
+  .hearts-pill.pop { animation: pillpop .45s ease; }
+  .letter .hand.unfold { animation: unfold .9s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 0; }
+  .seal-break { position: absolute; right: 18px; top: 16px; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-family: var(--f-display); animation: sealbreak .8s ease-in both; pointer-events: none; }
+  .fly-heart { position: fixed; z-index: 90; pointer-events: none; color: #E95F7E; font-size: 18px; transform: translate(-50%, -50%); animation: heartfly 1.15s cubic-bezier(.5, 0, .3, 1) both; }
+}
+@keyframes tabin-r { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@keyframes tabin-l { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+@keyframes layerin { from { opacity: 0; transform: translateY(28px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes layerout { to { opacity: 0; transform: translateY(22px); } }
+@keyframes pillpop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes unfold { from { opacity: 0; transform: scaleY(.6) translateY(-6px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes sealbreak { 0% { transform: scale(1) rotate(0); opacity: 1; } 35% { transform: scale(1.15) rotate(-12deg); } 100% { transform: scale(.4) rotate(40deg) translateY(30px); opacity: 0; } }
+@keyframes heartfly { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 15% { opacity: 1; transform: translate(calc(-50% + var(--sx) * .4), calc(-50% - 30px)) scale(1.15); } 100% { opacity: .2; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.6); } }
 @keyframes pagein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .panel { border: 1px solid var(--hair); }
 .greet { display: grid; gap: 4px; }
@@ -1216,6 +1234,11 @@ html.ys-paused, html.ys-paused body { overscroll-behavior-y: contain; }
 @supports not (color: color-mix(in srgb, red, blue)) { :root[data-theme="dark"] { --glass: rgba(39, 33, 44, .85); --hair: rgba(239, 231, 240, .08); } }
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <radialGradient id="ys-face" cx=".38" cy=".3" r=".78"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".26"/><stop offset=".42" stop-color="#FFFFFF" stop-opacity="0"/><stop offset=".78" stop-color="#7A4A3A" stop-opacity="0"/><stop offset="1" stop-color="#7A4A3A" stop-opacity=".2"/></radialGradient>
+  <linearGradient id="ys-body" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".16"/><stop offset=".4" stop-color="#FFFFFF" stop-opacity="0"/><stop offset=".62" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity=".16"/></linearGradient>
+  <linearGradient id="ys-hair" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".14"/><stop offset=".5" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity=".12"/></linearGradient>
+</defs></svg>
 <div id="cozy" aria-hidden="true"><i></i><i></i><i></i><i></i><div class="cozy-fx"></div></div>
 <div id="ground" aria-hidden="true" hidden><div class="season-deco"></div><svg class="meadow" viewBox="0 0 400 52" preserveAspectRatio="none"><path d="M0 26C50 16 96 22 150 19S258 12 308 18 380 22 400 17V52H0Z" fill="var(--g2)"/><path d="M0 33C46 26 98 31 152 29S250 25 300 29 370 32 400 27V52H0Z" fill="var(--g1)"/><g fill="none" stroke="var(--g3)" stroke-width="1.3" stroke-linecap="round"><path d="M15.9 29.7q-1.6-4.4-3.4-5.6M15.9 29.7q.2-5.2 1.4-7M15.9 29.7q2-3.8 4.2-4.6"/><path d="M53.8 29.5q-1.6-4.4-3.4-5.6M53.8 29.5q.2-5.2 1.4-7M53.8 29.5q2-3.8 4.2-4.6"/><path d="M83.4 30.2q-1.6-4.4-3.4-5.6M83.4 30.2q.2-5.2 1.4-7M83.4 30.2q2-3.8 4.2-4.6"/><path d="M115.7 30.5q-1.6-4.4-3.4-5.6M115.7 30.5q.2-5.2 1.4-7M115.7 30.5q2-3.8 4.2-4.6"/><path d="M154.4 30.3q-1.6-4.4-3.4-5.6M154.4 30.3q.2-5.2 1.4-7M154.4 30.3q2-3.8 4.2-4.6"/><path d="M192.8 29.5q-1.6-4.4-3.4-5.6M192.8 29.5q.2-5.2 1.4-7M192.8 29.5q2-3.8 4.2-4.6"/><path d="M235.1 31.3q-1.6-4.4-3.4-5.6M235.1 31.3q.2-5.2 1.4-7M235.1 31.3q2-3.8 4.2-4.6"/><path d="M266.5 29.8q-1.6-4.4-3.4-5.6M266.5 29.8q.2-5.2 1.4-7M266.5 29.8q2-3.8 4.2-4.6"/><path d="M310.5 31.6q-1.6-4.4-3.4-5.6M310.5 31.6q.2-5.2 1.4-7M310.5 31.6q2-3.8 4.2-4.6"/><path d="M347.9 30.3q-1.6-4.4-3.4-5.6M347.9 30.3q.2-5.2 1.4-7M347.9 30.3q2-3.8 4.2-4.6"/><path d="M385.7 29.4q-1.6-4.4-3.4-5.6M385.7 29.4q.2-5.2 1.4-7M385.7 29.4q2-3.8 4.2-4.6"/></g><path d="M36 31.7v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="36" cy="25.5" r="2.1" fill="#F4B6C8"/><circle cx="36" cy="25.5" r=".8" fill="#F2C84B"/><path d="M104 30.6v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="104" cy="24.4" r="2.1" fill="#FFF1C9"/><circle cx="104" cy="24.4" r=".8" fill="#F2C84B"/><path d="M146 30.3v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="146" cy="24.1" r="2.1" fill="#F4B6C8"/><circle cx="146" cy="24.1" r=".8" fill="#F2C84B"/><path d="M214 30.2v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="214" cy="24.0" r="2.1" fill="#E9DDF6"/><circle cx="214" cy="24.0" r=".8" fill="#F2C84B"/><path d="M258 30.6v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="258" cy="24.4" r="2.1" fill="#FFF1C9"/><circle cx="258" cy="24.4" r=".8" fill="#F2C84B"/><path d="M330 31.6v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="330" cy="25.4" r="2.1" fill="#F4B6C8"/><circle cx="330" cy="25.4" r=".8" fill="#F2C84B"/><path d="M365 30.4v-5" stroke="var(--g3)" stroke-width="1"/><circle cx="365" cy="24.2" r="2.1" fill="#E9DDF6"/><circle cx="365" cy="24.2" r=".8" fill="#F2C84B"/></svg></div>
 <div id="app"></div>
@@ -2950,7 +2973,7 @@ function viewLettres() {
       <p class="when">${d === 0 ? "C'est le jour !" : "Ouverte depuis le " + esc(fmtDay(l.openOn))}</p>
       <p class="t"><b>${esc(l.title || "Une carte pour plus tard")}</b></p>
       <p class="small muted">De ${esc(nm(l.from))}, écrite le ${fmtTs(l.createdAt)}</p>
-      ${open ? `<p class="hand" style="font-family:var(--f-hand);font-size:1.55rem;line-height:1.15;white-space:pre-wrap;overflow-wrap:anywhere">${esc(l.message)}</p>` : `<div class="row"><button class="btn" data-a="open-letter" data-id="${l.id}">Ouvrir la carte</button></div>`}
+      ${open ? `${S.justOpened === l.id ? `<span class="seal-break" aria-hidden="true">YJ</span>` : ""}<p class="hand${S.justOpened === l.id ? " unfold" : ""}" style="font-family:var(--f-hand);font-size:1.55rem;line-height:1.15;white-space:pre-wrap;overflow-wrap:anywhere">${esc(l.message)}</p>` : `<div class="row"><button class="btn" data-a="open-letter" data-id="${l.id}">Ouvrir la carte</button></div>`}
       <div class="tools">${confirmRow("lettres", l.id)}</div>
     </article>`;
   }).join("");
@@ -4132,14 +4155,14 @@ function avatarSvg(k, ov) {
     fleur: [0, 72, 144, 216, 288].map(d => `<circle cx="${(72 + 4.5 * Math.cos(d * Math.PI / 180)).toFixed(1)}" cy="${(28 + 4.5 * Math.sin(d * Math.PI / 180)).toFixed(1)}" r="3.6" fill="#F7A8C4"/>`).join("") + `<circle cx="72" cy="28" r="2.4" fill="#F2C84B"/>`,
     oreilles: `<circle cx="24" cy="57" r="2.4" fill="#E8C35A"/><circle cx="76" cy="57" r="2.4" fill="#E8C35A"/>` }[a.acc] || "";
   // Chaque partie a son groupe (jambes, bras, buste, tête) : les chibis peuvent marcher, enlacer, croiser les bras…
-  return `<svg viewBox="0 0 100 150" aria-hidden="true"><ellipse class="av-shadow" cx="50" cy="146" rx="24" ry="4" fill="#000" opacity=".18"/><g class="av-hairback">${back}</g>
+  return `<svg viewBox="0 0 100 150" aria-hidden="true"><ellipse class="av-shadow" cx="50" cy="146" rx="24" ry="4" fill="#000" opacity=".18"/><g class="av-hairback">${back}${back ? `<g style="mix-blend-mode:normal" fill="url(#ys-hair)">${back.replace(/fill="[^"]*"/g, "")}</g>` : ""}</g>
     <g class="av-leg av-leg-l"><rect x="38" y="116" width="10" height="26" rx="5" fill="#3D3550"/><ellipse cx="42" cy="142" rx="8" ry="4" fill="#2A2433"/></g><g class="av-leg av-leg-r"><rect x="52" y="116" width="10" height="26" rx="5" fill="#3D3550"/><ellipse cx="58" cy="142" rx="8" ry="4" fill="#2A2433"/></g>
-    <g class="av-arm av-arm-l"><rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><circle cx="22" cy="116" r="5" fill="${skin}"/></g><g class="av-arm av-arm-r"><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/><circle cx="78" cy="116" r="5" fill="${skin}"/></g>
-    <g class="av-torso"><g class="av-sway">${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/>`}${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}</g></g>
+    <g class="av-arm av-arm-l"><rect x="20" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(8 25 86)"/><rect x="20" y="84" width="10" height="32" rx="5" fill="url(#ys-body)" transform="rotate(8 25 86)"/><circle cx="22" cy="116" r="5" fill="${skin}"/></g><g class="av-arm av-arm-r"><rect x="70" y="84" width="10" height="32" rx="5" fill="${top}" transform="rotate(-8 75 86)"/><rect x="70" y="84" width="10" height="32" rx="5" fill="url(#ys-body)" transform="rotate(-8 75 86)"/><circle cx="78" cy="116" r="5" fill="${skin}"/></g>
+    <g class="av-torso"><g class="av-sway">${out && out.robe ? `<path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="${top}"/><path d="M30 84Q50 74 70 84L80 128Q50 136 20 128Z" fill="url(#ys-body)"/>` : `<path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="${top}"/><path d="M30 84Q50 74 70 84L72 122Q50 128 28 122Z" fill="url(#ys-body)"/>`}<path d="M43 79.5Q50 84.5 57 79.5" stroke="#000" stroke-opacity=".14" stroke-width="1.4" fill="none" stroke-linecap="round"/>${out ? out.d(tintPal(eq.outfit, eq.tint)) : ""}</g></g>
     <g class="av-cross"><rect x="26" y="91" width="48" height="10" rx="5" fill="${top}" transform="rotate(-13 50 96)" stroke="#000" stroke-opacity=".12" stroke-width=".8"/><rect x="26" y="95" width="48" height="10" rx="5" fill="${top}" transform="rotate(11 50 100)" stroke="#000" stroke-opacity=".12" stroke-width=".8"/><circle cx="28.5" cy="102" r="4.6" fill="${skin}"/><circle cx="71.5" cy="90.5" r="4.6" fill="${skin}"/></g>
     <rect x="45" y="68" width="10" height="12" fill="${skin}"/>
-    <g class="av-head"><circle class="av-ear av-ear-l" cx="24" cy="50" r="5" fill="${skin}"/><circle class="av-ear av-ear-r" cx="76" cy="50" r="5" fill="${skin}"/><circle cx="50" cy="46" r="26" fill="${skin}"/>${front}
-    <g class="av-face"><g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3" ry="3.8" fill="#2B1E2F"/><circle cx="41.5" cy="48.6" r="1" fill="#FFFFFF"/><circle cx="60.5" cy="48.6" r="1" fill="#FFFFFF"/></g>
+    <g class="av-head"><circle class="av-ear av-ear-l" cx="24" cy="50" r="5" fill="${skin}" stroke="#5A3A2E" stroke-opacity=".14"/><circle class="av-ear av-ear-r" cx="76" cy="50" r="5" fill="${skin}" stroke="#5A3A2E" stroke-opacity=".14"/><circle cx="24.6" cy="50.4" r="2.2" fill="#7A4A3A" opacity=".14"/><circle cx="75.4" cy="50.4" r="2.2" fill="#7A4A3A" opacity=".14"/><circle cx="50" cy="46" r="26" fill="${skin}" stroke="#5A3A2E" stroke-opacity=".16" stroke-width="1"/><circle cx="50" cy="46" r="26" fill="url(#ys-face)"/>${front}${a.hair !== "rase" ? `<path d="M33 30Q43 22 57 23" stroke="#FFFFFF" stroke-opacity=".3" stroke-width="2.4" fill="none" stroke-linecap="round"/>` : ""}
+    <g class="av-face"><g class="av-eyes"><ellipse cx="40.5" cy="50" rx="3.3" ry="4.2" fill="#2B1E2F"/><ellipse cx="59.5" cy="50" rx="3.3" ry="4.2" fill="#2B1E2F"/><ellipse cx="40.5" cy="51.8" rx="2.2" ry="1.6" fill="#5B3F52" opacity=".55"/><ellipse cx="59.5" cy="51.8" rx="2.2" ry="1.6" fill="#5B3F52" opacity=".55"/><circle cx="41.6" cy="48.4" r="1.25" fill="#FFFFFF"/><circle cx="60.6" cy="48.4" r="1.25" fill="#FFFFFF"/><circle cx="39.4" cy="52" r=".55" fill="#FFFFFF" opacity=".85"/><circle cx="58.4" cy="52" r=".55" fill="#FFFFFF" opacity=".85"/></g>
     <g class="av-happy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 51q3 -3.5 6 0"/><path d="M56.5 51q3 -3.5 6 0"/></g>
     <g class="av-grr" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M35.5 43l8 2.6"/><path d="M64.5 43l-8 2.6"/></g>
     <g class="av-sleepy" fill="none" stroke="#2B1E2F" stroke-width="2" stroke-linecap="round"><path d="M37.5 50.5q3 2.6 6 0"/><path d="M56.5 50.5q3 2.6 6 0"/></g>
@@ -6599,6 +6622,21 @@ function gainToast(msg, sound = "chime") {
   if (!t) { t = document.createElement("div"); t.id = "gain"; t.setAttribute("role", "status"); document.body.appendChild(t); }
   t.innerHTML = `<div class="gain-toast"><span aria-hidden="true">♥︎</span>${esc(msg)}</div>`;
   clearTimeout(gainToast.tm); gainToast.tm = setTimeout(() => { t.innerHTML = ""; }, 3400);
+  if (/\+\s?\d+ cœurs/.test(msg)) heartsFly();
+}
+// Quelques cœurs partent du milieu de l'écran et rejoignent le compteur en haut, qui bondit à leur arrivée.
+function heartsFly() {
+  const pill = document.querySelector(".hearts-pill");
+  if (!pill || reduceMotion()) return;
+  const r = pill.getBoundingClientRect(), x0 = innerWidth / 2, y0 = innerHeight * 0.55;
+  for (let i = 0; i < 7; i++) {
+    const h = document.createElement("span"); h.className = "fly-heart"; h.textContent = "♥";
+    h.style.left = x0 + "px"; h.style.top = y0 + "px";
+    h.style.setProperty("--dx", (r.left + r.width / 2 - x0) + "px"); h.style.setProperty("--dy", (r.top + r.height / 2 - y0) + "px");
+    h.style.setProperty("--sx", ((Math.random() - 0.5) * 140).toFixed(0) + "px"); h.style.animationDelay = (i * 70) + "ms";
+    document.body.appendChild(h); setTimeout(() => h.remove(), 1300 + i * 70);
+  }
+  setTimeout(() => { pill.classList.remove("pop"); void pill.offsetWidth; pill.classList.add("pop"); }, 900);
 }
 const Jeu = {
   g() { return Store.meta.game || {}; },
@@ -8406,9 +8444,10 @@ function renderNow(force) {
   if (!views[S.tab]) S.tab = "home";
   if (S.invite && (!S.layer || S.layer.type !== "game")) S.layer = { type: "sheet", name: "invite" };
   if (!S.layer && !S.obShown && onboardStep()) { S.obShown = true; S.layer = { type: "onboard" }; }
-  const enter = S.tab !== render.lastTab; render.lastTab = S.tab;
+  const order = tabs.map(t => t[0]), enter = S.tab !== render.lastTab ? (render.lastTab && order.indexOf(S.tab) < order.indexOf(render.lastTab) ? " enter from-l" : " enter from-r") : "";
+  render.lastTab = S.tab;
   app.innerHTML = `<header class="appbar"><div class="appbar-in"><span class="brand">${BRAND_MARK}<span class="brand-txt">Y<span>&amp;</span>S</span></span><span class="row" style="gap:2px"><button class="hearts-pill" data-a="tresors" aria-label="Nos trésors : ${Jeu.hearts()} cœurs">♥︎ ${Jeu.hearts()}</button>${(n => `<button class="icon-btn bell" data-a="sheet" data-name="notifs" aria-label="Notifications${n ? ` : ${n} nouvelle${n > 1 ? "s" : ""}` : ""}">${BELL}${n ? `<span class="badge">${n > 9 ? "9+" : n}</span>` : ""}</button>`)(notifUnread())}<button class="icon-btn" data-a="sheet" data-name="avatars" aria-label="Nos personnages">${ico("people")}</button><button class="icon-btn" data-a="sheet" data-name="names" aria-label="Réglages">${ICON.gear}</button></span></div></header>
-    <main class="wrap${enter ? " enter" : ""}">${views[S.tab]()}</main>
+    <main class="wrap${enter}">${views[S.tab]()}</main>
     <nav class="nav" aria-label="Navigation"><div class="nav-in">${tabs.map(([k, l]) => `<button data-a="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${ICON[k]}<span>${l}</span></button>`).join("")}</div></nav>`;
   app.inert = !!S.layer;
   if (!("inert" in HTMLElement.prototype)) { if (S.layer) app.setAttribute("aria-hidden", "true"); else app.removeAttribute("aria-hidden"); }
@@ -8419,12 +8458,17 @@ function renderNow(force) {
   const cel = celebrationMsg(), celKey = todayStr() + ":" + cel;
   if (cel && !S.layer && S.celebrated !== celKey && lsGet("entre-nous:celebrated") !== celKey) { S.celebrated = celKey; lsSet("entre-nous:celebrated", celKey); setTimeout(() => { Buddies.celebrate(cel); Sfx.play("fanfare"); }, 1400); }
   sigCheck();
-  if (!S.layer) { layer.innerHTML = ""; return; }
+  if (!S.layer) {
+    const old = layer.firstElementChild;
+    if (old && !old.classList.contains("out") && !reduceMotion()) { old.classList.add("out"); old.setAttribute("aria-hidden", "true"); setTimeout(() => { if (!S.layer && layer.firstElementChild === old) layer.innerHTML = ""; }, 220); }
+    else if (!old || !old.classList.contains("out")) layer.innerHTML = "";
+    return;
+  }
   const key = S.layer.type + (S.game ? S.game.i + S.game.phase : "")
     + (S.arc ? S.arc.game + S.arc.i + S.arc.phase + (S.arc.round || "") : "")
     + (S.layer.type === "conte" && S.cx ? S.cx.view + (S.cx.id || "") + (cxStory() ? cxSteps(cxStory()).length : "") + (cxBusy() || S.cx.pitching ? "b" : "") + (S.cx.ri || "") : "")
     + (S.layer.type === "live" && Live.state ? "lv" + Live.state.startAt + (Live.state.i || 0) + (Live.state.node || "") + (Live.state.round || "") : "") + (S.story ? S.story.id + S.story.node + S.story.phase : "");
-  const prev = layer.firstElementChild, keep = prev && prev.dataset.key === key ? prev.scrollTop : 0, fresh = !prev;
+  const prev0 = layer.firstElementChild, prev = prev0 && prev0.classList.contains("out") ? null : prev0, keep = prev && prev.dataset.key === key ? prev.scrollTop : 0, fresh = !prev;
   const fsel = focusSel();
   let html = "";
   if (S.layer.type === "setup") html = setupView();
@@ -8438,7 +8482,10 @@ function renderNow(force) {
   else if (S.layer.type === "tresors") html = tresorsView();
   else if (S.layer.type === "onboard") html = onboardView();
   else if (S.layer.type === "conte") html = conteView();
-  layer.innerHTML = `<div class="layer" role="dialog" aria-modal="true" tabindex="-1" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
+  // L'animation d'ouverture continue là où elle en était si l'écran est redessiné juste après.
+  if (fresh) render.layerAt = Date.now();
+  const age = Date.now() - (render.layerAt || 0), opening = age < 320;
+  layer.innerHTML = `<div class="layer${opening ? " in" : ""}"${opening && age ? ` style="animation-delay:-${age}ms"` : ""} role="dialog" aria-modal="true" tabindex="-1" data-key="${esc(key)}"><div class="wrap">${html}</div></div>`;
   layer.firstElementChild.scrollTop = keep;
   const chat = document.getElementById("yj-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
   // Un écran qui s'ouvre prend le focus (lecteurs d'écran, clavier) ; sinon on rend le focus là où il était.
@@ -8930,7 +8977,7 @@ const ACT = {
     Store.add("cartes", { cat, text: t.slice(0, 280), tone: draft("cc-tone", "l"), from: draft("cc-f", "a"), ...(cat === "def" ? { duree: +draft("cc-dur", "15") } : {}) });
     clearDrafts("cc-t"); toast("Carte ajoutée au paquet");
   },
-  "open-letter"(d) { const l = Store.cols.lettres.find(x => x.id === d.id); if (l && daysUntil(l.openOn) <= 0) { S.openLetters[d.id] = true; Jeu.flag("lettre"); Sfx.play("paper"); setTimeout(() => Buddies.letter(l.from), 400); } },
+  "open-letter"(d) { const l = Store.cols.lettres.find(x => x.id === d.id); if (l && daysUntil(l.openOn) <= 0) { S.openLetters[d.id] = true; S.justOpened = d.id; setTimeout(() => { if (S.justOpened === d.id) S.justOpened = null; }, 1600); Jeu.flag("lettre"); Sfx.play("paper"); setTimeout(() => Buddies.letter(l.from), 400); } },
   tresors(d) { S.trSeg = d.v || S.trSeg || "quetes"; S.layer = { type: "tresors" }; },
   "tr-seg"(d) { S.trSeg = d.v; },
   "shop-cat"(d) { S.shopCat = d.v; },
