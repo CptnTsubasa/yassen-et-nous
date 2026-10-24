@@ -92,7 +92,9 @@ p { margin: 0; }
 .btn.c { background: var(--c); color: var(--on-c); }
 .btn.wide { width: 100%; }
 .btn[disabled] { opacity: .45; cursor: default; }
-.link { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: .92rem; padding: 6px 2px; }
+.link { color: var(--accent); font-weight: 600; font-size: .92rem; padding: 6px 2px; }
+.link.del { color: var(--muted); font-weight: 500; font-size: .85rem; display: inline-flex; align-items: center; gap: 5px; }
+.link.del svg { width: 15px; height: 15px; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { padding: 8px 14px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 600; font-size: .92rem; min-height: 38px; }
@@ -104,13 +106,13 @@ p { margin: 0; }
 
 /* Rendez-vous du jour */
 .daily { position: relative; overflow: hidden; background: var(--m4); color: var(--on-m4); border-radius: 26px; padding: 20px; display: grid; gap: 14px; }
-.daily .date { font-family: var(--f-hand); font-size: 1.5rem; line-height: 1; color: var(--i4); }
+.daily .date { font-family: var(--f-display); font-size: 1.15rem; line-height: 1.1; color: var(--i4); }
 .daily h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; opacity: .7; }
 .daily .q { font-size: 1.22rem; font-weight: 600; line-height: 1.35; text-wrap: pretty; }
 .daily .d { display: grid; gap: 4px; padding-top: 12px; border-top: 1px dashed color-mix(in srgb, var(--on-m4) 25%, transparent); }
 .daily .d b { font-size: .74rem; text-transform: uppercase; letter-spacing: .1em; opacity: .7; }
 .daily .btn.ghost { background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--fg); }
-.daily .link { color: color-mix(in srgb, var(--on-m4) 75%, transparent); }
+.daily .link { color: color-mix(in srgb, var(--on-m4) 80%, transparent); }
 .daily-off { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 18px; background: var(--surface-2); color: var(--muted); font-size: .92rem; }
 
 /* Tuiles des modes */
@@ -129,7 +131,7 @@ p { margin: 0; }
 .tally b { font-family: var(--f-display); font-weight: 400; font-size: 1.9rem; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
 .tally span { font-size: .84rem; color: var(--muted); line-height: 1.25; }
 .last-souv { text-align: left; display: grid; gap: 4px; padding-top: 12px; border-top: 1px dashed var(--line); }
-.last-souv .hand { font-family: var(--f-hand); font-size: 1.45rem; line-height: 1.15; overflow-wrap: anywhere; }
+.last-souv .hand { font-family: var(--f-display); font-size: 1.15rem; line-height: 1.25; overflow-wrap: anywhere; }
 
 .sync { font-size: .8rem; color: var(--muted); text-align: center; text-wrap: balance; }
 
@@ -158,7 +160,7 @@ p { margin: 0; }
 .fav { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 1.3rem; color: inherit; }
 .fav[aria-pressed="true"] { background: color-mix(in srgb, var(--on-c) 20%, transparent); }
 .card-body { padding: 22px 22px 12px; display: grid; align-content: center; gap: 12px; }
-.card-for { font-family: var(--f-hand); font-size: 1.45rem; line-height: 1; color: var(--ic); }
+.card-for { font-family: var(--f-display); font-size: 1.15rem; line-height: 1.1; color: var(--ic); }
 .card-text { font-size: clamp(1.32rem, 5.2vw, 1.66rem); font-weight: 650; line-height: 1.3; text-wrap: pretty; }
 .card-foot { display: flex; justify-content: space-between; align-items: end; padding: 0 16px 12px; color: var(--ic); font-size: 1.4rem; }
 .card-foot .meta { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -219,10 +221,11 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
 .item { background: var(--surface); border-radius: 20px; padding: 16px; box-shadow: var(--shadow); display: grid; gap: 10px; min-width: 0; }
 .item .t { font-weight: 700; font-size: 1.05rem; line-height: 1.3; overflow-wrap: anywhere; }
-.item .q { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--i4); }
+.item .q { font-family: var(--f-display); font-size: 1.12rem; line-height: 1.25; color: var(--fg); }
 .item .hand { font-family: var(--f-hand); font-size: 1.55rem; line-height: 1.15; overflow-wrap: anywhere; white-space: pre-wrap; }
 .item .by { font-size: .82rem; color: var(--muted); }
 .item .tools { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.item .tools > .del { margin-left: auto; }
 .empty { border: 1.5px dashed var(--line); border-radius: 22px; padding: 20px 20px 24px; background: color-mix(in srgb, var(--surface) 55%, transparent); text-align: center; display: grid; gap: 10px; justify-items: center; color: var(--muted); }
 .empty strong { color: var(--fg); font-size: 1.05rem; }
 .group-h { display: flex; align-items: baseline; justify-content: space-between; }
@@ -236,7 +239,7 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
 .letter { position: relative; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); padding: 20px 18px 16px; display: grid; gap: 8px; overflow: hidden; }
 .letter.sealed { padding-right: 82px; background: linear-gradient(160deg, var(--surface) 0 58%, var(--surface-2) 58%); }
 .letter .seal { position: absolute; right: 16px; top: 16px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--f-display); font-size: 1.3rem; box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--on-accent) 25%, transparent); transform: rotate(-12deg); }
-.letter .when { font-family: var(--f-hand); font-size: 1.5rem; line-height: 1.1; color: var(--accent); padding-right: 64px; }
+.letter .when { font-family: var(--f-display); font-size: 1.15rem; line-height: 1.2; color: var(--accent); padding-right: 64px; }
 .letter .t { padding-right: 64px; }
 
 .toast { position: fixed; left: 50%; bottom: calc(178px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; background: var(--fg); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: .92rem; max-width: calc(100% - 32px); text-align: center; box-shadow: var(--shadow); animation: deal .3s ease both; }
@@ -307,7 +310,7 @@ body { background: var(--bg); }
 #cozy i:nth-child(2) { background: var(--m4); right: -20vmax; top: 4vmax; animation-duration: 46s; animation-delay: -12s; }
 #cozy i:nth-child(3) { background: var(--m1); left: -12vmax; bottom: -18vmax; animation-duration: 52s; animation-delay: -24s; }
 #cozy i:nth-child(4) { background: var(--m2); right: -14vmax; bottom: 6vmax; width: 30vmax; height: 30vmax; animation-duration: 34s; }
-#cozy::after { content: ""; position: absolute; inset: 0; background-image: var(--doodle); background-size: 140px 140px; }
+#cozy::after { content: ""; position: absolute; inset: 0; background-image: var(--doodle); background-size: 140px 140px; opacity: .5; }
 @keyframes cozy { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, 4vmax) scale(1.12); } }
 /* Les petits compagnons, debout sur la barre d'onglets. Leurs déplacements sont calculés en JS. */
 #buddies { position: fixed; left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 24px)); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); height: 0; z-index: 21; pointer-events: none; }
@@ -371,16 +374,17 @@ body { background: var(--bg); }
 .greet-title span { color: var(--accent); }
 /* Yassen Jr., quêtes, boutique et succès. */
 .yj-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 16px; align-items: center; padding: 16px; border-radius: 24px; background: var(--glass); border: 1px solid var(--hair); box-shadow: var(--shadow); }
-.yj-ring { position: relative; width: 112px; height: 112px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #FFE15A 26%, transparent) 0 52%, transparent 70%); }
+.yj-ring { position: relative; width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #FFE15A 26%, transparent) 0 52%, transparent 70%); }
 .yj-ring .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .yj-ring .track { fill: none; stroke: var(--surface-2); stroke-width: 6; }
 .yj-ring .prog { fill: none; stroke: #F2B544; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset .8s ease; filter: drop-shadow(0 0 4px rgba(242, 181, 68, .55)); }
-.yj-pet { width: 84px; display: block; margin-top: -10px; }
+.yj-pet { width: 68px; display: block; margin-top: -8px; }
 .yj-pet svg { display: block; width: 100%; height: auto; overflow: visible; transform-origin: 50% 100%; animation: yjbreath 3.2s ease-in-out infinite; }
 .yj-pet.jump svg { animation: yjjump .6s ease; }
 .yj-info { display: grid; gap: 5px; min-width: 0; }
 .yj-stage { font-family: var(--f-display); font-size: 1.25rem; line-height: 1.15; }
-.yj-links { grid-column: 1 / -1; justify-content: center; }
+.yj-links { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yj-card .yj-talk { grid-column: 1 / -1; margin-top: 0; }
 .dedi-hero { font-family: var(--f-hand); font-size: 1.6rem; line-height: 1.15; text-align: center; text-wrap: balance; padding: 4px 8px; color: var(--fg); }
 .dedi-hero span { color: var(--accent); font-family: var(--f-body); font-size: .9rem; margin: 0 8px; vertical-align: middle; }
 .since { font-size: .95rem; color: var(--muted); margin-top: 4px; }
@@ -394,7 +398,7 @@ body { background: var(--bg); }
 .celebrate { position: relative; overflow: hidden; display: grid; gap: 8px; padding: 18px; border-radius: 24px; text-align: center; background: linear-gradient(135deg, var(--m1), var(--m2) 50%, var(--m4)); color: var(--on-m1); box-shadow: var(--shadow); }
 .celebrate::before { content: "✦ ♥ ✦ ♥ ✦ ♥ ✦"; position: absolute; inset: 6px 0 auto; font-size: .7rem; letter-spacing: .6em; color: var(--i1); opacity: .5; animation: celshine 3s ease-in-out infinite alternate; }
 .cel-title { font-family: var(--f-display); font-size: 1.5rem; line-height: 1.15; margin-top: 10px; }
-.cel-yj { display: flex; gap: 10px; align-items: center; justify-content: center; font-family: var(--f-hand); font-size: 1.3rem; line-height: 1.15; text-align: left; }
+.cel-yj { display: flex; gap: 10px; align-items: center; justify-content: center; font-size: 1rem; line-height: 1.35; text-align: left; }
 .cel-flame { width: 40px; flex: none; }
 .cel-flame svg { display: block; width: 100%; height: auto; animation: yjjump 1.4s ease-in-out infinite; }
 .quests-card { gap: 10px; }
@@ -471,7 +475,7 @@ body { background: var(--bg); }
 .trait-steps button:nth-child(3) i { width: 4px; height: 12px; border-radius: 2px; }
 .trait-steps button[aria-pressed="true"] { background: var(--accent); }
 .trait-steps button[aria-pressed="true"] i { background: var(--on-accent); transform: scale(1.3); }
-.perso-sum { font-family: var(--f-hand); font-size: 1.35rem; line-height: 1.15; }
+.perso-sum { font-size: .98rem; line-height: 1.4; }
 .buddy.blushy .av-blush { opacity: .6; }
 .buddy.shiver .buddy-body { animation: grr .12s linear infinite; }
 .yj-bud { position: absolute; left: 0; bottom: -2px; width: 46px; z-index: 3; will-change: transform; pointer-events: auto; cursor: pointer; }
@@ -535,7 +539,7 @@ body { background: var(--bg); }
 @keyframes disco { 0% { filter: drop-shadow(0 0 6px #FF6E89); } 25% { filter: drop-shadow(0 0 6px #F2C84B); } 50% { filter: drop-shadow(0 0 6px #6DBE9B); } 75% { filter: drop-shadow(0 0 6px #9B7BD6); } }
 @keyframes gainin { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
 /* Le sol où marchent les chibis : un fondu vers le fond, et une petite colline fleurie. */
-#ground { position: fixed; left: 0; right: 0; bottom: 0; height: calc(205px + env(safe-area-inset-bottom, 0px)); z-index: 19; pointer-events: none; background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); -webkit-mask-image: linear-gradient(to top, #000 0 64%, transparent); mask-image: linear-gradient(to top, #000 0 64%, transparent);
+#ground { position: fixed; left: 0; right: 0; bottom: 0; height: calc(205px + env(safe-area-inset-bottom, 0px)); z-index: 19; pointer-events: none; background: var(--bg); -webkit-mask-image: linear-gradient(to top, #000 0 78%, transparent); mask-image: linear-gradient(to top, #000 0 78%, transparent);
   --gbase: var(--m3); --g1: color-mix(in srgb, var(--gbase) 88%, var(--bg)); --g2: color-mix(in srgb, var(--gbase) 52%, var(--bg)); --g3: color-mix(in srgb, var(--gbase) 62%, var(--fg) 26%); }
 #ground .meadow { position: absolute; left: 50%; transform: translateX(-50%); width: min(560px, 100%); height: 52px; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
 :root[data-ys-theme="hiver"] #ground { --gbase: #DCE6F2; }
@@ -790,7 +794,7 @@ body { background: var(--bg); }
 .coeur-w { width: 54px; height: 54px; }
 .coeur-w .wx { width: 100%; height: 100%; display: block; }
 .coeur-p b { font-size: .9rem; }
-.coeur-l { font-family: var(--f-hand); font-size: 1.25rem; line-height: 1.05; color: var(--fg); }
+.coeur-l { font-family: var(--f-display); font-size: 1.02rem; line-height: 1.15; color: var(--fg); }
 .coeur-p small { font-size: .74rem; color: var(--muted); }
 .coeur-p q { font-family: var(--f-hand); font-size: 1.1rem; line-height: 1.1; color: var(--i1); }
 .coeur-sig { min-height: 32px; padding: 6px 10px; font-size: .78rem; margin-top: 2px; }
@@ -1089,14 +1093,18 @@ textarea[readonly] { font-size: 16px; }
 .notif { display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
 .notif.new { box-shadow: inset 3px 0 0 var(--accent), var(--shadow); }
 .notif.live { background: var(--m7, var(--surface)); }
-.notif-ic { font-size: 1.35rem; flex: none; width: 30px; text-align: center; }
+.notif-ic { flex: none; width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; background: var(--icb, var(--m1)); color: var(--ic, var(--i1)); }
+.notif-ic svg { width: 21px; height: 21px; }
 .notif-body { flex: 1; min-width: 0; }
 .notif-body p { margin: 0 0 2px; line-height: 1.35; overflow-wrap: anywhere; }
 .notif .btn { flex: none; padding-inline: 14px; }
 /* Parler à Yassen Jr. */
 .yj-talk { margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .yj-talk svg { flex: none; }
-.yj-daily { margin: 6px 0 0; font-family: var(--f-hand, cursive); font-size: 1.05rem; color: var(--fg); line-height: 1.3; }
+/* Le mot du jour de Yassen Jr. : une bulle qui part de lui, sur toute la largeur. */
+.yj-daily { grid-column: 1 / -1; position: relative; margin: 0; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, #FFD25A 22%, var(--surface)); color: var(--fg); font-size: .98rem; line-height: 1.4; }
+.yj-daily::before { content: ""; position: absolute; top: -7px; left: 40px; width: 14px; height: 14px; background: inherit; transform: rotate(45deg); border-radius: 3px; }
+.yj-daily.dodo { background: color-mix(in srgb, var(--m4) 45%, var(--surface)); color: var(--muted); }
 .yj-chat-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
 .yj-chat-av { width: 58px; flex: none; animation: bob 3s ease-in-out infinite; }
 .yj-chat-av svg { display: block; width: 100%; height: auto; }
@@ -2301,6 +2309,15 @@ const ICON = {
 };
 
 const PATHS = {
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
+  star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  flame: '<path d="M12 21c-3.9 0-6.5-2.7-6.5-6.2 0-3.2 2.2-5 3.4-7.3.9 1.4 1.7 2 2.6 2.2-.3-2.6.6-4.8 2.4-6.7.5 3.4 4.6 5.6 4.6 10.8 0 3.6-2.6 7.2-6.5 7.2z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  cake: '<path d="M4 20h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 15c2 1.5 4 1.5 5.3 0 1.4 1.5 4 1.5 5.4 0 1.3 1.5 3.3 1.5 5.3 0M12 11V8M12 5.5v.01"/>',
+  map: '<path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4zM9 4v14M15 6v14"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   sword: '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>',
   quill: '<path d="M20 4C12 5 7 10 5 18l-1 3 3-2c7-1 12-6 13-15z"/><path d="M5 19l9-10"/>',
   bubbles: '<path d="M4 5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M17 9h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-4-3h-3"/>',
@@ -2496,8 +2513,6 @@ function viewHome() {
   ${dediHero()}
   ${celebrateCard()}
   ${HEART_WEATHER ? moodCard() : ""}
-  ${yassenCard()}
-  ${questsCard()}
   ${named ? "" : `<div class="panel">
       <p><b>Comment vous appelez-vous ?</b></p>
       <p class="muted small">Vos prénoms servent à savoir à qui passer le téléphone et pour qui voter.</p>
@@ -2505,6 +2520,8 @@ function viewHome() {
     </div>`}
   ${liveBanner()}
   ${dailyBlock()}
+  ${yassenCard()}
+  ${questsCard()}
   <section class="stack" aria-labelledby="h-quick"><div class="group-h"><h2 class="sec" id="h-quick">Envie de jouer ?</h2><button class="link" data-a="tab" data-tab="play">Tous les jeux</button></div>
     <div class="quick">${["surprise", "questions", "arcade"].map(k => `<button class="qcard" style="${cvar(MODES[k].c)}" data-a="open-mode" data-mode="${k}"><span class="icon-tile">${ico(MODE_ICON[k])}</span><b>${esc(fr(MODES[k].title))}</b></button>`).join("")}</div></section>
   ${carnetBlock()}
@@ -2581,7 +2598,7 @@ function carnetBlock() {
 
 /* ───────────────────────── Vues : capsule ───────────────────────── */
 function confirmRow(col, id) {
-  if (S.confirm !== col + ":" + id) return `<button class="link" data-a="ask-del" data-col="${esc(col)}" data-id="${esc(id)}">Supprimer</button>`;
+  if (S.confirm !== col + ":" + id) return `<button class="link del" data-a="ask-del" data-col="${esc(col)}" data-id="${esc(id)}">${ico("trash")}Supprimer</button>`;
   return `<div class="confirm"><span>Supprimer pour de bon ?</span><button class="btn" data-a="do-del" data-col="${esc(col)}" data-id="${esc(id)}">Supprimer</button><button class="btn ghost" data-a="cancel-del">Garder</button></div>`;
 }
 function byDate(a) { return a.slice().sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)); }
@@ -2640,6 +2657,7 @@ function viewAventures() {
   const all = Store.cols.aventures;
   const groups = AV_STATUT.map(([k, l]) => {
     const items = byDate(all.filter(a => (a.statut || "afaire") === k));
+    if (!items.length) return "";
     return `<section class="stack" aria-label="${l}">
       <div class="group-h"><h2 class="sec">${l}</h2><span class="small muted">${items.length}</span></div>
       ${items.length ? items.map(avItem).join("") : `<p class="small muted">Rien ici pour le moment.</p>`}
@@ -6617,6 +6635,9 @@ const ago = t => {
   if (s < 86400) return `il y a ${Math.floor(s / 3600)} h`;
   return s < 172800 ? "hier" : fmtTs(t);
 };
+// Chaque genre de nouvelle a son icône au trait et sa couleur (plus d'emoji, comme dans le reste de l'appli).
+const NOTIF_IC = { "✉️": ["mail", 5], "💌": ["heart", 1], "🤗": ["heart", 1], "🌟": ["star", 2], "🌤️": ["sun", 2], "🎂": ["cake", 6], "🎲": ["dice", 1], "🏁": ["flag", 3], "💬": ["bubbles", 4], "📖": ["book", 4], "📸": ["frame", 5], "🔒": ["lock", 8], "🔥": ["flame", 2], "🧭": ["map", 3] };
+const notifIcon = e => { const [n, c] = NOTIF_IC[e] || ["star", 1]; return `<span class="notif-ic" style="--ic:var(--i${c});--icb:var(--m${c})" aria-hidden="true">${ico(n)}</span>`; };
 function notifItems() {
   const me = whoAmI(), o = me ? other(me) : "", by = x => x.by || x.from, mine = x => !me || by(x) === me;
   const recent = t => +t && Date.now() - t < 14 * 86400000, out = [];
@@ -6662,7 +6683,7 @@ function notifSheet() {
   const items = notifItems(), keys = notifKeys(), fresh = new Set(items.filter(n => notifIsNew(n, keys)).map(n => n.key));
   setTimeout(() => { const all = [...keys, ...items.map(n => n.key)]; lsSet("entre-nous:notif-keys", JSON.stringify([...new Set(all)].slice(-400))); }, 0);
   return `${layerHead("Notifications")}
-    ${items.length ? `<div class="notif-list">${items.map((n, i) => `<div class="notif${n.live ? " live" : ""}${fresh.has(n.key) ? " new" : ""}"><span class="notif-ic" aria-hidden="true">${n.icon}</span>
+    ${items.length ? `<div class="notif-list">${items.map((n, i) => `<div class="notif${n.live ? " live" : ""}${fresh.has(n.key) ? " new" : ""}">${notifIcon(n.icon)}
       <div class="notif-body"><p>${esc(n.text)}</p><span class="small muted">${n.live ? "En cours" : ago(n.t)}</span></div>
       ${n.label ? `<button class="btn${n.live ? "" : " ghost"}" data-a="notif-go" data-i="${i}">${esc(n.label)}</button>` : ""}</div>`).join("")}</div>`
       : empty("Rien de nouveau pour l'instant", "Les petits mots, lettres, parties et souvenirs de l'autre apparaîtront ici.", "lettres")}
@@ -6671,14 +6692,14 @@ function notifSheet() {
 function yassenCard() {
   const d = Jeu.days(), st = Jeu.stage(), next = STAGE_DAYS[st + 1], asleep = !Jeu.activeToday();
   const pct = next != null ? (d - STAGE_DAYS[st]) / (next - STAGE_DAYS[st]) : 1, C = 2 * Math.PI * 54;
+  const dl = (Store.meta.yj || {}).daily, word = dl && dl.day === todayStr() ? dl.x : asleep ? fr("Yassen Jr. se repose. Il vous attend tranquillement, sans rien vous demander.") : "";
   return `<section class="yj-card" aria-labelledby="h-yj">
     <button class="yj-ring" data-a="yj-poke" aria-label="Caresser Yassen Jr."><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="prog" cx="60" cy="60" r="54" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg><span class="yj-pet">${yassenSvg(st, asleep)}</span></button>
-    <div class="yj-info"><p class="sec" id="h-yj">Yassen Jr.</p><p class="yj-stage">${esc(fr(STAGE_NAMES[st]))}</p>
-      <p class="small muted">${d} jour${d > 1 ? "s" : ""} ensemble${next != null ? ` · encore ${next - d} pour grandir` : " · stade maximal"}</p>
-      ${asleep ? `<p class="small" style="color:var(--i4)">${esc(fr("Yassen Jr. se repose. Il vous attend tranquillement, sans rien vous demander."))}</p>` : ""}
-      ${(() => { const dl = (Store.meta.yj || {}).daily; return dl && dl.day === todayStr() ? `<p class="yj-daily">« ${esc(dl.x)} »</p>` : ""; })()}</div>
+    <div class="yj-info"><p class="sec" id="h-yj">Votre petite flamme</p><p class="yj-stage">${esc(fr(STAGE_NAMES[st]))}</p>
+      <p class="small muted">${d} jour${d > 1 ? "s" : ""} ensemble${next != null ? ` · encore ${next - d} pour grandir` : " · stade maximal"}</p></div>
+    ${word ? `<p class="yj-daily${asleep && !(dl && dl.day === todayStr()) ? " dodo" : ""}">${esc(word)}</p>` : ""}
     <button class="btn wide yj-talk" data-a="sheet" data-name="yassen">${YJ_MINI} Parler à Yassen Jr.</button>
-    <div class="row yj-links"><button class="btn ghost" data-a="tresors" data-v="boutique">Boutique · ♥︎ ${Jeu.hearts()}</button><button class="link" data-a="tresors" data-v="succes">Nos succès</button></div>
+    <div class="row yj-links"><button class="btn ghost" data-a="tresors" data-v="boutique">Boutique</button><button class="btn ghost" data-a="tresors" data-v="succes">Nos succès</button></div>
   </section>`;
 }
 function questsCard() {
