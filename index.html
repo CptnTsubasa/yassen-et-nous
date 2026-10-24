@@ -2582,7 +2582,14 @@ const Update = {
     const ae = document.activeElement, busy = S.layer || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
     if (back && !busy) this.apply(); else { S.update = true; render(); }
   },
-  apply() { saveDrafts(); Store.saveCacheNow(); location.reload(); }
+  apply() { saveDrafts(); Store.saveCacheNow(); location.reload(); },
+  // Prévenue par le service worker : rechargement tout de suite si rien n'est en cours et que l'appli vient
+  // de s'ouvrir, sinon au prochain retour dans l'appli (ou d'un toucher sur le bandeau).
+  found() {
+    this.pending = true;
+    const ae = document.activeElement, busy = S.layer || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
+    if (!busy && performance.now() < 5000) this.apply(); else if (!S.update) { S.update = true; render(); }
+  }
 };
 
 /* ───────────────────────── Notifications ─────────────────────────
@@ -8863,7 +8870,11 @@ function openNotifs() {
   if (S.layer && S.layer.type === "game") return;
   S.layer = { type: "sheet", name: "notifs" }; render(true);
 }
-if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.ys === "notifs") openNotifs(); });
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
+  if (e.data && e.data.ys === "notifs") openNotifs();
+  // La page affichée venait de la copie du téléphone, et une version plus récente vient d'arriver.
+  if (e.data && e.data.ys === "update") Update.found();
+});
 window.addEventListener("hashchange", () => {
   if (location.hash === "#notifs") return openNotifs();
   if (!Shared.available() || !/^#c-/.test(location.hash)) return;
@@ -8906,9 +8917,10 @@ function start(data) {
   atMidnight();
   document.addEventListener("visibilitychange", () => {
     document.documentElement.classList.toggle("ys-hidden", document.hidden);
-    if (!document.hidden) { Buddies.wake(); render(); Update.check(true); }
+    if (!document.hidden) { Buddies.wake(); render(); if (Update.pending && !S.layer) Update.apply(); else Update.check(true); }
   });
-  Update.check(false);
+  // Avec le service worker, c'est lui qui vérifie la version en ligne : pas de deuxième téléchargement au démarrage.
+  if (!(navigator.serviceWorker && navigator.serviceWorker.controller)) Update.check(false);
   setInterval(() => Update.check(false), 30 * 60000);
   Store.connect().then(() => setTimeout(() => { Push.refresh(); Notify.flush(); }, 3000));
   // La copie automatique du jour, une fois l'espace bien chargé.
