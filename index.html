@@ -7,6 +7,7 @@
 <meta name="description" content="Notre petit jeu à deux.">
 <meta name="theme-color" content="#F6F2F5" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1C1820" media="(prefers-color-scheme: dark)">
+<script>try { var ysT = localStorage.getItem("entre-nous:scheme"); if (ysT === "light" || ysT === "dark") { document.documentElement.setAttribute("data-theme", ysT); document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.setAttribute("content", ysT === "dark" ? "#1C1820" : "#F6F2F5"); }); } } catch (e) {}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -61,6 +62,7 @@ img { max-width: 100%; }
   --shadow: 0 1px 0 rgba(0,0,0,.2), 0 12px 28px -20px rgba(0,0,0,.7);
   color-scheme: dark;
 }
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
@@ -369,6 +371,9 @@ body { background: var(--bg); }
 @keyframes pagein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .panel { border: 1px solid var(--hair); }
 .greet { display: grid; gap: 4px; }
+.greet-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.scheme-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); color: var(--fg); font-size: .82rem; font-weight: 600; flex: none; }
+.scheme-btn svg { width: 17px; height: 17px; }
 .greet-date { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 700; }
 .greet-title { font-family: var(--f-display); font-weight: 400; font-size: clamp(2rem, 9vw, 2.5rem); line-height: 1.08; }
 .greet-title span { color: var(--accent); }
@@ -547,6 +552,9 @@ body { background: var(--bg); }
 :root[data-ys-theme="etoiles"] #ground { --gbase: #A69CD8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-ys-theme="hiver"] #ground { --gbase: #3E4B5C; } :root:not([data-theme="light"])[data-ys-theme="plage"] #ground { --gbase: #5A4C30; } :root:not([data-theme="light"])[data-ys-theme="etoiles"] #ground { --gbase: #3A3470; } }
 .wrap { padding-block: 20px 215px; }
+:root[data-theme="dark"][data-ys-theme="hiver"] #ground { --gbase: #3E4B5C; } :root[data-theme="dark"][data-ys-theme="plage"] #ground { --gbase: #5A4C30; } :root[data-theme="dark"][data-ys-theme="etoiles"] #ground { --gbase: #3A3470; }
+:root[data-theme="dark"][data-season="noel"] #ground { --gbase: #3E4B5C; }
+:root[data-theme="dark"][data-ys-theme="hiver"] .cozy-fx span { background: #FFFFFF; opacity: .55; }
 /* Le ciel du fond suit l'heure (un thème acheté passe devant). */
 #cozy i:nth-child(1) { background: var(--s1, var(--m6)); } #cozy i:nth-child(2) { background: var(--s2, var(--m4)); } #cozy i:nth-child(3) { background: var(--s3, var(--m1)); } #cozy i:nth-child(4) { background: var(--s4, var(--m2)); }
 :root[data-sky="aube"] { --s1: #F3D5CA; --s2: #F0DDE4; --s3: #F3E6D0; --s4: #E5DDEE; }
@@ -2317,6 +2325,7 @@ const PATHS = {
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
   cake: '<path d="M4 20h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 15c2 1.5 4 1.5 5.3 0 1.4 1.5 4 1.5 5.4 0 1.3 1.5 3.3 1.5 5.3 0M12 11V8M12 5.5v.01"/>',
   map: '<path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4zM9 4v14M15 6v14"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
   lock: '<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   sword: '<path d="M14.5 4.5L20 3l-1.5 5.5L9 18l-3-3z"/><path d="M5 16l3 3M4 20l2-2"/>',
   quill: '<path d="M20 4C12 5 7 10 5 18l-1 3 3-2c7-1 12-6 13-15z"/><path d="M5 19l9-10"/>',
@@ -2498,12 +2507,28 @@ function notifPanel() {
     <button class="link" data-a="push-off">Ne plus recevoir de notifications ici</button>`;
   return `<section class="panel" aria-labelledby="h-notif">${head}${body}</section>`;
 }
+// Clair ou sombre : un choix propre à ce téléphone (« » = comme l'iPhone).
+const Scheme = {
+  get() { const v = lsGet("entre-nous:scheme"); return v === "light" || v === "dark" ? v : ""; },
+  dark() { const v = this.get(); return v ? v === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); },
+  set(v) {
+    lsSet("entre-nous:scheme", v);
+    if (v) document.documentElement.setAttribute("data-theme", v); else document.documentElement.removeAttribute("data-theme");
+    // La barre du haut de l'iPhone prend la couleur choisie.
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute("content", v ? (v === "dark" ? "#1C1820" : "#F6F2F5") : (/dark/.test(m.media) ? "#1C1820" : "#F6F2F5")));
+  }
+};
+// En mode « comme l'iPhone », le bouton suit l'iPhone s'il change d'apparence pendant que l'appli est ouverte.
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (!Scheme.get()) render(); }); } catch (e) { /* vieux navigateur */ }
+const schemeBtn = () => Scheme.dark()
+  ? `<button class="scheme-btn" data-a="scheme-flip" aria-label="Passer en mode clair">${ico("sun")}Clair</button>`
+  : `<button class="scheme-btn" data-a="scheme-flip" aria-label="Passer en mode sombre">${ico("moon")}Sombre</button>`;
 function viewHome() {
   const c = couple(), named = c.a && c.b, h = new Date().getHours();
   const hello = h < 5 ? "Bonsoir" : h < 12 ? "Bonjour" : h < 18 ? "Bel après-midi" : "Bonsoir";
   return `
   <section class="greet">
-    <p class="greet-date">${esc(fmtDay(todayStr(), { weekday: "long", day: "numeric", month: "long" }))}</p>
+    <div class="greet-top"><p class="greet-date">${esc(fmtDay(todayStr(), { weekday: "long", day: "numeric", month: "long" }))}</p>${schemeBtn()}</div>
     <h1 class="greet-title">${hello}${named ? `,<br><span>${esc(c.a)} &amp; ${esc(c.b)}</span>` : ""}</h1>
     ${sinceLine()}
     ${seasonChip()}
@@ -3027,6 +3052,7 @@ function sheetView() {
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "partage"}" data-a="set-draft" data-k="nstyle" data-v="partage">Mode partagé</button>
       <button class="chip" aria-pressed="${draft("nstyle", c.style || "partage") === "secret"}" data-a="set-draft" data-k="nstyle" data-v="secret">Réponses secrètes</button></div></div>
     <div class="row"><button class="btn ghost" data-a="sheet" data-name="avatars">Personnaliser nos personnages</button></div>
+    <div class="stack"><p class="lbl">Affichage sur ce téléphone</p><div class="chips">${[["light", "Clair"], ["dark", "Sombre"], ["", "Comme l'iPhone"]].map(([v, l]) => `<button class="chip" aria-pressed="${Scheme.get() === v}" data-a="scheme-set" data-v="${v}">${l}</button>`).join("")}</div></div>
     <div class="stack"><p class="lbl">Nos petits personnages sur la barre d'onglets</p><div class="chips">
       <button class="chip" aria-pressed="${Buddies.enabled()}" data-a="buddies" data-v="1">Affichés</button>
       <button class="chip" aria-pressed="${!Buddies.enabled()}" data-a="buddies" data-v="0">Masqués</button></div></div>
@@ -8591,6 +8617,8 @@ const ACT = {
   "shop-tint"(d) { S.prevTint = { ...(S.prevTint || {}), [d.o]: d.v }; },
   "shop-tint-buy"(d) { Jeu.buyTint(d.o, d.v); },
   "shop-theme"(d) { Jeu.setTheme(d.v); },
+  "scheme-flip"() { Scheme.set(Scheme.dark() ? "light" : "dark"); },
+  "scheme-set"(d) { Scheme.set(d.v || ""); },
   "yj-poke"() {
     const el = document.querySelector(".yj-pet");
     if (el) { el.classList.remove("jump"); void el.offsetWidth; el.classList.add("jump"); }
