@@ -6,6 +6,7 @@
 
    - POST /register { code }            : un téléphone a activé les notifications pour ce couple
    - POST /notify { code, type, id }     : quelque chose vient d'arriver (petit mot, geste, lettre, partie)
+   - POST /rescue { op, key, code }      : le code de secours (6 mots) d'un espace, enregistré ou retrouvé
      Le Worker relit lui-même l'élément dans l'espace commun : il n'envoie que ce qui existe vraiment.
    - Tâches programmées : 9 h (lettres qui s'ouvrent, anniversaires) et 20 h 30 (rappel, si demandé).
 
@@ -217,9 +218,25 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
     try {
       if (req.method === "GET" && url.pathname === "/vapid") return json({ key: (await vapid(env)).pub });
-      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 5, types: ["mot", "geste", "geste2", "lettre", "partie", "test"] });
+      if (req.method === "GET" && url.pathname === "/") return json({ ok: true, service: "Y&S notifications", version: 6, types: ["mot", "geste", "geste2", "lettre", "partie", "test"] });
       if (req.method !== "POST") return json({ error: "inconnu" }, 404);
       const b = await req.json().catch(() => ({}));
+      // Code de secours : l'empreinte des 6 mots (calculée sur le téléphone) → le code de l'espace.
+      if (url.pathname === "/rescue") {
+        if (typeof b.key !== "string" || !/^[a-f0-9]{64}$/.test(b.key)) return json({ error: "key" }, 400);
+        const k = "rescue:" + b.key;
+        if (b.op === "get") {
+          await new Promise(r => setTimeout(r, 300));   // freine les essais en rafale
+          const code = await env.KV.get(k);
+          return code ? json({ ok: true, code }) : json({ error: "inconnu" }, 404);
+        }
+        if (b.op !== "set" || !okCode(b.code)) return json({ error: "code" }, 400);
+        if (!(await rtdb(`couples/${b.code}/meta/couple`))) return json({ error: "espace" }, 404);
+        const cur = await env.KV.get(k);
+        if (cur && cur !== b.code) return json({ error: "pris" }, 409);
+        if (!cur) await env.KV.put(k, b.code);
+        return json({ ok: true });
+      }
       if (!okCode(b.code)) return json({ error: "code" }, 400);
       if (url.pathname === "/register") {
         if (!(await env.KV.get("couple:" + b.code))) await env.KV.put("couple:" + b.code, "1").catch(e => console.log("kv", e.message));

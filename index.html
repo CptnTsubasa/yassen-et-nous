@@ -401,6 +401,10 @@ body { background: var(--bg); }
 .join-row { flex-wrap: nowrap; gap: 8px; align-items: stretch; }
 .join-row input { flex: 1; min-width: 0; }
 .join-more { margin-top: 12px; }
+.rescue { display: grid; gap: 10px; margin-top: 6px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.rescue-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; counter-reset: rw; }
+.rescue-words li { counter-increment: rw; padding: 10px 8px; border-radius: 14px; background: var(--surface-2); font-family: var(--f-display); font-size: 1.02rem; text-align: center; overflow-wrap: anywhere; }
+.rescue-words li::before { content: counter(rw); display: block; font: 700 .7rem var(--f-body); color: var(--muted); }
 .join-more summary { cursor: pointer; color: var(--muted); padding: 8px 0; min-height: 44px; display: flex; align-items: center; }
 .crash { margin-top: 16vh; text-align: center; }
 .since b { color: var(--fg); font-weight: 600; }
@@ -1702,6 +1706,7 @@ function cleanMeta(m, v) {
     ["pa", "pb"].forEach(k => { if (k in d && !["papa", "maman", "prenom"].includes(d[k])) delete d[k]; });
   }
   if (m === "space") {
+    if ("rescue" in d && !(typeof d.rescue === "string" && /^[a-z]{3,11}( [a-z]{3,11}){5}$/.test(d.rescue))) delete d.rescue;
     d.who = isObj(d.who) ? Object.fromEntries(["a", "b"].filter(k => typeof d.who[k] === "string").map(k => [k, d.who[k].slice(0, 64)])) : {};
     if ("epoch" in d) d.epoch = cNum(d.epoch, 0, 1e13, 0);
     if ("notif" in d) d.notif = isObj(d.notif) ? Object.fromEntries(["a", "b"].filter(k => isObj(d.notif[k])).map(k => [k, Object.fromEntries(Object.entries(d.notif[k]).filter(([t, v]) => okTok(t) && typeof v === "boolean"))])) : {};
@@ -2084,6 +2089,7 @@ function sharedPanel() {
     <div class="row">${navigator.share ? `<button class="btn" data-a="sh-share">Envoyer le lien d'invitation</button>` : ""}<button class="btn ghost" data-a="sh-copy">Copier le lien</button></div>
     ${S.shLink ? `<textarea readonly rows="2" style="font-size:.85rem;min-height:0" aria-label="Lien d'invitation">${esc(S.shLink)}</textarea>` : ""}
     <p class="small muted">${esc(fr("Envoie ce lien à l'autre : en l'ouvrant, son téléphone rejoint le même espace, et ce qu'il contenait déjà y est ajouté. Gardez-le pour vous deux : il sert de clé."))}</p>
+    ${rescueBlock()}
     <details class="join-more"><summary class="small">Rejoindre un autre espace</summary>${joinField("sh-in")}<p class="small muted">${esc(fr("Ce téléphone quittera l'espace actuel (une confirmation est demandée). Rien n'est effacé : vous pourrez y revenir."))}</p></details>
     <div class="row"><button class="link" data-a="sh-leave">Détacher ce téléphone de l'espace commun</button>${back}</div></section>`;
   return `<section class="panel" aria-labelledby="h-shared"><h2 class="sec" id="h-shared">Notre progression commune</h2>
@@ -2091,7 +2097,7 @@ function sharedPanel() {
     <div class="actions"><button class="btn wide" data-a="sh-create" data-v="fresh">Créer un espace tout neuf</button>
     <button class="btn ghost wide" data-a="sh-create" data-v="keep">Créer et garder ce qu'il y a sur ce téléphone</button></div>
     <p class="small muted">${esc(fr("Si l'autre l'a déjà créé, ouvre le lien d'invitation reçu, ou colle-le ici :"))}</p>
-    ${joinField("sh-in")}${back}</section>`;
+    ${joinField("sh-in")}${rescueField("rc-in")}${back}</section>`;
 }
 
 /* ───────────────────────── Sauvegarde de vos souvenirs ─────────────────────────
@@ -2217,6 +2223,51 @@ function backupPanel() {
       <div class="stack">${list.map(dy => `<div class="row" style="justify-content:space-between;align-items:center"><span class="small">${esc(fmtDay(dy))}</span><button class="btn ghost" data-a="bk-restore" data-v="${esc(dy)}">Restaurer</button></div>`).join("")}</div>
       <p class="small muted">${esc(fr("Une copie par jour, les 7 dernières, gardées dans l'appli sur ce téléphone."))}</p></details>` : ""}
   </section>`;
+}
+
+/* ───────────────────────── Code de secours ─────────────────────────
+   Six mots tirés au hasard (1 024 possibles chacun) : de quoi retrouver votre espace sur n'importe quel
+   téléphone, sans le lien. Les mots restent dans votre espace ; le service Cloudflare ne garde qu'une
+   empreinte des six mots, reliée à votre code. */
+const RESCUE_WORDS = "abeille abricot acacia accord acrobate aigle aiguille ailes aimant airelle album algue allumette almanach alpaga amande amarre ambre ami amour ananas ancre ange anis anneau antenne antilope arbre arc arche ardoise argent argile arome artiste asperge astre atelier atlas aube auberge aurore autruche avenue aventure avion avoine azur bagage bague baie baleine balade balcon ballon bambou banane banc bandeau banjo banquise baobab barque bassin bateau baton baume bazar beignet belette berceau berger bijou biscuit bison blason bleuet bocal bois boisson bol bonbon bonnet bord bosquet botte bouclier bougie boulanger bouquet boussole bouton branche brebis brioche brise brocoli brosse brouillard bruine bulle bureau buisson cabane cacao cactus cadeau cadran cahier caillou calin calme camelia camion campagne canard canari cannelle canoe canyon capitaine caramel caravane carnet carotte carrosse cartable cascade casque castor cerf cerise chalet chameau champ chandelle chanson chapeau charme chaton chemin cheminee chene chenille cheval chevreuil chocolat chouette ciboulette cigale cinema citron citrouille clairiere clarinette clef clocher clown coccinelle cocon coffre colibri colline comete compas comptoir concert confiture copain coquelicot coquillage corail corbeau corde cornet costume coton coucou coude coussin couronne crabe craie crayon creme crepe cresson crevette criquet cristal crocodile croissant cuillere cygne dahlia dauphin dentelle desert dessert dessin diamant domino dragon dromadaire dune echarpe eclair ecorce ecureuil ecume edredon elan elephant emeraude encre enigme epice epi equipe erable escalier escargot etang etoile eventail fable facteur faisan falaise fanfare farandole farine faucon fauteuil fee fenetre fenouil feuille feutre figue filet flamant flamme flocon fleur fleuve flute foin fontaine foret fourmi fraise framboise frangipane frelon frisson fromage fruit fumee fusee galet galette gaufre gazelle gazon gecko genet gilet girafe girouette givre glace gland glycine gomme gondole gorille goutte gouttiere grain grange grappe grenade grenier grenouille griffon grillon groseille grotte guepard guirlande guitare hamac hamster hareng harpe hautbois herisson heron hibou hirondelle homard horizon horloge hotte houblon houx hublot huile huitre hutte icone igloo ile impermeable indigo iris ivoire jacinthe jade jaguar jardin jasmin jockey jongleur jonquille journal jouet jument jungle jupe kayak kiwi koala lagon lagune lama lampe lanterne lapin laurier lavande legume lentille lezard libellule licorne lierre lilas limonade lin lion lit livre loge loir losange loup loutre luciole lune lutin lynx lyre macaron magnolia maison mandarine manege mangue manteau marelle margueritte marin marmotte marron mascotte matelot matin melodie melon menthe merle meringue mesange meteore meuble miel mimosa miroir moineau montagne mouette moufle moulin mousse mouton muguet mur mure musique myrtille nacre narval navire nectar neige nenuphar nid noisette noix nougat nuage nuit oasis ocean odeur oeillet oie olive ombre ondee opale orage orange orchidee oreiller orge orque ortie ourson outil pagaie paille palmier panda panier panthere papaye papillon paquebot parapluie parc parfum passage pastel pasteque patin paupiere pavot peche pelican pelouse pendule pense perle perroquet persil petale phare piano pigeon piment pin pinceau pingouin piscine pistache pivoine placard plage plaine planete plateau plume poire poisson pollen pomme pompon poney potiron poudre poulpe poupee prairie praline prune puits puzzle quai quartz quiche quille racine radeau radis raisin rameau rayon recolte refuge reglisse renard requin reve riviere robe rocher roseau rose rossignol roue rubis ruche ruisseau sable sablier sabot safran sapin sardine satin saule saumon sauterelle savane savon serpent sirene sirop soleil sorbet souris sourire sucre sureau tabouret tambour tamis tango tapis tarte tasse taupe tempete tente terrasse theiere thym tigre tilleul timbre tipi tirelire toboggan tomate tonnerre topaze torrent tortue toucan toupie tournesol train traineau trefle tresor tricot trompette tulipe tunnel turquoise ukulele univers vague valise vallee vanille velours vent verger verveine violette violon voile volcan voyage wagon yaourt yeti zebre zeste zinnia accordeon aquarelle balancoire bambin bibelot bobine bonhomme boomerang bouillotte boulier bourgeon brindille cabriole cachette cerceau chaloupe chamois chardon charrette chausson chignon citadelle clementine cocotte comptine coquette corolle cotillon couffin courgette crinoline croquet cueillette dinette dragee echasse echo edelweiss emoi escapade etincelle farfadet fauvette ficelle flanelle frimousse frisbee gourmand grelot guimauve hochet joyau kermesse lampion loupiote luge lutrin madeleine malice mandoline manivelle marmite marmelade marquise massepain mazurka menestrel mirabelle mistral moucheron musette nougatine ocarina orchestre origami osier paillette palissade pantoufle papotage paquerette parasol passerelle patineur pavillon peton picoti pignon pinson pipeau pirouette plumeau polka poussin primevere quenouille ramage ricochet rigolade ritournelle rondelle roulotte sarabande serpentin sorbier soufflet sucette tartine tintamarre toupet tourbillon tralala trampoline trottinette troubadour valse vitrail voltige zephyr abysse acajou agrume aloes ambroisie anemone archipel arpege aster aubepine avalanche baladin balise bamboula bastion belvedere bergamote bivouac bocage boheme bolero bonsai boreal bouleau brumeux buffle buvard calanque calendrier campanule capucine cardamome carillon cassis cedre celeste cerfeuil chanterelle chimere cible coquelet cormoran cosmos cotonnier crique croisiere cumulus cyclamen datte delta diapason dorade duvet eglantine embrun encens epicea equinoxe escale estuaire eucalyptus fanion feerie fjord flambeau flottille foulard fresque friandise gardenia geyser glacier goeland gong granit gravure hameau heliotrope hermine hortensia hysope iceberg jonc lichen lotus macareux mangrove marais marsouin meandre mesa mirage moraine mousseline myosotis nebuleuse neroli nomade obelisque ondine oriflamme orme paillote palourde papyrus patio pelerin peuplier phenix pistil platane pommier quetzal rameur recif renoncule rivage roitelet romarin rosace rosee sanglier sarriette sequoia sextant sillage solstice stalactite steppe sycomore tamaris tapir tarentelle tisane toundra tourterelle trapeze triton troene tropique vanneau verrerie vigie voilier zenith abri acier adresse affiche agenda aile allee ambiance ampoule anecdote animal annee appel aquarium araignee arbitre assiette astuce atout aviron babouin badge baguette baiser balai baluchon barbe barreau bascule bassine batterie beret biche bijoutier billet bistrot blouse bobsleigh bolide bonsoir bordure boucle bouee bougeoir boulet bourdon bracelet bretelle brouette buche cabine cage calepin canape capsule carafe carton cascadeur casquette casserole castagnette ceinture chaise chalumeau chariot chaussette chemise chiffon cigogne ciseau citerne clavier clochette cloche coffret collier colombe console coquetier corbeille cornemuse couleur couloir courrier cravate creneau crochet cuisine dentifrice diademe dindon disque dossier drapeau ecran ecrin ecuelle eglise enclume entrepot epingle epouvantail escabeau etagere etui evier fanal fardeau fauve fermier feutrine flacon flanc flaque fourchette fourneau fronde fusain gamelle gant garage gardien gargouille gateau gazette geranium glacon gobelet gourde graine gratin grille guichet guide halte haricot harmonica hiver iguane image insecte jambon jeton joker jumelle kangourou kimono lacet laine lasso lavoir levure licou limace linge lisiere loquet loupe lucarne lustre machine maillot maracas marteau masque medaille".split(" ");
+const Rescue = {
+  norm: t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]+/g, " ").trim().split(" ").filter(Boolean),
+  make() { return Array.from(crypto.getRandomValues(new Uint16Array(6)), v => RESCUE_WORDS[v % 1024]); },
+  async key(words) {
+    const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ys-rescue:" + words.join(" ")));
+    return Array.from(new Uint8Array(h), x => x.toString(16).padStart(2, "0")).join("");
+  },
+  words() { const v = (Store.meta.space || {}).rescue; return typeof v === "string" ? v.split(" ") : null; },
+  async create() {
+    if (this.busy || !Shared.code() || Store.backend !== "shared") return;
+    this.busy = true; render();
+    try {
+      const words = this.make(), r = await notifPost("/rescue", { op: "set", key: await this.key(words), code: Shared.code() });
+      if (r.ok) { await Store.patchMeta("space", { rescue: words.join(" ") }); toast("Votre code de secours est prêt : notez-le bien"); }
+      else toast(r.status === 404 || r.status === 400 ? "Le service Cloudflare n'est pas à jour : recolle son code (notifications/worker.js), puis réessaie." : "Le code n'a pas pu être créé. Réessaie dans un instant.");
+    } catch (e) { toast("Pas de réseau : réessaie dans un instant."); }
+    this.busy = false; render();
+  },
+  async find(text) {
+    const words = this.norm(text), bad = words.filter(w => !RESCUE_WORDS.includes(w));
+    if (words.length !== 6 || bad.length) { toast(bad.length ? `« ${bad[0]} » ne fait pas partie des mots possibles : vérifie l'orthographe.` : "Il faut les 6 mots du code de secours."); return; }
+    try {
+      const r = await notifPost("/rescue", { op: "get", key: await this.key(words) }), v = r.ok ? await r.json() : null;
+      if (!v || !v.code) { toast("Aucun espace ne correspond à ces 6 mots. Vérifie-les, dans l'ordre."); return; }
+      if (v.code === Shared.code()) { toast("Ce téléphone est déjà dans cet espace."); return; }
+      if (Shared.join(v.code, true)) { await Shared.reconnect(); toast(Store.backend === "shared" ? "Vous voilà de retour dans votre espace" : "L'espace commun est injoignable pour l'instant"); }
+    } catch (e) { toast("Pas de réseau : réessaie dans un instant."); }
+    render(true);
+  }
+};
+const rescueField = id => `<div class="field"><label for="${id}">${esc(fr("Ou tape votre code de secours (les 6 mots)"))}</label><div class="row join-row"><input type="text" id="${id}" data-d autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="abeille lune voilier…" value="${dv(id, "")}"><button class="btn" data-a="rc-find" data-f="${id}">Retrouver</button></div></div>`;
+function rescueBlock() {
+  const w = Rescue.words();
+  if (!w) return `<div class="rescue"><p class="lbl">Code de secours</p><p class="small">${esc(fr("Six mots à noter quelque part (Notes, photo, papier) : avec eux, vous retrouvez votre espace sur n'importe quel téléphone, même sans le lien."))}</p>
+    <button class="btn ghost wide" data-a="rc-make" ${Rescue.busy ? "disabled" : ""}>${Rescue.busy ? "Création…" : "Créer notre code de secours"}</button></div>`;
+  return `<div class="rescue"><p class="lbl">Notre code de secours</p><ol class="rescue-words">${w.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
+    <div class="row"><button class="btn ghost" data-a="rc-copy">Copier les 6 mots</button></div>
+    <p class="small muted">${esc(fr("Notez-les quelque part (Notes, photo, papier). Sur un nouveau téléphone : « Retrouver notre espace », puis les 6 mots dans l'ordre. Gardez-les pour vous deux."))}</p></div>`;
 }
 
 /* ───────────────────────── Code de transfert ─────────────────────────
@@ -2893,7 +2944,7 @@ function onboardView() {
     <div class="field"><label for="ob-b">Second prénom</label><input type="text" id="ob-b" data-d maxlength="24" autocomplete="off" value="${dv("ob-b", c.b)}" placeholder="Et l'autre"></div></div>
     <div class="field"><label for="ob-since">Ensemble depuis le (facultatif)</label><input type="date" id="ob-since" data-d max="${todayStr()}" value="${dv("ob-since", c.since || "")}"></div>
     <button class="btn wide" data-a="ob-names">Continuer</button>
-    ${Shared.available() && Store.backend !== "shared" ? `<details class="join-more"${isInstalled() && !Shared.code() ? " open" : ""}><summary class="small">${esc(fr(isInstalled() ? "Tu avais déjà Y&S dans Safari, ou l'autre a tout créé ? Colle le lien d'invitation" : "L'autre a déjà tout créé ? Rejoins son espace"))}</summary>${joinField("ob-inv")}</details>` : ""}`;
+    ${Shared.available() && Store.backend !== "shared" ? `<details class="join-more"${isInstalled() && !Shared.code() ? " open" : ""}><summary class="small">${esc(fr(isInstalled() ? "Tu avais déjà Y&S, ou l'autre a tout créé ? Retrouve votre espace" : "L'autre a déjà tout créé ? Rejoins son espace"))}</summary>${joinField("ob-inv")}${rescueField("ob-rc")}</details>` : ""}`;
   else if (st === "moi") body = `<h1 class="sheet-title">Et toi, qui es-tu ?</h1>
     <p class="muted">${esc(fr("Pour savoir quel personnage est le tien sur ce téléphone."))}</p>
     <div class="ob-who">${["a", "b"].map(k => `<button class="ob-pick" data-a="ob-me" data-v="${k}"><span class="ob-fig">${avatarSvg(k)}</span><b>${esc(nm(k))}</b></button>`).join("")}</div>`;
@@ -8750,6 +8801,9 @@ const ACT = {
   "shop-tint"(d) { S.prevTint = { ...(S.prevTint || {}), [d.o]: d.v }; },
   "shop-tint-buy"(d) { Jeu.buyTint(d.o, d.v); },
   "shop-theme"(d) { Jeu.setTheme(d.v); },
+  "rc-make"() { Rescue.create(); return false; },
+  "rc-find"(d) { const t = draft(d.f); clearDrafts(d.f); Rescue.find(t); return false; },
+  "rc-copy"() { const w = Rescue.words(); if (w && navigator.clipboard) navigator.clipboard.writeText(w.join(" ")).then(() => toast("Les 6 mots sont copiés"), () => toast("Sélectionne les mots pour les copier")); },
   "bk-make"() { Backup.prepare(); return false; },
   "bk-save"() { const f = S.bk && S.bk.file; if (!f) return; Backup.save(f).then(ok => { if (ok) { S.bk = null; toast("Sauvegarde enregistrée"); render(); } }); return false; },
   async "bk-restore"(d) { try { const v = await IDB.get(Backup.key(d.v)); if (v) await Backup.restore(v); else toast("Cette copie n'existe plus."); } catch (e) { toast("Cette copie n'a pas pu être lue."); } render(true); },
