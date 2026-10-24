@@ -458,6 +458,27 @@ body { background: var(--bg); }
 .sw-hiver { background: radial-gradient(circle at 30% 30%, #FFFFFF 0 3px, transparent 4px), radial-gradient(circle at 70% 60%, #FFFFFF 0 2px, transparent 3px), linear-gradient(160deg, #CFE3F5, #9FB4F0); }
 .sw-plage { background: linear-gradient(180deg, #F7E3B5 0 55%, #7FD0D6 55% 100%); }
 .sw-etoiles { background: radial-gradient(circle at 25% 30%, #F2D27A 0 2px, transparent 3px), radial-gradient(circle at 70% 45%, #FFFFFF 0 1.5px, transparent 2.5px), radial-gradient(circle at 45% 75%, #F2D27A 0 1.5px, transparent 2.5px), linear-gradient(160deg, #3D3470, #1F1B3D); }
+/* Bienvenue */
+.ob-hello { display: grid; justify-items: center; gap: 14px; text-align: center; padding: 6vh 4px 24px; }
+.ob-hero { position: relative; width: 170px; height: 170px; display: grid; place-items: center; }
+.ob-hero.small { width: 120px; height: 120px; justify-self: center; }
+.ob-glow { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, #FFD25A 55%, transparent) 0%, color-mix(in srgb, #FFB86B 22%, transparent) 45%, transparent 70%); animation: obglow 3.6s ease-in-out infinite; }
+.ob-flame { position: relative; width: 86%; animation: bob 3s ease-in-out infinite; }
+.ob-flame svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ob-flame.party { animation: buddyhop .9s ease-in-out infinite; }
+@keyframes obglow { 0%, 100% { transform: scale(.94); opacity: .85; } 50% { transform: scale(1.06); opacity: 1; } }
+.ob-brand { margin: 0; font-family: var(--f-display); font-size: 2.6rem; line-height: 1; }
+.ob-brand span { color: var(--accent); }
+.ob-dedi { margin: 0; font-family: var(--f-hand); font-size: 1.45rem; line-height: 1.15; max-width: 22ch; text-wrap: balance; }
+.ob-feats { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 10px; text-align: left; width: 100%; max-width: 380px; }
+.ob-feats li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); font-size: .95rem; line-height: 1.35; }
+.ob-feats li span { flex: none; width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; background: var(--icb); color: var(--ic); }
+.ob-feats li svg { width: 21px; height: 21px; }
+.ob-hello .actions { width: 100%; max-width: 380px; display: grid; gap: 10px; }
+.ob-yj { display: flex; gap: 10px; align-items: flex-end; }
+.ob-yj-av { width: 62px; margin-bottom: -6px; flex: none; animation: bob 3s ease-in-out infinite; }
+.ob-yj-av svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ob-yj p { position: relative; margin: 0 0 6px; padding: 10px 14px; border-radius: 18px 18px 18px 6px; background: color-mix(in srgb, #FFD25A 24%, var(--surface)); font-size: .95rem; line-height: 1.4; }
 .ob-dots { display: flex; gap: 6px; justify-content: center; }
 .ob-dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width .25s ease, background .25s ease; }
 .ob-dots i.on { width: 22px; background: var(--accent); }
@@ -2954,15 +2975,37 @@ function onboardStep() {
   if (!((Store.meta.avatars || {})[me] || {}).self) return "avatar";
   return null;
 }
+// Yassen Jr. accompagne chaque étape d'une petite bulle.
+const obYj = text => `<div class="ob-yj"><span class="ob-yj-av" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span><p>${esc(fr(text))}</p></div>`;
 function onboardView() {
-  const st = onboardStep() || "fin", c = couple(), me = whoAmI(), steps = ["noms", "moi", "avatar"];
+  let st = onboardStep() || "fin";
+  const c = couple(), me = whoAmI(), steps = ["noms", "moi", "avatar"];
+  // Tout premier lancement : une vraie page de bienvenue (ou « retrouver notre espace » après une réinstallation).
+  if (st === "noms" && !c.a && !c.b && !S.obHello) st = S.obFind ? "retrouver" : "bonjour";
   const live = Store.backend === "shared"
     ? `<p class="ob-live"><span class="dot" aria-hidden="true"></span>${esc(fr("En direct : ce que vous remplissez ici apparaît aussi sur l'autre téléphone."))}</p>`
     : `<p class="small muted">${esc(fr("Pour tout voir en direct sur vos deux téléphones, créez votre espace commun dans les réglages (ou ouvrez le lien d'invitation reçu)."))}</p>`;
   const dots = `<div class="ob-dots" aria-hidden="true">${steps.map(k => `<i class="${k === st ? "on" : steps.indexOf(k) < steps.indexOf(st) || st === "fin" ? "done" : ""}"></i>`).join("")}</div>`;
   let body = "";
-  if (st === "noms") body = `<h1 class="sheet-title">Veuillez renseigner vos noms</h1>
-    <p class="muted">${esc(fr("Ils apparaissent sur les cartes, dans les votes et dans les histoires dont vous êtes les héros."))}</p>
+  if (st === "bonjour") return `<section class="ob-hello">
+    <div class="ob-hero"><span class="ob-glow" aria-hidden="true"></span><span class="ob-flame" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span></div>
+    <p class="ob-brand">Y<span>&amp;</span>S</p>
+    <p class="ob-dedi">${esc(fr("À la mémoire de Yassen Jr. : montrons-lui que ses parents s'aiment vraiment."))}</p>
+    <ul class="ob-feats">
+      <li><span style="--ic:var(--i1);--icb:var(--m1)">${ico("dice")}</span>${esc(fr("Des jeux et des histoires à vivre à deux, côte à côte ou à distance"))}</li>
+      <li><span style="--ic:var(--i5);--icb:var(--m5)">${ico("mail")}</span>${esc(fr("Vos petits mots, vos souvenirs et des lettres à ouvrir plus tard"))}</li>
+      <li><span style="--ic:var(--i2);--icb:var(--m2)">${ico("flame")}</span>${esc(fr("Yassen Jr. grandit avec vous, et vous parle"))}</li>
+    </ul>
+    <div class="actions"><button class="btn wide" data-a="ob-hello">Commencer notre histoire</button>
+    ${Shared.available() ? `<button class="btn ghost wide" data-a="ob-find">Retrouver notre espace</button>` : ""}</div>
+  </section>`;
+  if (st === "retrouver") body = `<h1 class="sheet-title">Retrouver notre espace</h1>
+    ${obYj("Vous m'avez déjà ? Donne-moi votre lien d'invitation ou votre code de secours, et je retrouve tout !")}
+    ${joinField("ob-inv")}${rescueField("ob-rc")}
+    <p class="small muted">${esc(fr("Le lien se trouve dans les réglages de l'autre téléphone (Notre progression commune → Copier le lien), et les 6 mots juste en dessous."))}</p>
+    <button class="link" data-a="ob-back">Revenir</button>`;
+  else if (st === "noms") body = `<h1 class="sheet-title">Comment vous appelez-vous ?</h1>
+    ${obYj("Dites-moi vos prénoms : je veux savoir comment appeler mes parents !")}
     <div class="ob-names"><div class="field"><label for="ob-a">Premier prénom</label><input type="text" id="ob-a" data-d maxlength="24" autocomplete="off" value="${dv("ob-a", c.a)}" placeholder="Le tien ou le sien"></div>
     <span class="ob-amp" aria-hidden="true">&amp;</span>
     <div class="field"><label for="ob-b">Second prénom</label><input type="text" id="ob-b" data-d maxlength="24" autocomplete="off" value="${dv("ob-b", c.b)}" placeholder="Et l'autre"></div></div>
@@ -2970,14 +3013,18 @@ function onboardView() {
     <button class="btn wide" data-a="ob-names">Continuer</button>
     ${Shared.available() && Store.backend !== "shared" ? `<details class="join-more"${isInstalled() && !Shared.code() ? " open" : ""}><summary class="small">${esc(fr(isInstalled() ? "Tu avais déjà Y&S, ou l'autre a tout créé ? Retrouve votre espace" : "L'autre a déjà tout créé ? Rejoins son espace"))}</summary>${joinField("ob-inv")}${rescueField("ob-rc")}</details>` : ""}`;
   else if (st === "moi") body = `<h1 class="sheet-title">Et toi, qui es-tu ?</h1>
-    <p class="muted">${esc(fr("Pour savoir quel personnage est le tien sur ce téléphone."))}</p>
+    ${obYj("Sur ce téléphone, c'est qui ? Touche ton prénom.")}
     <div class="ob-who">${["a", "b"].map(k => `<button class="ob-pick" data-a="ob-me" data-v="${k}"><span class="ob-fig">${avatarSvg(k)}</span><b>${esc(nm(k))}</b></button>`).join("")}</div>`;
   else if (st === "avatar") body = `<h1 class="sheet-title">Personnalisez vos avatars</h1>
     <p class="muted">${esc(fr(`${nm(me)}, crée ton mini-toi : ton look, ta personnalité, tes phrases fétiches. ${nm(other(me))} fait pareil de son côté.`))}</p>
     <div class="stage">${sceneSvg("souvenir")}<div class="cast">${castFig("a")}${castFig("b")}</div></div>
     <p class="small muted">${["a", "b"].map(k => `${esc(nm(k))} : ${((Store.meta.avatars || {})[k] || {}).self ? "avatar prêt ✓" : k === me ? "à toi de jouer" : "pas encore"}`).join(" · ")}</p>
     <button class="btn wide" data-a="ob-avatar">Personnaliser mon avatar</button>`;
-  else body = `<h1 class="sheet-title">Tout est prêt !</h1><p class="muted">${esc(fr("Vos personnages vous attendent sur l'accueil."))}</p><button class="btn wide" data-a="close-layer">C'est parti</button>`;
+  else body = `<div class="ob-hero small"><span class="ob-glow" aria-hidden="true"></span><span class="ob-flame party" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span></div>
+    <h1 class="sheet-title" style="text-align:center">Tout est prêt !</h1>
+    ${obYj("Youpi ! Vos personnages vous attendent sur l'accueil. On joue ?")}
+    <button class="btn wide" data-a="close-layer">C'est parti</button>`;
+  if (st === "retrouver") return `${layerHead("")}<section class="stack ob">${body}</section>`;
   return `${layerHead("")}${dots}<section class="stack ob">${body}${live}<div class="joker"><button class="link" data-a="close-layer">Plus tard</button></div></section>`;
 }
 
@@ -8806,6 +8853,9 @@ const ACT = {
     clearDrafts("ob-a", "ob-b", "ob-since");
   },
   "ob-me"(d) { claimMe(d.v); },
+  "ob-hello"() { S.obHello = true; S.obFind = false; },
+  "ob-find"() { S.obFind = true; },
+  "ob-back"() { S.obFind = false; },
   "claim-yes"() { const k = S.claim; S.layer = S.claimBack; S.claimBack = null; claimMe(k, true); },
   "claim-other"() { const k = S.claim; S.layer = S.claimBack; S.claimBack = null; claimMe(other(k), true); },
   "ob-avatar"() { const me = whoAmI() || "a"; S.avWho = me; S.fromOb = true; S.layer = { type: "sheet", name: "avatars" }; },
