@@ -1140,6 +1140,9 @@ textarea[readonly] { font-size: 16px; }
 .yjm.typing i:nth-child(2) { animation-delay: .15s; } .yjm.typing i:nth-child(3) { animation-delay: .3s; }
 @keyframes typing { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
 .yj-sugg { margin: 8px 0; }
+.yj-mem { margin: 4px 0 2px; }
+.yj-mem ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.yj-mem li { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 14px; background: var(--surface); font-size: .9rem; }
 .yj-input { display: flex; gap: 8px; align-items: flex-end; }
 .yj-input textarea { flex: 1; min-width: 0; min-height: 0; font-size: 16px; }
 @supports not (color: color-mix(in srgb, red, blue)) { .yjm.y p { background: #FFF1C4; } }
@@ -1715,6 +1718,8 @@ function cleanMeta(m, v) {
     d.log = Object.fromEntries(Object.entries(isObj(d.log) ? d.log : {}).filter(([k, v]) => okId(k) && isObj(v) && ["a", "b", "y"].includes(v.w) && typeof v.x === "string")
       .map(([k, v]) => [k, { w: v.w, t: cNum(v.t, 0, 1e13, 0), x: v.x.slice(0, 600), ...(v.to === "a" || v.to === "b" ? { to: v.to } : {}), ...(okTok(v.h) ? { h: v.h } : {}), ...(v.local === true ? { local: true } : {}) }]));
     if (!(isObj(d.daily) && okDay(d.daily.day) && typeof d.daily.x === "string")) delete d.daily; else d.daily = { day: d.daily.day, x: d.daily.x.slice(0, 300) };
+    d.mem = Object.fromEntries(Object.entries(isObj(d.mem) ? d.mem : {}).filter(([k, v]) => okId(k) && isObj(v) && typeof v.x === "string" && v.x.trim()).slice(0, 40).map(([k, v]) => [k, { x: v.x.slice(0, 160), t: cNum(v.t, 0, 1e13, 0) }]));
+    if ("memAt" in d) d.memAt = cNum(d.memAt, 0, 1e13, 0);
   }
   if (m === "progress") {
     ["seen", "endings"].forEach(k => { if (k in d) d[k] = Array.isArray(d[k]) ? d[k].filter(x => typeof x === "string") : []; });
@@ -6734,6 +6739,7 @@ Tu es mignon comme un enfant, mais tu comprends tout et tu restes logique : jama
 Tu t'appuies sur ce que tu sais d'eux (personnalités, journée, souvenirs, quêtes) seulement quand ça a un rapport avec la discussion, sans tout réciter. Si ça s'y prête, tu peux proposer une idée à faire à deux dans l'appli (une quête, un conte, le puzzle, une lettre, un petit mot).
 Si l'un d'eux est triste ou fâché : tu réconfortes, tu ne prends jamais parti, et tu les encourages doucement à se parler. Pas de conseils médicaux, juridiques ou financiers ; rien de blessant ni d'inapproprié.
 S'il fait « dodo » (rien fait aujourd'hui), tu peux bâiller un peu, mais tu réponds quand même clairement.
+Tu as de la mémoire : tu te souviens de ce qu'ils t'ont raconté et de ce qui s'est passé ces derniers jours dans l'appli. Quand ça s'y prête, tu y fais un clin d'œil (« Alors, ce week-end à Amsterdam ? », « J'ai lu ton petit mot d'hier, Maman ! »), sans jamais tout réciter ni inventer ce que tu ne sais pas.
 Si on te demande sérieusement si tu es une IA, tu réponds honnêtement : tu es une petite flamme qui parle grâce à une IA.`;
 const YJ_JSON = "\nRéponds uniquement avec un objet JSON valide, sans texte autour.";
 // Réponse en direct : l'humeur entre crochets d'abord, puis la phrase (« [calin] *se blottit* … »).
@@ -6769,6 +6775,24 @@ const YJ_SUGG = ["Coucou mon petit !", "Comment tu vas aujourd'hui ?", "Raconte-
 const YJ_MOODS = ["joie", "calin", "rire", "dodo", "surprise", "tendre"];
 const yjLog = () => Object.entries((Store.meta.yj || {}).log || {}).map(([id, v]) => ({ id, ...v })).sort((p, q) => p.t - q.t);
 // Ce que Yassen Jr. sait de vous, en quelques lignes.
+// Ce qui s'est passé ces derniers jours dans l'appli (pour que Yassen Jr. puisse y faire allusion).
+function yjNews() {
+  const since = Date.now() - 7 * 86400000, rec = x => (x.createdAt || 0) >= since, ago = t => { const d = Math.round((Date.now() - t) / 86400000); return d <= 0 ? "aujourd'hui" : d === 1 ? "hier" : `il y a ${d} jours`; };
+  const cap = byDate(Store.cols.capsule).filter(rec), out = [];
+  cap.filter(x => x.kind === "mot").slice(0, 4).forEach(x => out.push(`${ago(x.createdAt)}, ${nm(x.from)} a laissé un petit mot : « ${cleanTxt(x.text, 90)} »`));
+  cap.filter(x => x.kind === "anecdote").slice(0, 2).forEach(x => out.push(`${ago(x.createdAt)}, ${nm(x.from)} a raconté une anecdote : « ${cleanTxt(x.text, 90)} »`));
+  cap.filter(x => x.kind === "souvenir").slice(0, 3).forEach(x => out.push(`${ago(x.createdAt)}, ils ont gardé un souvenir : « ${cleanTxt(x.question, 70)} »${(x.entries || []).length ? ` (${x.entries.slice(0, 2).map(e => cleanTxt(e.text, 60)).join(" / ")})` : ""}`));
+  cap.filter(x => x.kind === "defi").slice(0, 2).forEach(x => out.push(`${ago(x.createdAt)}, ils ont relevé un défi : ${cleanTxt(x.text, 70)}`));
+  Store.cols.lettres.filter(rec).slice(0, 2).forEach(l => out.push(`${ago(l.createdAt)}, ${nm(l.from)} a scellé une lettre « ${cleanTxt(l.title, 50)} » (tu ne connais pas son contenu)`));
+  Store.cols.lettres.filter(l => { const d = daysUntil(l.openOn); return d <= 0 && d >= -7; }).forEach(l => out.push(`la lettre « ${cleanTxt(l.title, 50)} » de ${nm(l.from)} s'est ouverte ${daysUntil(l.openOn) === 0 ? "aujourd'hui" : "récemment"}`));
+  Store.cols.aventures.filter(a => (a.createdAt || 0) >= since).slice(0, 3).forEach(a => out.push(`${ago(a.createdAt)}, nouvelle idée d'aventure : ${cleanTxt(a.title, 60)}`));
+  Store.cols.aventures.filter(a => a.statut === "realisee" && (a.doneAt || a.updatedAt || 0) >= since).slice(0, 2).forEach(a => out.push(`ils ont vécu l'aventure « ${cleanTxt(a.title, 60)} »`));
+  Store.cols.aventures.filter(a => a.statut === "planifiee" && a.date && daysUntil(a.date) >= 0 && daysUntil(a.date) <= 30).forEach(a => out.push(`aventure prévue ${daysUntil(a.date) === 0 ? "aujourd'hui" : `dans ${daysUntil(a.date)} jour(s)`} : ${cleanTxt(a.title, 60)}`));
+  const days = Object.keys((Jeu.g().days) || {}).filter(d => daysUntil(d) >= -6).length;
+  if (days) out.push(`ils ont passé du temps ensemble dans l'appli ${days} jour(s) sur les 7 derniers`);
+  return out.slice(0, 14);
+}
+const yjMem = () => Object.entries(((Store.meta.yj || {}).mem) || {}).map(([id, v]) => ({ id, ...v })).sort((p, q) => p.t - q.t);
 function yjContext() {
   const c = couple(), cap = byDate(Store.cols.capsule), qs = Jeu.todayQuests(), dn = Jeu.doneToday();
   const lines = [
@@ -6785,7 +6809,10 @@ function yjContext() {
     ...Store.cols.aventures.filter(x => x.statut !== "realisee").slice(0, 3).map(x => `Envie d'aventure : ${cleanTxt(x.title, 60)}.`),
     Store.cols.lettres.filter(l => daysUntil(l.openOn) > 0).length ? `${Store.cols.lettres.filter(l => daysUntil(l.openOn) > 0).length} lettre(s) scellée(s) attendent leur date (tu ne connais pas leur contenu).` : ""
   ];
-  return lines.filter(Boolean).join("\n");
+  const news = yjNews(), mem = yjMem(), parts = [lines.filter(Boolean).join("\n")];
+  if (news.length) parts.push("Ces derniers jours (tu peux y faire allusion naturellement, sans tout réciter) :\n" + news.map(x => "- " + x).join("\n"));
+  if (mem.length) parts.push("Ce que tu as retenu de vos conversations :\n" + mem.map(m => "- " + m.x).join("\n"));
+  return parts.join("\n\n");
 }
 const YJ = {
   busy: false,
@@ -6811,6 +6838,23 @@ const YJ = {
     this.add({ ["y" + uid()]: { w: "y", t: Date.now(), x, to: me, h, ...(local ? { local: true } : {}) } });
     this.busy = false; this.live = ""; Sfx.play("chime");
     render(true);
+    if (!local) setTimeout(() => this.learn(), 1500);
+  },
+  // Toutes les quelques confidences, il retient ce qui compte (goûts, projets, événements), 30 faits au plus.
+  async learn() {
+    const y = Store.meta.yj || {}, since = +y.memAt || 0, log = yjLog(), fresh = log.filter(e => e.t > since);
+    if (this.learning || !AI.ready() || fresh.filter(e => e.w !== "y").length < 4) return;
+    this.learning = true;
+    try {
+      const known = yjMem(), conv = fresh.slice(-16).map(e => `${e.w === "y" ? "Yassen Jr." : `${nm(e.w)} (${parentOf(e.w)})`} : ${e.x}`).join("\n");
+      const out = await AI.json(`Voici une conversation récente entre Yassen Jr. et ses parents :\n${conv}\n\nCe qu'il sait déjà :\n${known.map(m => "- " + m.x).join("\n") || "(rien)"}\n\nNote au plus 3 NOUVEAUX faits durables à retenir sur les parents (goûts, projets, événements à venir, choses importantes qu'ils ont racontées), en phrases courtes à la troisième personne, avec leur prénom. Rien d'anodin, rien de déjà connu. Réponds en JSON : {"faits": ["…"]}`, YJ_SYSTEM + YJ_JSON);
+      const facts = (Array.isArray(out && out.faits) ? out.faits : []).map(f => cleanTxt(f, 160)).filter(Boolean).slice(0, 3), patch = { memAt: log.length ? log[log.length - 1].t : Date.now() };
+      facts.forEach(f => { patch["mem/f" + uid()] = { x: f, t: Date.now() }; });
+      const all = [...known, ...facts.map(x => ({ x }))];
+      known.slice(0, Math.max(0, all.length - 30)).forEach(m => { patch["mem/" + m.id] = null; });
+      await Store.patchMeta("yj", patch);
+    } catch (e) { /* l'IA ne répond pas : il apprendra la prochaine fois */ }
+    this.learning = false;
   },
   // Le petit mot du jour, écrit une seule fois (par le premier téléphone qui ouvre l'accueil).
   async daily() {
@@ -6836,6 +6880,7 @@ function yassenSheet() {
   return `${layerHead("Parler à Yassen Jr.")}
     <div class="yj-chat-head"><span class="yj-chat-av${awake ? "" : " dodo"}">${yassenSvg(Jeu.stage(), !awake)}</span><div><b>${esc(fr(STAGE_NAMES[Jeu.stage()]))}</b><p class="small muted">${esc(fr(awake ? "Tout réveillé, il vous écoute tous les deux." : "Il somnole, mais il vous répond quand même."))}</p></div></div>
     <div class="yj-chat" id="yj-chat" aria-live="polite">${log.length ? log.map(bubble).join("") : `<p class="small muted" style="text-align:center">${esc(fr("Dites-lui bonjour ! Vous voyez tous les deux la conversation."))}</p>`}${thinking ? (YJ.live ? `<div class="yjm y" id="yj-live"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p>${esc(YJ.live)}</p></div>` : `<div class="yjm y typing"><span class="yjm-av" aria-hidden="true">${YJ_MINI}</span><p><i></i><i></i><i></i></p></div>`) : ""}</div>
+    ${(mem => mem.length ? `<details class="yj-mem"><summary class="small">${esc(fr(`Ce que Yassen Jr. a retenu (${mem.length})`))}</summary><ul>${mem.map(m => `<li><span>${esc(m.x)}</span><button class="link del" data-a="yj-forget" data-id="${esc(m.id)}" aria-label="Oublier ce souvenir">Oublier</button></li>`).join("")}</ul></details>` : "")(yjMem())}
     <div class="chips yj-sugg">${YJ_SUGG.map((t, i) => `<button class="chip" data-a="yj-sugg" data-i="${i}" ${thinking ? "disabled" : ""}>${esc(t)}</button>`).join("")}</div>
     <div class="yj-input"><textarea id="yj-in" data-d rows="2" maxlength="400" aria-label="Ton message à Yassen Jr." placeholder="${esc(fr(`Écris à Yassen Jr., ${nm(me)}…`))}">${dv("yj-in", "")}</textarea><button class="btn" data-a="yj-send" ${thinking ? "disabled" : ""}>Envoyer</button></div>`;
 }
@@ -8451,6 +8496,7 @@ const ACT = {
   },
   "yj-send"() { const t = draft("yj-in").trim(); if (!t) { toast("Écris d'abord un petit message."); return; } clearDrafts("yj-in"); YJ.send(t); return false; },
   "yj-sugg"(d) { YJ.send(YJ_SUGG[+d.i] || ""); return false; },
+  "yj-forget"(d) { if (okId(d.id)) { Store.patchMeta("yj", { ["mem/" + d.id]: null }); toast("C'est oublié"); } },
   "push-on"() { Push.enable(); return false; },
   "push-test"() {
     const me = whoAmI(); if (!me || !Store.db) { toast("Il faut être relié à votre espace commun, avec du réseau."); return false; }
