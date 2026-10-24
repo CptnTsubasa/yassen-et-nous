@@ -1,0 +1,35 @@
+import { chromium, LAUNCH } from '../lib/pw.mjs';
+import fs from 'fs';
+const fakeDb = fs.readFileSync('fbtest/fake-firebase.js', 'utf8') + '\nexport const getApps = () => [];';
+const fakeMsg = `export const getMessaging = a => ({ a }); export const getToken = async (m, o) => { window.__tokOpts = o; return "TOKEN-" + (localStorage.getItem("entre-nous:me") || "x"); }; export const deleteToken = async () => true;`;
+const b = await chromium.launch(LAUNCH);
+const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+const errs = [], W = ms => new Promise(r => setTimeout(r, ms)), ok = (n, v) => console.log((v ? 'OK  ' : 'FAIL') + ' ' + n);
+const C = 'HHHHHHHHHHHHHHHHHHHHHHHHHHHH';
+await fetch('http://localhost:8123/__fakedb', { method: 'POST', body: JSON.stringify({ couples: { [C]: { meta: { couple: { a: 'Yanis', b: 'Sarah', style: 'partage' }, avatars: { a: { self: true }, b: { self: true } } } } } }) });
+const ctx = await b.newContext({ viewport: { width: 393, height: 852 }, userAgent: UA });
+await ctx.route('https://www.gstatic.com/firebasejs/**', r => r.fulfill({ status: 200, contentType: 'text/javascript', body: /messaging/.test(r.request().url()) ? fakeMsg : fakeDb }));
+await ctx.addInitScript(([c]) => { try { localStorage.setItem('entre-nous:couple', c); localStorage.setItem('entre-nous:me', 'b'); } catch (e) {}
+  Object.defineProperty(navigator, 'standalone', { get: () => true });
+  window.PushManager = window.PushManager || function () {};
+  let perm = 'default'; window.Notification = { get permission() { return perm; }, requestPermission: async () => (perm = 'granted') };
+  Object.defineProperty(navigator.serviceWorker, 'ready', { get: () => Promise.resolve({ fake: true }) }); }, [C]);
+const P = await ctx.newPage(); P.on('pageerror', e => errs.push(e.message));
+await P.goto('http://localhost:8123/'); await W(1800);
+await P.click('.appbar [data-name="names"]'); await W(300);
+await P.evaluate(() => document.getElementById('h-notif').scrollIntoView()); await P.screenshot({ path: 'n-off.png' });
+await P.click('[data-a="push-on"]'); await W(1500);
+const db = await (await fetch('http://localhost:8123/__fakedb')).json();
+ok('jeton enregistré pour Sarah', JSON.stringify(db.couples[C].push || {}).includes('TOKEN-b') && !!(db.couples[C].push || {}).b);
+await P.evaluate(() => document.getElementById('h-notif').scrollIntoView()); await P.screenshot({ path: 'n-on.png' });
+await P.click('[data-a="push-pref"][data-v="quetes"]'); await W(1000);
+const db2 = await (await fetch('http://localhost:8123/__fakedb')).json();
+ok('préférence « rappel du soir » enregistrée', db2.couples[C].meta.space.notif.b.quetes === true);
+// Mise à jour : une nouvelle version en ligne, puis retour dans l'appli
+await P.click('#layer [data-a="close-layer"]'); await W(300);
+await P.evaluate(() => { window.__marker = 1; });
+const f = fs.readFileSync('fbtest/index.html', 'utf8'); fs.writeFileSync('fbtest/index.html', f.replace('</body>', '<!-- v2 --></body>'));
+await P.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await W(2500);
+ok('rechargée sur la nouvelle version au retour dans l\'appli', await P.evaluate(() => !window.__marker));
+fs.writeFileSync('fbtest/index.html', f);
+console.log('errors', JSON.stringify(errs)); await b.close();

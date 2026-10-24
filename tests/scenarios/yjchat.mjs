@@ -1,0 +1,31 @@
+import { chromium, LAUNCH } from '../lib/pw.mjs';
+import fs from 'fs';
+const fakeDb = fs.readFileSync('fbtest/fake-firebase.js', 'utf8'), fakeAi = fs.readFileSync('fake-ai.js', 'utf8');
+const b = await chromium.launch(LAUNCH);
+const errs = [], W = ms => new Promise(r => setTimeout(r, ms)), ok = (n, v) => console.log((v ? 'OK  ' : 'FAIL') + ' ' + n);
+const C = 'YYYYYYYYYYYYYYYYYYYYYYYYYYYZ';
+await fetch('http://localhost:8123/__fakedb', { method: 'POST', body: JSON.stringify({ couples: { [C]: { meta: { couple: { a: 'Yanis', b: 'Sarah', style: 'partage' }, avatars: { a: { self: true }, b: { self: true } } } } } }) });
+async function phone(me) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  await ctx.route('https://www.gstatic.com/firebasejs/**', r => r.fulfill({ status: 200, contentType: 'text/javascript', body: /12\.0\.0/.test(r.request().url()) ? fakeAi : fakeDb }));
+  await ctx.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await ctx.addInitScript(([c, me]) => { try { localStorage.setItem('entre-nous:couple', c); localStorage.setItem('entre-nous:me', me); localStorage.setItem('entre-nous:sfx', '0'); } catch (e) {} }, [C, me]);
+  const p = await ctx.newPage(); p.on('pageerror', e => errs.push(me + ': ' + e.message)); await p.goto('http://localhost:8123/'); return p;
+}
+const A = await phone('a'), B = await phone('b'); await W(1500);
+for (const P of [A, B]) await P.evaluate(() => { S.layer = null; S.obShown = true; render(true); });
+await W(6500);
+ok('mot du jour écrit et partagé', await B.evaluate(() => !!document.querySelector('.yj-daily')));
+await B.evaluate(() => { window.__said = []; const g = Buddies.yjSay.bind(Buddies); Buddies.yjSay = (t, ms) => { window.__said.push(t); return g(t, ms); }; });
+await A.click('[data-a="sheet"][data-name="yassen"]'); await W(300);
+await A.fill('#yj-in', 'Coucou mon petit, tu vas bien ?'); await A.click('[data-a="yj-send"]'); await W(300);
+await A.screenshot({ path: 'yj-typing.png' });
+await W(2000);
+ok('réponse de Yassen dans la discussion', await A.evaluate(() => yjLog().some(e => e.w === 'y' && /content/.test(e.x))));
+ok('le contexte contient vos prénoms et la journée', await A.evaluate(() => /Yanis et Sarah/.test(window.__yjPrompt || '') && /Quêtes du jour/.test(window.__yjPrompt || '')));
+await W(1500);
+ok('Sarah voit la conversation', await B.evaluate(() => yjLog().length === 2));
+ok('et Yassen le dit sur son téléphone', await B.evaluate(() => window.__said.some(t => /content/.test(t))));
+await A.screenshot({ path: 'yj-chat.png' });
+await B.screenshot({ path: 'yj-home-b.png' });
+console.log('errors', JSON.stringify(errs)); await b.close();

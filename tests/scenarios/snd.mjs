@@ -1,0 +1,18 @@
+import { chromium, LAUNCH } from '../lib/pw.mjs';
+const b = await chromium.launch({ ...LAUNCH, args: ['--autoplay-policy=user-gesture-required'] });
+const errs = [], W = ms => new Promise(r => setTimeout(r, ms)), ok = (n, v) => console.log((v ? 'OK  ' : 'FAIL') + ' ' + n);
+const ctx = await b.newContext({ viewport: { width: 393, height: 852 }, hasTouch: true });
+await ctx.route('https://www.gstatic.com/firebasejs/**', r => r.abort());
+const P = await ctx.newPage(); P.on('pageerror', e => errs.push(e.message));
+await P.goto('http://localhost:8123/'); await W(1200);
+await P.evaluate(() => { localStorage.setItem('entre-nous:me', 'a'); });
+await P.mouse.click(200, 300); await W(300);
+ok('son prêt dès le premier toucher', await P.evaluate(() => !!Sfx.ctx && Sfx.ctx.state === 'running'));
+await P.evaluate(() => { S.layer = null; ACT['music-set']({ v: '1' }); render(true); });
+await P.evaluate(() => { ACT['open-mode']({ mode: 'puzzle' }); render(true); }); await W(500);
+ok('musique douce sur le puzzle', await P.evaluate(() => Music.theme === 'calme' && Music.ctx.state === 'running'));
+await P.evaluate(() => { ACT['close-layer'](); render(true); ACT['open-mode']({ mode: 'arcade' }); render(true); }); await W(300);
+ok('musique pétillante à l\'arcade', await P.evaluate(() => Music.theme === 'pop'));
+await P.evaluate(() => { ACT['close-layer'](); render(true); }); await W(1500);
+ok('silence sur l\'accueil', await P.evaluate(() => !Music.theme));
+console.log('errors', JSON.stringify(errs)); await b.close();
