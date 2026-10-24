@@ -44,6 +44,7 @@ Un `FAIL`, une erreur de page (`errors [...]`) ou un plantage font échouer le s
 | `backup` | Fichier « nos souvenirs », restauration sans doublon, copies automatiques |
 | `rescue` | Code de secours en 6 mots |
 | `cd` | Comptes à rebours « Bientôt » |
+| `annee` | « Notre année » : chiffres de l'année, diapositives, mot de Yassen Jr. |
 | `ob2` | Page de bienvenue et « Retrouver notre espace » |
 | `anim2` | Animations (onglets, fenêtres, cœurs qui s'envolent) |
 | `scheme` | Bouton clair / sombre |

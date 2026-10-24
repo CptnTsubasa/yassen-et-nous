@@ -394,6 +394,60 @@ body { background: var(--bg); }
 @keyframes pagein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .panel { border: 1px solid var(--hair); }
 .greet { display: grid; gap: 4px; }
+/* Notre année */
+.yr-open { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 6px 14px; border-radius: 999px; background: linear-gradient(120deg, var(--m1), var(--m2)); color: var(--fg); font-weight: 700; font-size: .9rem; }
+.yr-open svg { width: 17px; height: 17px; color: var(--i1); }
+.top:has(.yr-open) { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.layer:has(.yr) { padding: 0; }
+.layer:has(.yr) > .wrap { max-width: none; padding: 0; }
+.yr { position: relative; min-height: 100vh; min-height: 100dvh; display: grid; align-content: center; padding: calc(64px + env(safe-area-inset-top, 0px)) 24px 48px; color: #2E2333; overflow: hidden; }
+.yr.c1 { background: linear-gradient(160deg, #FFE7A8, #F7C6D4 60%, #D9C6F2); }
+.yr.c2 { background: linear-gradient(160deg, #F9D3DC, #F6B3C6); }
+.yr.c3 { background: linear-gradient(160deg, #FFF0C9, #FFD48A); }
+.yr.c4 { background: linear-gradient(160deg, #FCD5E0, #EFA8BE); }
+.yr.c5 { background: linear-gradient(160deg, #D9E9F7, #B9D3F0); }
+.yr.c6 { background: linear-gradient(160deg, #D6F0E3, #A9DCC3); }
+.yr.c7 { background: linear-gradient(160deg, #F7DCC7, #F0B994); }
+.yr.c8 { background: linear-gradient(160deg, #2B2440, #4A3A6E); color: #FFF4E6; }
+.yr-bars { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; display: flex; gap: 4px; }
+.yr-bars i { flex: 1; height: 3px; border-radius: 2px; background: rgba(46, 35, 51, .2); }
+.yr.c8 .yr-bars i { background: rgba(255, 244, 230, .25); }
+.yr-bars i.done, .yr-bars i.on { background: currentColor; }
+.yr-x { position: absolute; top: calc(24px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 3; color: inherit; background: rgba(255, 255, 255, .35); }
+.yr-slide { position: relative; z-index: 2; display: grid; gap: 14px; justify-items: center; text-align: center; animation: yrin .45s cubic-bezier(.2, .8, .2, 1) both; pointer-events: none; }
+.yr-slide button, .yr-end { pointer-events: auto; }
+@keyframes yrin { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+.yr-tap { position: absolute; top: 0; bottom: 0; z-index: 1; background: transparent; }
+.yr-tap.next { right: 0; width: 70%; } .yr-tap.prev { left: 0; width: 30%; }
+.yr-yj { width: 120px; animation: bob 3s ease-in-out infinite; }
+.yr-yj svg { display: block; width: 100%; height: auto; overflow: visible; }
+.yr-kick { margin: 0; font-size: .82rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+.yr-title { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(2rem, 9vw, 2.8rem); line-height: 1.05; }
+.yr-sub { margin: 0; font-size: 1.05rem; line-height: 1.4; max-width: 30ch; }
+.yr-hint { margin: 18px 0 0; font-size: .85rem; opacity: .65; animation: obpulse 2s ease-in-out infinite; }
+.yr-big { margin: 0; font-family: var(--f-display); font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; }
+.yr-lbl { margin: -4px 0 0; font-size: 1.15rem; font-weight: 700; max-width: 22ch; }
+.yr-duo { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.yr-duo span { display: grid; min-width: 96px; padding: 10px 14px; border-radius: 18px; background: rgba(255, 255, 255, .45); font-size: .9rem; font-weight: 600; }
+.yr-duo b { font-family: var(--f-display); font-weight: 400; font-size: 1.7rem; line-height: 1.1; }
+.yr-quote { margin: 4px 0 0; padding: 16px 18px; border-radius: 20px; background: rgba(255, 255, 255, .5); font-family: var(--f-hand); font-size: 1.5rem; line-height: 1.2; max-width: 32ch; }
+.yr-quote cite { display: block; margin-top: 6px; font: italic 600 .85rem var(--f-body); opacity: .7; }
+.yr-quote.big { font-size: 1.6rem; }
+.yr.c1 .yr-quote.big { background: rgba(255, 255, 255, .6); }
+.yr-card { display: grid; gap: 8px; text-align: left; width: min(100%, 340px); padding: 16px; border-radius: 20px; background: rgba(255, 255, 255, .55); }
+.yr-q { margin: 0; font-family: var(--f-display); font-size: 1.15rem; }
+.yr-a { margin: 0; font-family: var(--f-hand); font-size: 1.35rem; line-height: 1.15; }
+.yr-a span { display: block; font: 600 .78rem var(--f-body); opacity: .7; }
+.yr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: min(100%, 340px); }
+.yr-grid div { display: grid; padding: 14px; border-radius: 20px; background: rgba(255, 255, 255, .5); }
+.yr-grid b { font-family: var(--f-display); font-weight: 400; font-size: 2.2rem; line-height: 1.05; }
+.yr-grid span { font-size: .88rem; font-weight: 600; }
+.yr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; width: min(100%, 340px); }
+.yr-list li { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .5); font-weight: 600; }
+.yr-typing { display: inline-flex; gap: 6px; } .yr-typing i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .4; animation: obpulse 1.2s ease-in-out infinite; }
+.yr-typing i:nth-child(2) { animation-delay: .2s; } .yr-typing i:nth-child(3) { animation-delay: .4s; }
+.yr-end { display: flex; gap: 10px; margin-top: 10px; }
+.yr .btn.ghost { background: rgba(255, 255, 255, .5); color: #2E2333; }
 .cd-row { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 8px; margin: 0 -2px; scrollbar-width: none; scroll-snap-type: x mandatory; }
 .cd-row::-webkit-scrollbar { display: none; }
 .cd { flex: none; width: 128px; scroll-snap-align: start; display: grid; align-content: start; gap: 2px; padding: 14px; border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); }
@@ -2160,6 +2214,91 @@ function sharedPanel() {
     ${joinField("sh-in")}${rescueField("rc-in")}${back}</section>`;
 }
 
+/* ───────────────────────── Notre année ─────────────────────────
+   Un récapitulatif à faire défiler comme des stories : vos jours ensemble, vos mots, vos câlins, vos souvenirs,
+   vos parties, vos aventures… et, pour finir, un mot de Yassen Jr. Sur les 12 derniers mois (ou depuis le début
+   si vous êtes ensemble depuis moins longtemps). Ouvert depuis la Capsule, et mis en avant le jour de votre anniversaire. */
+// Petits compteurs (câlins envoyés, messages à Yassen) : une clé par jour, par personne et par sorte, que seul
+// le téléphone concerné écrit — deux téléphones ne se marchent jamais dessus.
+const Stats = {
+  bump(cat, sub) {
+    const me = whoAmI() || "a", k = `${todayStr()}_${me}${sub ? "_" + sub : ""}`;
+    if (!okKey(k) || !/^[a-z]{1,8}$/.test(cat)) return;
+    const cur = +((((Jeu.g().stats || {})[cat]) || {})[k]) || 0;
+    Store.patchMeta("game", { [`stats/${cat}/${k}`]: cur + 1 });
+  },
+  sum(cat, from, filter) {
+    return Object.entries(((Jeu.g().stats || {})[cat]) || {}).filter(([k]) => k.slice(0, 10) >= from && (!filter || filter(k.split("_")))).reduce((n, [, v]) => n + (+v || 0), 0);
+  }
+};
+function yearData() {
+  const today = todayStr(), c = couple(), back = new Date(parseDay(today).getTime() - 364 * 86400000), y = d => d.toISOString().slice(0, 10);
+  let from = y(new Date(back.getTime() - back.getTimezoneOffset() * 60000));
+  if (/^\d{4}-\d{2}-\d{2}$/.test(c.since || "") && c.since > from) from = c.since;
+  const t0 = parseDay(from).getTime(), inT = t => (+t || 0) >= t0, g = Jeu.g(), pr = Store.meta.progress || {};
+  const cap = Store.cols.capsule.filter(x => inT(x.createdAt)), mots = cap.filter(x => x.kind === "mot");
+  const pick = list => list.slice().sort((p, q) => ((q.text || "").length - (p.text || "").length))[0];
+  const souv = cap.filter(x => x.kind === "souvenir"), feat = souv.find(x => (x.entries || []).length >= 2) || souv[0];
+  const days = Object.keys(g.days || {}).filter(d => d >= from).length;
+  const quests = Object.entries(g.quests || {}).filter(([d]) => d >= from).reduce((n, [, m]) => n + Object.values(isObj(m) ? m : {}).filter(Boolean).length, 0);
+  const hearts = Object.entries(g.earn || {}).filter(([k]) => k.slice(0, 10) >= from || (k.startsWith("ach_") && inT(((g.ach || {})[k.slice(4)])))).reduce((n, [, v]) => n + (+v || 0), 0);
+  const gest = k => Stats.sum("g", from, p => p[2] === k);
+  return {
+    from, to: today, long: parseDay(today) - t0 > 300 * 86400000,
+    days, quests, hearts,
+    mots: { a: mots.filter(x => x.from === "a").length, b: mots.filter(x => x.from === "b").length, best: pick(mots) },
+    anecdotes: cap.filter(x => x.kind === "anecdote").length,
+    gestes: { calin: gest("calin"), pense: gest("pense"), courage: gest("courage"), espace: gest("espace") },
+    souvenirs: souv.length, feat, defis: cap.filter(x => x.kind === "defi").length,
+    parties: Object.values(pr.partiesLog || {}).filter(inT).length, puzzles: Object.values(pr.puzzlesLog || {}).filter(inT).length, fins: endSet().size,
+    avDone: Store.cols.aventures.filter(a => a.statut === "realisee" && inT(a.doneAt || a.updatedAt || a.createdAt)), avNew: Store.cols.aventures.filter(a => inT(a.createdAt)).length,
+    lettres: Store.cols.lettres.filter(l => inT(l.createdAt)).length,
+    yj: Stats.sum("yj", from), stage: Jeu.stage(), ach: Object.values(g.ach || {}).filter(inT).length
+  };
+}
+// Les écrans du récapitulatif (ceux qui n'ont rien à montrer sont sautés).
+function yearSlides(d) {
+  const n = (v, one, many) => `${v} ${v > 1 ? many : one}`, big = (v, label) => `<p class="yr-big">${v}</p><p class="yr-lbl">${esc(fr(label))}</p>`;
+  const tg = d.gestes.calin + d.gestes.pense + d.gestes.courage + d.gestes.espace, sl = [];
+  sl.push({ c: 1, h: `<span class="yr-yj" aria-hidden="true">${yassenSvg(d.stage, false)}</span><p class="yr-kick">${esc(fmtDay(d.from))} → ${esc(fmtDay(d.to))}</p><h2 class="yr-title">${d.long ? "Notre année" : "Notre histoire, jusqu'ici"}</h2><p class="yr-sub">${esc(fr(`${nm("a")} & ${nm("b")}, voici ce que vous avez vécu ensemble.`))}</p><p class="yr-hint">Touchez pour continuer</p>` });
+  if (d.days) sl.push({ c: 2, h: big(d.days, d.days > 1 ? "jours passés ensemble dans Y&S" : "jour passé ensemble dans Y&S") + `<p class="yr-sub">${esc(fr(`${n(d.quests, "quête accomplie", "quêtes accomplies")} et ${n(d.hearts, "cœur gagné", "cœurs gagnés")}.`))}</p>` });
+  if (d.mots.a + d.mots.b) sl.push({ c: 3, h: big(d.mots.a + d.mots.b, d.mots.a + d.mots.b > 1 ? "petits mots échangés" : "petit mot échangé") + `<div class="yr-duo"><span><b>${d.mots.a}</b>${esc(nm("a"))}</span><span><b>${d.mots.b}</b>${esc(nm("b"))}</span></div>${d.mots.best ? `<blockquote class="yr-quote">« ${esc(cleanTxt(d.mots.best.text, 180))} »<cite>${esc(nm(d.mots.best.from))}</cite></blockquote>` : ""}` });
+  if (tg) sl.push({ c: 4, h: big(tg, tg > 1 ? "câlins, pensées et encouragements" : "geste tendre envoyé") + `<div class="yr-duo">${[["calin", "câlins"], ["pense", "pensées"], ["courage", "encouragements"]].filter(([k]) => d.gestes[k]).map(([k, l]) => `<span><b>${d.gestes[k]}</b>${l}</span>`).join("")}</div>` });
+  if (d.souvenirs) sl.push({ c: 5, h: big(d.souvenirs, d.souvenirs > 1 ? "souvenirs gardés dans l'album" : "souvenir gardé dans l'album") + (d.feat ? `<div class="yr-card"><p class="yr-q">${esc(d.feat.question || "")}</p>${(d.feat.entries || []).slice(0, 2).map(e => `<p class="yr-a">${esc(cleanTxt(e.text, 120))}<span>${esc(e.label || nm(e.who))}</span></p>`).join("")}</div>` : "") });
+  if (d.parties + d.puzzles + d.fins) sl.push({ c: 6, h: `<h2 class="yr-title">Vous avez joué</h2><div class="yr-grid">${[[d.parties, "partie", "parties"], [d.puzzles, "puzzle reconstitué", "puzzles reconstitués"], [d.fins, "fin d'histoire découverte", "fins d'histoire découvertes"], [d.defis, "défi relevé", "défis relevés"]].filter(([v]) => v).map(([v, one, many]) => `<div><b>${v}</b><span>${v > 1 ? many : one}</span></div>`).join("")}</div>` });
+  if (d.avDone.length || d.avNew || d.lettres) sl.push({ c: 7, h: `<h2 class="yr-title">Vos aventures</h2>${d.avDone.length ? `<ul class="yr-list">${d.avDone.slice(0, 5).map(a => `<li>${esc(cleanTxt(a.title, 60))}</li>`).join("")}</ul>` : ""}<p class="yr-sub">${esc(fr([d.avNew ? n(d.avNew, "nouvelle envie notée", "nouvelles envies notées") : "", d.lettres ? n(d.lettres, "lettre scellée pour plus tard", "lettres scellées pour plus tard") : ""].filter(Boolean).join(" · ")))}</p>` });
+  sl.push({ c: 8, h: `<span class="yr-yj" aria-hidden="true">${yassenSvg(d.stage, false)}</span>${big(STAGE_NAMES[d.stage], "Yassen Jr. a grandi avec vous")}${d.yj ? `<p class="yr-sub">${esc(fr(`Vous lui avez écrit ${n(d.yj, "message", "messages")}.`))}</p>` : ""}${d.ach ? `<p class="yr-sub">${esc(fr(n(d.ach, "succès débloqué", "succès débloqués")))}</p>` : ""}` });
+  const w = S.yr && S.yr.word;
+  sl.push({ c: 1, h: `<span class="yr-yj" aria-hidden="true">${yassenSvg(d.stage, false)}</span><p class="yr-kick">Le mot de Yassen Jr.</p><blockquote class="yr-quote big">${w ? `« ${esc(w)} »` : `<span class="yr-typing"><i></i><i></i><i></i></span>`}</blockquote>
+    <div class="yr-end"><button class="btn" data-a="yr-restart">Revoir</button><button class="btn ghost" data-a="close-layer">Fermer</button></div>` });
+  return sl;
+}
+function yearView() {
+  const d = yearData(), sl = yearSlides(d), i = Math.min(S.yr.i, sl.length - 1), cur = sl[i];
+  if (i === sl.length - 1) yearWord(d);
+  return `<div class="yr c${cur.c}">
+    <div class="yr-bars" aria-hidden="true">${sl.map((_, k) => `<i class="${k < i ? "done" : k === i ? "on" : ""}"></i>`).join("")}</div>
+    <button class="yr-x icon-btn" data-a="close-layer" aria-label="Fermer">×</button>
+    <div class="yr-slide" aria-live="polite">${cur.h}</div>
+    ${i < sl.length - 1 ? `<button class="yr-tap next" data-a="yr-next" aria-label="Suivant"></button>` : ""}${i > 0 ? `<button class="yr-tap prev" data-a="yr-prev" aria-label="Précédent"></button>` : ""}
+  </div>`;
+}
+// Le mot de la fin, écrit par Yassen Jr. (une seule fois par ouverture ; sans IA, un mot tout prêt).
+async function yearWord(d) {
+  if (S.yr.asked) return;
+  S.yr.asked = true;
+  const fallback = `${parentOf("a")}, ${parentOf("b")}… Merci pour tous ces jours. Je brille grâce à vous, et j'ai hâte de voir la suite.`;
+  let w = "";
+  if (AI.ready()) {
+    try {
+      const facts = [`${d.days} jours ensemble dans l'appli`, `${d.mots.a + d.mots.b} petits mots`, `${d.souvenirs} souvenirs`, `${d.parties} parties`, d.avDone.length ? `aventures vécues : ${d.avDone.slice(0, 3).map(a => a.title).join(", ")}` : "", d.mots.best ? `un petit mot : « ${cleanTxt(d.mots.best.text, 100)} »` : ""].filter(Boolean).join(" ; ");
+      const out = await AI.json(`${yjContext()}\n\nC'est le récapitulatif de leur année dans l'appli : ${facts}.\nÉcris-leur un petit mot de fin, tendre et personnel (3 phrases au plus, 60 mots au plus), qui fait un clin d'œil à un de ces moments. Réponds en JSON : {"mot": "…"}`, YJ_SYSTEM + YJ_JSON);
+      w = cleanTxt(out && out.mot, 400);
+    } catch (e) { /* sans IA : le mot tout prêt */ }
+  }
+  if (S.yr) { S.yr.word = w || fallback; if (S.layer && S.layer.type === "annee") render(true); }
+}
+
 /* ───────────────────────── Sauvegarde de vos souvenirs ─────────────────────────
    1. « Télécharger nos souvenirs » : un fichier .html qui s'ouvre dans n'importe quel navigateur (vos mots,
       lettres, souvenirs, aventures, conversations avec Yassen Jr., photos) et qui contient aussi toutes les
@@ -2921,7 +3060,7 @@ function viewCapsule() {
       </article>`).join("") : empty("Rien de coché pour l'instant", "Les défis relevés et les aventures réalisées viendront se ranger ici.", "realise");
   }
   return `
-  <header class="top"><h1 class="logo">Notre <span>capsule</span></h1></header>
+  <header class="top"><h1 class="logo">Notre <span>capsule</span></h1><button class="yr-open" data-a="yr-open">${ico("star")}Notre année</button></header>
   <p class="hello">Les réponses, les mots et les moments qu'on veut garder.</p>
   <div class="seg" role="group" aria-label="Rubriques de la capsule">${segs}</div>
   <div class="stack">${body}</div>`;
@@ -6923,6 +7062,7 @@ const YJ = {
     text = cleanTxt(text, 400); if (!text || this.busy) return;
     const me = whoAmI() || "a", hist = yjLog().slice(-12);
     this.add({ ["m" + uid()]: { w: me, t: Date.now(), x: text } });
+    Stats.bump("yj");
     this.busy = true; render(true);
     let out = null;
     if (AI.ready()) {
@@ -7130,7 +7270,7 @@ function celebrateCard() {
   if (!si || !si.today) return "";
   return `<section class="celebrate" aria-live="polite"><p class="cel-title">${esc(fr(si.today))}</p>
     <p class="cel-yj"><span class="cel-flame" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span>${esc(fr(`Yassen Jr. : « ${pickDay(["Je savais que vous y arriveriez.", "Encore plein d'autres comme ça, promis ?", "Vous êtes mes parents préférés. Mes seuls, mais mes préférés.", "Câlin à trois pour fêter ça !"])} »`))}</p>
-    <p class="small muted">${si.totalDays} jours d'amour, et ce n'est que le début.</p></section>`;
+    <p class="small muted">${si.totalDays} jours d'amour, et ce n'est que le début.</p>${/an/.test(si.today) ? `<button class="btn" data-a="yr-open">${ico("star")} Revivre notre année</button>` : ""}</section>`;
 }
 // Le même choix toute la journée, pour qu'un message ne change pas à chaque rendu.
 const pickDay = list => list[Math.floor(parseDay(todayStr()).getTime() / 86400000) % list.length];
@@ -8304,6 +8444,7 @@ function sigSend(kind, text) {
   // Un câlin, du courage, une pensée : l'autre reçoit aussi une notification sur son iPhone,
   // une par geste envoyé (chaque geste a son propre petit document, relu puis effacé par le service).
   if (kind !== "mot") {
+    Stats.bump("g", kind);
     Store.write({ p: "gestes/" + payload.id, o: "set", d: { to, from: me, kind, t: payload.t } });
     Notify.ping("geste2", payload.id, null, { to });
   }
@@ -8482,6 +8623,7 @@ function renderNow(force) {
   else if (S.layer.type === "tresors") html = tresorsView();
   else if (S.layer.type === "onboard") html = onboardView();
   else if (S.layer.type === "conte") html = conteView();
+  else if (S.layer.type === "annee") html = yearView();
   // L'animation d'ouverture continue là où elle en était si l'écran est redessiné juste après.
   if (fresh) render.layerAt = Date.now();
   const age = Date.now() - (render.layerAt || 0), opening = age < 320;
@@ -8987,6 +9129,10 @@ const ACT = {
   "shop-tint"(d) { S.prevTint = { ...(S.prevTint || {}), [d.o]: d.v }; },
   "shop-tint-buy"(d) { Jeu.buyTint(d.o, d.v); },
   "shop-theme"(d) { Jeu.setTheme(d.v); },
+  "yr-open"() { S.yr = { i: 0 }; S.layer = { type: "annee" }; Sfx.play("chime"); },
+  "yr-next"() { S.yr.i++; },
+  "yr-prev"() { S.yr.i = Math.max(0, S.yr.i - 1); },
+  "yr-restart"() { S.yr.i = 0; },
   "rc-make"() { Rescue.create(); return false; },
   "rc-find"(d) { const t = draft(d.f); clearDrafts(d.f); Rescue.find(t); return false; },
   "rc-copy"() { const w = Rescue.words(); if (w && navigator.clipboard) navigator.clipboard.writeText(w.join(" ")).then(() => toast("Les 6 mots sont copiés"), () => toast("Sélectionne les mots pour les copier")); },
