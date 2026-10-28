@@ -76,13 +76,13 @@ iframe { width: 100%; max-width: 400px; height: min(820px, 78vh); border: 0; bor
 </style>
 <header>
   <h1>L'évasion de <span>Yassen Jr.</span></h1>
-  <p class="lede">Aperçu jouable, avant de l'ajouter à Y&amp;S. Deux téléphones, Papa au grenier et Maman dans le couloir, reliés entre eux. Rien n'est enregistré dans votre vrai espace.</p>
+  <p class="lede">Aperçu jouable, avant de l'ajouter à Y&amp;S : l'escape game à deux et les nouvelles histoires de « Il était une fois nous ». Deux téléphones, Papa et Maman, reliés entre eux. Rien n'est enregistré dans votre vrai espace.</p>
   <div class="bar">
     <div class="tabs" role="group" aria-label="Téléphone affiché"><button id="t-a" aria-pressed="true" data-p="a">Téléphone de Papa</button><button id="t-b" aria-pressed="false" data-p="b">Téléphone de Maman</button></div>
     <button class="act" id="hap" type="button">Voir le happening</button>
     <button class="act" id="reset" type="button">Recommencer</button>
   </div>
-  <p class="how"><b>Pour essayer :</b> sur le téléphone de Papa, touchez la carte « Yassen Jr. a disparu… » (ou l'onglet Jouer), choisissez qui monte au grenier, puis lancez. Passez ensuite d'un téléphone à l'autre pour vous parler… tout·e seul·e. Les indices de Yassen sont là si besoin.</p>
+  <p class="how"><b>Pour essayer :</b> sur le téléphone de Papa, touchez la carte « Yassen Jr. a disparu… » (ou l'onglet Jouer), choisissez qui monte au grenier, puis lancez. Passez ensuite d'un téléphone à l'autre pour vous parler… tout·e seul·e. Les indices de Yassen sont là si besoin. <b>Les histoires :</b> onglet Jouer, puis « Il était une fois nous ». La fin cachée de chaque histoire demande de bien explorer.</p>
 </header>
 <div class="phones">
   <div class="phone" id="p-a"><p>Téléphone de <b>Papa</b></p><iframe id="f-a" name="a" title="Téléphone de Papa"></iframe></div>

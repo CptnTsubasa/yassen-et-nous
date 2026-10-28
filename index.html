@@ -297,6 +297,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 /* Histoires interactives */
 .story-page { background: var(--surface); border-radius: 24px; padding: 24px 22px; box-shadow: var(--shadow); border-top: 6px solid var(--c); display: grid; gap: 12px; animation: deal .5s ease both; }
 .story-text { font-size: 1.12rem; line-height: 1.65; text-wrap: pretty; }
+.story-moral { display: grid; gap: 4px; margin-top: 4px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--c) 12%, var(--surface)); border-left: 4px solid var(--c); }
+.story-moral span { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.story-moral p { margin: 0; font-family: var(--f-display); font-size: 1.12rem; line-height: 1.35; text-wrap: balance; }
+.story-path { background: var(--surface); border-radius: 18px; padding: 12px 16px; box-shadow: var(--shadow); }
+.story-path summary { cursor: pointer; font-weight: 600; font-size: .9rem; color: var(--muted); }
+.story-path ol { margin: 10px 0 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: .92rem; }
 .story-page:not(.end) .story-text::first-letter { font-family: var(--f-display); font-size: 3em; float: left; line-height: .85; margin: 6px 10px 0 0; color: var(--ic); }
 .choice { display: block; text-align: left; width: 100%; padding: 15px 16px; border-radius: 16px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 600; line-height: 1.35; }
 button.choice:active { background: var(--surface-2); }
@@ -3910,269 +3916,641 @@ function arcadeView() {
 }
 
 /* ───────────────────────── Il était une fois nous ─────────────────────────
-   Histoires à embranchements. {a} et {b} sont remplacés par vos prénoms. */
+   Histoires à embranchements, en trois actes. {a} et {b} sont remplacés par vos prénoms, {pa} et {pb} par
+   « Papa » et « Maman » (pour Yassen Jr.). Chaque choix peut nourrir en secret un trait de votre duo
+   (3e case : « au » audace, « te » tendresse, « ec » écoute, « fa » fantaisie). Une étape « go » ne s'affiche
+   pas : elle aiguille vers la suite selon ce que vous avez vécu (« seen:etape »), votre trait dominant
+   (« top:te ») ou un minimum (« min:fa:2 »), conditions reliées par « & ». Chaque fin a sa morale, sa question
+   « Et vous ? », parfois un petit défi, et une fin par histoire est cachée. */
 const STORIES = [
   { id: "train", title: "Le dernier train de nuit", mood: "Romantique · aventure", c: 5, start: "quai", nodes: {
-    quai: { t: "Vingt-deux heures, sur le quai d'une grande gare. Vous partez pour un week-end surprise, et {a} est la seule personne à connaître le programme. Mauvaise nouvelle : le contrôleur annonce que le train sera coupé en deux à Dijon. Une moitié file vers les Alpes, l'autre vers la Méditerranée. Et vos billets n'indiquent… aucune voiture.",
-      talk: "Pour de vrai : plutôt montagne ou plutôt mer, vous deux ?",
-      ch: [["Monter côté Alpes", "alpes"], ["Monter côté mer", "mer"], ["Demander conseil à la dame qui voyage avec un chat dans un panier", "chat"]] },
-    chat: { t: "La dame vous observe par-dessus ses lunettes. « Des amoureux ? Prenez la voiture 7. Il y a un piano dedans, personne ne sait pourquoi. » Son chat bâille, comme pour confirmer. Dans la voiture 7, il y a bien un vieux piano, avec un mot scotché dessus : « Jouez-moi si vous l'osez. »",
-      ch: [["{a} s'installe au piano, même sans savoir jouer", "piano"], ["Laisser le piano tranquille et filer au wagon-bar", "bar"]] },
-    piano: { t: "Trois notes approximatives plus tard, tout le wagon applaudit. Un musicien en tournée vous propose un vrai morceau à quatre mains, puis vous invite à son concert du lendemain, dans un village perché au-dessus de la mer.",
+    quai: { sc: "quai", t: "Vingt-deux heures, sur le quai d'une grande gare. Vous partez pour un week-end surprise, et {a} est la seule personne à connaître le programme : il tient dans une enveloppe scellée que {b} n'a pas le droit d'ouvrir avant le petit matin. Mauvaise nouvelle : le contrôleur annonce que le train sera coupé en deux à Dijon, vers 2 h. Une moitié file vers les Alpes, l'autre vers la Méditerranée. Et vos billets n'indiquent… aucune voiture.",
+      talk: "Pour de vrai : plutôt montagne ou plutôt mer, vous deux ? Et qui, de vous deux, aime le plus tout prévoir ?",
+      ch: [["Monter côté Alpes, à l'instinct", "alpes", "au"], ["Monter côté mer, là où le soleil se lève", "couchette", "te"], ["Demander conseil à la dame qui voyage avec un chat dans un panier", "chat", "ec"]] },
+    chat: { sc: "train", t: "La dame s'appelle Odette, et son chat, Pistache. Elle vous observe par-dessus ses lunettes : « Un couple sans voiture, la veille d'un week-end ? Prenez la 7. Il y a un piano dedans, personne ne sait pourquoi. » Dans la voiture 7, il y a bien un vieux piano, avec un mot scotché dessus : « Jouez-moi si vous l'osez. » Odette s'installe juste à côté, son panier sur les genoux, comme si elle attendait quelque chose.",
+      ch: [["{a} s'installe au piano, même sans savoir jouer", "piano", "fa"], ["Demander à Odette pourquoi elle prend ce train", "odette", "ec"], ["Filer au wagon-bar, on verra bien", "bar", "au"]] },
+    odette: { sc: "train", t: "Odette caresse Pistache. « Il y a cinquante ans, j'ai pris ce train avec un garçon qui s'appelait Anselme. On s'est disputés pour une bêtise, chacun est parti bouder dans sa voiture… et à Dijon, le train s'est coupé. Lui vers la neige, moi vers la mer. On s'est écrit pendant un an, puis plus rien. » Elle sort de son sac une lettre jaunie, jamais postée. « Il tenait un chalet, là-haut. Les Trois Sapins. »",
+      talk: "Pour de vrai : quelle est la dispute la plus bête que vous ayez eue ? Et comment s'est-elle terminée ?",
+      ch: [["Promettre de porter la lettre là-haut", "lettre", "te"], ["Lui conseiller de la porter elle-même", "odette_ose", "au"]] },
+    lettre: { sc: "train", t: "Odette vous confie la lettre comme on confie un oiseau blessé. « Il faut être dans la bonne moitié du train à Dijon. Celle des Alpes, c'est l'avant. » Il est 1 h 40. Pistache miaule, comme pour vous presser. Derrière vous, le piano attend toujours quelqu'un d'assez fou pour y toucher.",
+      ch: [["Remonter tout le train vers l'avant, au pas de course", "alpes", "au"], ["Rester encore un peu avec Odette, au piano", "piano", "te"]] },
+    odette_ose: { sc: "train", t: "Odette vous regarde longtemps. « À mon âge ? » Puis elle rit, un petit rire de jeune fille. « Vous avez raison. Si je ne la porte pas maintenant, quand ? » Elle se lève, son panier sous le bras, et part vers l'avant du train. Sur le seuil, elle se retourne : « Et vous deux, ne laissez jamais un train décider à votre place. »",
+      ch: [["Lui souhaiter bonne chance et aller au wagon-bar", "bar", "ec"], ["Prendre sa place au piano, en son honneur", "piano", "fa"]] },
+    piano: { sc: "train", t: "Trois notes approximatives plus tard, tout le wagon applaudit. Un musicien en tournée, Lucas, s'assoit à côté de {a} : « Tu joues mal, mais tu joues avec quelqu'un dans la tête. Ça s'entend. » Il propose un morceau à quatre mains, puis vous invite à son concert du lendemain, dans un village perché au-dessus de la mer.",
       talk: "Si vous deviez jouer « votre » chanson à quatre mains, laquelle serait-ce ?",
-      ch: [["Accepter l'invitation", "fin_concert"], ["Remercier et garder le programme secret de {a}", "mer"]] },
-    bar: { t: "Au wagon-bar, il reste une seule table, un jeu de cartes et deux chocolats chauds. Le serveur propose un marché : si vous gagnez une partie contre lui, il vous révèle un arrêt secret que les touristes ne connaissent pas.",
-      ch: [["Jouer la partie", "indice"], ["Préférer discuter tranquillement jusqu'à l'aube", "aube"]] },
-    indice: { t: "Vous perdez avec panache. Beau joueur, le serveur glisse quand même un papier sur la table : « Descendez à Banyuls. Suivez le sentier du littoral jusqu'à la crique sans nom. »",
-      ch: [["Suivre l'indice", "fin_crique"], ["Garder l'indice pour un prochain voyage", "mer"]] },
-    aube: { t: "Vous parlez de tout et de rien pendant des heures, jusqu'à ce que le ciel rosisse derrière la vitre. Le train ralentit. Vous ne savez plus du tout où vous êtes, et curieusement, ça n'a aucune importance.",
+      ch: [["Jouer à quatre mains, faux mais ensemble", "concert", "fa"], ["Laisser Lucas jouer, et l'écouter main dans la main", "aube", "te"]] },
+    bar: { sc: "train", t: "Au wagon-bar, il reste une seule table, un jeu de cartes et deux chocolats chauds. Le serveur, Marcel, a une moustache impeccable et un regard de joueur. Il propose un marché : si vous gagnez une partie contre lui, il vous révèle un endroit que les touristes ne connaissent pas. Si vous perdez… il vous le révèle aussi, mais il rira d'abord.",
+      ch: [["Jouer la partie, pour l'honneur", "partie", "au"], ["Préférer discuter tranquillement jusqu'à l'aube", "aube", "ec"]] },
+    partie: { sc: "train", t: "Vous perdez. Magnifiquement. {b} bluffe avec un aplomb admirable, {a} abat la mauvaise carte au pire moment, et Marcel rit jusqu'aux larmes. Puis il glisse un papier plié sur la table : « Descendez à Banyuls. Suivez le sentier du littoral jusqu'à la crique sans nom. » Il ajoute, plus bas : « Je n'envoie là-bas que les gens qui perdent bien. »",
+      ch: [["Lui demander pourquoi", "marcel", "ec"], ["Ranger le papier et trinquer à la défaite", "aube", "fa"]] },
+    marcel: { sc: "train", t: "Marcel essuie un verre, longtemps. « En 1974, j'ai perdu une partie contre une passagère. Elle trichait, et je l'ai laissée faire, parce qu'elle riait. On s'est mariés l'année d'après. » Il range le jeu de cartes. « Depuis, j'envoie à la crique tous ceux qui préfèrent rire que gagner. Vous verrez bien ce qu'il y a là-bas. »",
+      talk: "Pour de vrai : qui de vous deux est le plus mauvais perdant ? Racontez une preuve.",
+      ch: [["Le remercier et guetter la mer", "mer", "te"]] },
+    aube: { sc: "aube", t: "Vous parlez de tout et de rien pendant des heures : de vos enfances, de ce qui vous fait peur, de la maison que vous aurez peut-être un jour. Le ciel rosit derrière la vitre. Le train ralentit dans une gare minuscule dont le panneau est illisible. Vous ne savez plus du tout où vous êtes, ni dans quelle moitié du train, et curieusement, ça n'a aucune importance.",
       talk: "De quoi pourriez-vous parler toute une nuit sans voir le temps passer ?",
-      ch: [["Descendre au prochain arrêt, quel qu'il soit", "fin_inconnu"], ["Rester jusqu'au terminus", "mer"]] },
-    mer: { t: "Au petit matin, la mer apparaît entre deux collines. Le train s'arrête à Collioure, petite ville aux façades colorées. Votre week-end commence par une question cruciale : par quoi on commence ?",
-      ch: [["Un petit-déjeuner face à l'eau", "fin_cafe"], ["Une baignade, même si l'eau est fraîche", "fin_plongeon"]] },
-    alpes: { t: "Réveil dans la neige. Le train s'est arrêté au milieu de nulle part : une coulée de neige bloque la voie pour quelques heures. Dehors, la cheminée d'un chalet fume, et un panneau annonce « Luges prêtées aux voyageurs patients ».",
-      ch: [["Foncer faire de la luge", "fin_luge"], ["Frapper à la porte du chalet", "chalet"]] },
-    chalet: { t: "Une vieille dame vous ouvre, ravie d'avoir de la visite. Elle vous sert une fondue en racontant comment elle a rencontré son mari ici même, pendant une tempête, il y a cinquante ans. « Et vous deux, alors ? Racontez-moi tout ! »",
-      talk: "Racontez-lui votre rencontre, chacun votre version, comme si c'était la première fois.",
-      ch: [["Lui raconter votre rencontre", "fin_chalet"]] },
-    fin_concert: { end: "Le concert sous les étoiles", t: "Le lendemain soir, sur une place de village, le musicien vous dédie un morceau. Vous dansez maladroitement au milieu des pavés, et c'est parfait." },
-    fin_crique: { end: "La crique sans nom", t: "Une plage minuscule, rien que pour vous. Vous gravez vos initiales sur un galet et le cachez entre deux rochers. Rendez-vous dans un an pour le retrouver ?" },
-    fin_inconnu: { end: "La gare sans nom", t: "Vous descendez sur un quai désert, entre un champ de tournesols et une boulangerie qui ouvre. Personne ne saura jamais où vous étiez ce week-end. C'était un peu le but." },
-    fin_cafe: { end: "Le café face à la mer", t: "Croissants, soleil, mouettes un peu trop curieuses. {a} dévoile enfin le programme du week-end, et {b} découvre que tout a été pensé jusqu'au moindre détail." },
-    fin_plongeon: { end: "Le plongeon", t: "L'eau est glaciale. Vous criez, vous riez, vous ressortez en courant. Ce sera la photo préférée de l'année." },
-    fin_luge: { end: "La grande descente", t: "Trois descentes, deux chutes dans la poudreuse, un fou rire qui résonne dans toute la vallée. Quand le train repart, vous avez les joues rouges et zéro regret." },
-    fin_chalet: { end: "L'histoire au coin du feu", t: "La vieille dame vous écoute, les yeux brillants. En partant, elle vous glisse une petite clé : « Pour quand vous reviendrez. » Vous reviendrez." }
+      ch: [["Descendre ici, quel que soit cet endroit", "gare", "au"], ["Rester jusqu'au terminus", "mer", "te"]] },
+    gare: { sc: "tournesols", t: "Un quai désert, un champ de tournesols et une boulangerie qui ouvre. Sur la porte, un écriteau : « Ici, le temps est en option. » La boulangère vous regarde arriver, les bras couverts de farine : « Vous avez perdu votre chemin ? Il me manque deux paires de mains pour ma première fournée. Payés en croissants. »",
+      ch: [["Mettre les mains dans la farine", "r_gare", "fa"], ["S'asseoir sur le banc et regarder le village se réveiller", "r_gare", "ec"]] },
+    r_gare: { go: [["min:fa:2", "fin_fournee"], ["", "fin_inconnu"]] },
+    alpes: { sc: "neige", t: "Réveil dans la neige. Vous êtes bien dans la moitié des Alpes, mais une coulée de neige bloque la voie pour quelques heures. Les cheminots sortent les pelles. Un peu plus haut, la cheminée d'un chalet fume, et un panneau annonce : « Luges prêtées aux voyageurs patients ».",
+      ch: [["Aider les cheminots à dégager la voie", "cheminots", "au"], ["Foncer faire de la luge", "luge", "fa"], ["Monter vers le chalet", "montee", "te"]] },
+    cheminots: { sc: "neige", t: "Une heure de pelle, des bonnets prêtés, un thermos qui passe de main en main. Le chef d'équipe, un colosse au rire énorme, vous raconte que le chalet là-haut est tenu par un vieil homme qui ne descend jamais, « depuis une histoire de cœur, il paraît ». La voie est presque dégagée. Il reste un peu de temps avant le départ.",
+      ch: [["Monter saluer le vieil homme", "montee", "ec"], ["S'offrir une descente en luge avant de repartir", "luge", "fa"]] },
+    montee: { sc: "neige", t: "En montant vers le chalet, la neige se met à tomber à gros flocons. On ne voit plus le sentier. Au détour d'un sapin, un chien de berger vous attend, assis bien droit, la queue qui balaie la neige, comme si quelqu'un l'avait envoyé vous chercher.",
+      talk: "Pour de vrai : dans une tempête, qui de vous deux garde le cap, et qui garde le moral ?",
+      ch: [["Suivre le chien sans discuter", "chalet", "ec"], ["Faire un bonhomme de neige pour marquer votre passage, au cas où", "chalet", "fa"]] },
+    couchette: { sc: "train", t: "Côté mer, les couchettes sont étroites et le train tangue doucement. Impossible de dormir. Dans le compartiment voisin, une petite fille n'y arrive pas non plus : elle passe la tête par la porte et vous demande, très sérieusement, si vous connaissez des histoires « avec des trains et des dragons, mais pas trop effrayantes ».",
+      ch: [["Lui inventer une histoire à deux voix", "aube", "fa"], ["Lui chanter une berceuse, tout bas", "aube", "te"], ["La raccompagner, puis filer au wagon-bar", "bar", "au"]] },
+    luge: { sc: "neige", t: "Trois descentes, deux chutes dans la poudreuse, un fou rire qui résonne dans toute la vallée. À la dernière, la luge file trop loin et vous dépose, sous une couche de neige, juste devant une pancarte en bois : « Chalet des Trois Sapins ».",
+      ch: [["Frapper à la porte, puisque le destin insiste", "chalet", "ec"], ["Remonter pour une dernière descente, la plus folle", "fin_luge", "au"]] },
+    chalet: { sc: "chalet", t: "Un vieil homme vous ouvre, surpris d'avoir de la visite. Il s'appelle Anselme. Il vous sert une fondue et vous raconte, sans qu'on lui demande rien, qu'il a pris ce même train il y a cinquante ans, avec une fille qui riait tout le temps. « On s'est perdus à Dijon. Une dispute idiote. » Il regarde la fenêtre. « Et vous deux, alors ? Racontez-moi votre rencontre. »",
+      talk: "Racontez-lui votre rencontre à deux voix, comme si c'était la première fois. Vos deux versions sont-elles d'accord ?",
+      ch: [["Lui raconter votre rencontre", "r_chalet", "te"], ["Lui demander plutôt comment elle s'appelait", "r_chalet", "ec"]] },
+    r_chalet: { go: [["seen:lettre", "fin_lettres"], ["seen:odette_ose", "fin_lettres"], ["", "fin_chalet"]] },
+    mer: { sc: "mer", t: "Au petit matin, la mer apparaît entre deux collines. Le train s'arrête à Collioure, petite ville aux façades couleur bonbon. {a} tend enfin l'enveloppe à {b}. Dedans, le programme du week-end, minute par minute. Sauf la dernière ligne : « Dimanche, 7 h : ? »",
+      talk: "Pour de vrai : qu'est-ce que l'autre a déjà organisé pour vous, dans les moindres détails ? Lui avez-vous assez dit merci ?",
+      ch: [["Suivre le programme à la lettre", "programme", "te"], ["Le ranger et improviser tout le week-end", "impro", "au"]] },
+    programme: { sc: "mer", t: "Tout est parfait : le petit-déjeuner face à l'eau, la balade dans les ruelles, la table réservée sur le port. {b} remarque que chaque étape correspond à une chose dite en passant, des mois plus tôt, et oubliée depuis. {a} rougit. Reste le point d'interrogation de dimanche matin.",
+      ch: [["Décider ensemble du « ? » de dimanche", "r_mer", "ec"], ["Laisser {a} garder la surprise jusqu'au bout", "r_mer", "te"]] },
+    impro: { sc: "mer", t: "Sans programme, la ville devient un jeu. Vous suivez un chat, puis une odeur de pain, puis une fanfare. En fin d'après-midi, un sentier part le long de la falaise, et la mer en bas est d'un bleu insensé.",
+      ch: [["Suivre le sentier jusqu'au bout", "r_sentier", "au"], ["Sauter dans l'eau tout de suite, même si elle est fraîche", "fin_plongeon", "fa"]] },
+    r_sentier: { go: [["seen:partie", "crique"], ["", "fin_falaise"]] },
+    crique: { sc: "crique", t: "Le sentier n'en finit pas, et {b} commence à douter du papier de Marcel. Puis la falaise s'ouvre sur une plage minuscule, où quelqu'un est déjà passé. Entre deux rochers, un galet porte deux initiales et une date : 1974. Dessous, un mot plié en quatre, protégé par un bocal : « Si vous lisez ceci, c'est que vous avez perdu la partie de cartes. Nous aussi. »",
+      ch: [["Graver vos initiales à côté des leurs", "fin_crique", "te"]] },
+    r_mer: { go: [["top:ec", "fin_question"], ["", "fin_cafe"]] },
+    concert: { sc: "village", t: "Le lendemain soir, sur la place d'un village accroché à la falaise, Lucas joue sous les guirlandes. Au milieu du concert, il s'arrête : « Hier, deux personnes ont massacré une valse avec moi dans un train de nuit. Elles sont là. » Tous les regards se tournent vers vous. Il désigne le piano.",
+      ch: [["Monter sur scène et rejouer la valse ratée", "fin_concert", "au"], ["Danser au pied de la scène pendant qu'il la joue", "fin_concert", "te"]] },
+    fin_concert: { end: "Le concert sous les étoiles", sc: "village", t: "Vous jouez aussi mal que la veille, peut-être pire. Mais cette fois, toute la place reprend la mélodie en chœur, pour couvrir les fausses notes. Lucas rit, la foule applaudit, quelqu'un pleure un peu. Plus tard, en redescendant vers la mer, {b} fredonne encore la valse, et {a} se rend compte que c'est devenu « votre » chanson sans que personne ne l'ait décidé.",
+      moral: "Ce qui nous unit ne se joue pas toujours juste. Ça se joue ensemble, et ça suffit pour que les autres chantent avec nous.",
+      ask: "Quelle chanson est devenue « la vôtre » sans que vous l'ayez choisie ?" },
+    fin_crique: { end: "La crique sans nom", sc: "crique", t: "Dans le bocal, sous la lettre de 1974, il y en a d'autres : des dizaines de mots de couples qui ont perdu la partie contre Marcel, et qui ont trouvé la crique. « 1981, on a ri jusqu'à Banyuls. » « 2003, toujours aussi mauvais aux cartes, toujours aussi amoureux. » Vous ajoutez le vôtre, vous recachez le bocal, et vous restez là jusqu'à ce que le soleil tombe dans l'eau. Vous comprenez que Marcel n'envoie pas les gens vers une plage : il les envoie vers les autres, ceux qui ont su perdre avec le sourire.",
+      moral: "Il y a des trésors qu'on ne trouve qu'en acceptant de perdre un peu, ensemble.",
+      ask: "Quel est votre plus beau raté à deux, celui qui a fini par devenir un bon souvenir ?" },
+    fin_inconnu: { end: "La gare sans nom", sc: "tournesols", t: "Vous passez la journée dans ce village qui n'est sur aucune carte. Vous mangez les croissants de la boulangère au bord du quai, les pieds dans le vide, vous dormez une heure dans l'herbe au milieu des tournesols. Le soir, le train repasse, et vous le laissez partir sans regret. Personne ne saura jamais où vous étiez ce week-end. Vous non plus, à vrai dire. C'était un peu le but.",
+      moral: "Se perdre à deux, ce n'est pas s'égarer : c'est donner au hasard une chance de nous faire un cadeau.",
+      ask: "Quand avez-vous laissé le hasard décider pour la dernière fois ? Et si c'était ce week-end ?" },
+    fin_fournee: { end: "La fournée du matin", sc: "tournesols", t: "Vous pétrissez, vous façonnez des croissants difformes, {a} invente une brioche en forme de locomotive. La boulangère s'appelle Rose, et elle vous raconte qu'elle a ouvert ici il y a trente ans, après être descendue d'un train « juste pour voir ». À l'ouverture, les premiers clients repartent avec vos croissants ratés, et ils reviennent en redemander. Le soir, Rose vous tend une clé : « La boutique est à vous chaque fois que vous passerez. Il faut toujours une deuxième fournée. »",
+      moral: "Ce qu'on fabrique à quatre mains a toujours un drôle de goût, et c'est pour ça qu'on y revient.",
+      ask: "Qu'aimeriez-vous fabriquer ensemble, de vos mains, cette année ?" },
+    fin_luge: { end: "La grande descente", sc: "neige", t: "La dernière descente est la plus folle : {b} hurle, {a} rit, la luge prend un virage que personne n'avait prévu et vous finissez la tête dans un talus. Vous restez là, dans la neige, à bout de souffle, à regarder le ciel blanc. Quand le train siffle en bas, vous courez comme des enfants, les joues rouges, les bonnets de travers. Dans le wagon, le contrôleur vous regarde arriver et sourit : il a vu toute la scène depuis la cabine.",
+      moral: "Il y a des jours où le plus sage est de ne pas l'être du tout.",
+      ask: "Quand avez-vous ri ensemble jusqu'à ne plus pouvoir respirer ? Et quand est-ce qu'on recommence ?" },
+    fin_chalet: { end: "L'histoire au coin du feu", sc: "chalet", t: "Vous racontez, vous vous coupez la parole, vous vous corrigez sur les détails. Anselme vous écoute, les yeux brillants. À la fin, il se lève, ouvre un tiroir et en sort une vieille clé. « Elle ouvre la petite chambre du haut. Je la gardais pour quelqu'un qui n'est jamais revenu. Gardez-la, vous. Revenez quand vous voulez. » Quand le train repart, vous voyez sa silhouette à la fenêtre, et vous vous promettez quelque chose sans le dire : ne jamais laisser une dispute idiote vous faire descendre du même train.",
+      moral: "Une dispute dure une heure. Le silence qui la suit peut durer cinquante ans : c'est lui qu'il faut briser.",
+      ask: "Y a-t-il une petite chose pas encore réglée entre vous ? Ce soir, prenez cinq minutes pour la régler." },
+    fin_lettres: { end: "Les lettres de Dijon", hidden: true, sc: "chalet", t: "Quand vous prononcez le nom d'Odette, Anselme pose sa cuillère. Vous lui tendez la lettre jaunie. Il la lit deux fois, sans rien dire, puis il sort sur le perron. En bas, sur le quai de la petite gare, une silhouette descend du train avec un panier dans les bras : Odette a fait le chemin, elle aussi. Ils se regardent de loin pendant une éternité, puis Anselme descend la pente, beaucoup trop vite pour son âge. Vous ne saurez jamais ce qu'ils se disent. Pistache, lui, s'installe sur vos genoux comme s'il avait toujours habité là.",
+      moral: "Ce qu'on n'a pas osé dire ne disparaît pas : ça attend, quelque part, que quelqu'un ait le courage de porter la lettre.",
+      ask: "Quel mot doux ne vous êtes-vous jamais dit, faute de bon moment ? Le bon moment, c'est maintenant.",
+      defi: "Cette semaine, écrivez-vous une vraie lettre, sur papier, et cachez-la là où l'autre la trouvera." },
+    fin_cafe: { end: "Le café face à la mer", sc: "mer", t: "Dimanche, 7 h : {a} vous emmène sur une jetée où quelqu'un a installé une table, deux chaises et une cafetière fumante. Le point d'interrogation, c'était ça : rien de prévu, juste ce moment-là, face à la mer, pour parler de ce que vous voulez vivre ensemble l'année prochaine. Les mouettes sont un peu trop curieuses, les croissants un peu trop beurrés, et c'est la plus belle heure du week-end. {b} comprend que tout le reste du programme ne servait qu'à arriver jusqu'ici, sans hâte, ensemble.",
+      moral: "Le plus beau cadeau qu'on puisse organiser pour quelqu'un, c'est du temps où rien n'est organisé.",
+      ask: "Quand avez-vous pris une heure, rien que pour parler de vous deux et de la suite ?" },
+    fin_question: { end: "Le point d'interrogation", sc: "mer", t: "Vous décidez ensemble du « ? » de dimanche, et vous tombez d'accord sur une chose étonnante : refaire le chemin à l'envers. Revenir à la gare, reprendre un train au hasard, sans programme cette fois, et laisser {b} choisir. {a}, qui avait tout prévu, se surprend à trouver ça merveilleux. Sur le quai, vous écrivez sur l'enveloppe vide la liste des week-ends à venir, un par un, chacun préparé par l'autre à tour de rôle.",
+      moral: "Un couple, c'est deux façons d'aimer le monde qui apprennent à se passer le volant.",
+      ask: "Qui organise d'habitude chez vous ? Et si le prochain week-end, c'était l'autre ?" },
+    fin_falaise: { end: "Le bout du sentier", sc: "crique", t: "Le sentier se termine sur un promontoire, au-dessus de l'eau. Pas de plage, pas de trésor : seulement le vent, le bruit des vagues et un banc posé là par on ne sait qui, gravé de centaines d'initiales. Vous vous asseyez. Vous ne dites rien pendant un long moment, et ce silence-là ne pèse rien du tout. Avant de repartir, vous gravez les vôtres, tout petit, dans un coin libre.",
+      moral: "On croit marcher vers un but ; souvent, c'est la marche à deux qui était le but.",
+      ask: "Quel silence partagé vous a fait du bien récemment ?" },
+    fin_plongeon: { end: "Le plongeon", sc: "mer", t: "L'eau est glaciale. Vous criez, vous riez, vous ressortez en courant, puis vous y retournez, parce que {b} a lancé un défi et que {a} ne sait pas refuser un défi. Un vieux pêcheur vous regarde depuis la jetée en secouant la tête, puis il éclate de rire et vous prend en photo avec un appareil d'un autre siècle. Il vous l'envoie par la poste une semaine plus tard : deux silhouettes floues, les bras en l'air, au milieu de l'écume. Elle est toujours sur votre frigo.",
+      moral: "Le courage, parfois, c'est seulement de sauter dans l'eau froide parce que l'autre y est déjà.",
+      ask: "Quel « plongeon » avez-vous osé grâce à l'autre, dans la vraie vie ?" }
   } },
   { id: "manoir", title: "Le manoir des énigmes", mood: "Mystère · fous rires", c: 4, start: "hall", nodes: {
-    hall: { t: "Un orage vous oblige à vous abriter dans un manoir perdu en pleine campagne. La porte s'ouvre toute seule. Sur la table du hall, deux bougies et un mot écrit à la plume : « Bienvenue. Pour repartir, trouvez ce que ce manoir a de plus précieux. »",
-      ch: [["Explorer la bibliothèque", "biblio"], ["Monter au grenier", "grenier"], ["Fouiller la cuisine, parce qu'on a faim", "cuisine"]] },
-    biblio: { t: "Des milliers de livres, et un seul rangé à l'envers. À l'intérieur, une devinette : « Plus on le partage, plus il grandit. Qu'est-ce que c'est ? »",
-      talk: "Cherchez la réponse ensemble avant de choisir.",
-      ch: [["« Le bonheur »", "passage"], ["« Un fou rire »", "passage"], ["« Une pizza »", "trappe"]] },
-    trappe: { t: "Un rire sinistre résonne… puis se transforme en vrai fou rire. Une voix lointaine : « Réponse incorrecte, mais pas totalement fausse. » Une trappe s'ouvre sous vos pieds, et vous atterrissez en douceur sur une pile de coussins, dans la cuisine.",
-      ch: [["Explorer la cuisine", "cuisine"]] },
-    passage: { t: "Une étagère pivote et révèle un passage éclairé par des lucioles. Au bout, deux chemins : un escalier qui descend vers une musique douce, et un couloir couvert de portraits qui semblent vous suivre du regard.",
-      ch: [["Descendre vers la musique", "bal"], ["Traverser le couloir des portraits", "portraits"]] },
-    grenier: { t: "Le grenier déborde de vieilles malles. L'une d'elles porte deux prénoms gravés dans le bois : {a} et {b}. Impossible. Pourtant, elle est bien là, fermée par un cadenas à trois chiffres.",
-      talk: "Quel code à trois chiffres pourrait raconter quelque chose de votre histoire ?",
-      ch: [["Essayer un code tiré de votre histoire", "malle"], ["Tenter 1-2-3, on ne sait jamais", "costumes"]] },
-    malle: { t: "Clic. Le cadenas cède. À l'intérieur : une boîte à musique, un vieil appareil photo et une lettre qui commence par « Cher futur nous… ».",
-      ch: [["Lire la lettre", "fin_lettre"], ["Prendre une photo avec le vieil appareil", "fin_photo"]] },
-    costumes: { t: "Clic. Ça marche. Vraiment ? Le manoir a manifestement de l'humour. La malle contient deux costumes de bal et un carton d'invitation : « Ce soir, au sous-sol. Tenue de rigueur. »",
-      ch: [["Enfiler les costumes", "bal"], ["Refermer la malle et redescendre", "cuisine"]] },
-    cuisine: { t: "La cuisine sent la cannelle. Un livre de recettes est ouvert sur le plan de travail : « Gâteau du manoir. À préparer à deux, sinon il ne lève pas. » Le four est déjà chaud.",
-      ch: [["Préparer le gâteau ensemble", "fin_gateau"], ["Goûter la pâte crue en douce", "pate"]] },
-    pate: { t: "Délicieux. Beaucoup trop délicieux. En quelques cuillerées, la moitié du saladier a disparu. Le manoir pousse un long soupir : « Bon. Plan B. » La porte du jardin s'ouvre.",
-      ch: [["Sortir dans le jardin", "fin_jardin"]] },
-    bal: { t: "Une salle de bal illuminée, vide, avec un orchestre de vieux automates. Ils se mettent à jouer dès que vous entrez. Une plaque au mur indique : « Le trésor se trouve au centre de la piste. »",
+    hall: { sc: "manoir", t: "Un orage vous oblige à vous abriter dans un manoir perdu en pleine campagne. La porte s'ouvre toute seule. Sur la table du hall, deux bougies allumées et un mot écrit à la plume : « Bienvenue. Pour repartir, trouvez ce que ce manoir a de plus précieux. Vous avez jusqu'à une heure du matin. » Au-dessus de la cheminée, une horloge affiche 23 h.",
+      ch: [["Explorer la bibliothèque", "biblio", "ec"], ["Monter au grenier", "grenier", "au"], ["Fouiller la cuisine, parce qu'on a faim", "cuisine", "fa"]] },
+    biblio: { sc: "biblio", t: "Des milliers de livres, et un seul rangé à l'envers. À l'intérieur, une devinette écrite d'une main fine : « Plus on le partage, plus il grandit. Qu'est-ce que c'est ? » Sur la page de garde, deux initiales entrelacées : C. et A.",
+      talk: "Cherchez la réponse ensemble avant de choisir : une idée chacun·e, à tour de rôle.",
+      ch: [["« Le bonheur »", "passage", "te"], ["« Un fou rire »", "passage", "fa"], ["« Un secret »", "secret", "ec"]] },
+    secret: { sc: "biblio", t: "Un silence. Puis une voix douce, qui semble venir des murs : « Ce n'est pas la réponse attendue… mais elle est jolie. Un secret ne grandit pas quand on le partage. Il grandit quand on le garde à deux. » Un tiroir s'ouvre dans le bureau : une petite clé d'argent y brille. Une étagère pivote juste derrière.",
+      ch: [["Prendre la clé et passer derrière l'étagère", "passage", "au"]] },
+    passage: { sc: "passage", t: "L'étagère pivote et révèle un passage éclairé par des lucioles. Au bout, deux chemins : un escalier qui descend vers une musique douce, et un couloir couvert de portraits qui semblent vous suivre du regard. Quelque part, une horloge sonne la demie.",
+      ch: [["Descendre vers la musique", "bal", "fa"], ["Traverser le couloir des portraits", "portraits", "ec"]] },
+    grenier: { sc: "grenier", t: "Le grenier déborde de vieilles malles. L'une d'elles porte deux prénoms gravés dans le bois : {a} et {b}. Impossible. Pourtant, elle est bien là, fermée par un cadenas à trois chiffres, et la poussière dessus a au moins cent ans.",
+      talk: "Quel code à trois chiffres pourrait raconter quelque chose de votre histoire ? Une date, un numéro de rue, un nombre de jours ?",
+      ch: [["Essayer un code tiré de votre histoire", "malle", "te"], ["Tenter 1-2-3, on ne sait jamais", "costumes", "fa"]] },
+    malle: { sc: "grenier", t: "Clic. Le cadenas cède. À l'intérieur : une boîte à musique, un vieil appareil photo et une lettre qui commence par « Cher futur nous… ». L'écriture est la même que celle de la devinette de la bibliothèque.",
+      ch: [["Lire la lettre", "lettre", "ec"], ["Remonter la boîte à musique", "boite", "te"], ["Prendre une photo avec le vieil appareil", "photo", "fa"]] },
+    lettre: { sc: "grenier", t: "« Cher futur nous. Si vous lisez ceci, c'est que nous avons tenu. Nous nous sommes promis d'écrire chaque année ce que nous avions appris l'un de l'autre. Cette année : qu'on peut être en désaccord sur tout et d'accord sur l'essentiel. Signé : C. et A., 1923. » Au moment où vous repliez la lettre, l'horloge sonne minuit en bas.",
+      talk: "Pour de vrai : qu'avez-vous appris de l'autre cette année ? Une chose par personne.",
+      ch: [["Descendre voir ce qui se passe", "minuit", "ec"]] },
+    boite: { sc: "grenier", t: "La boîte à musique joue une valse lente, un peu fausse. Au même moment, très loin sous vos pieds, un orchestre reprend exactement la même mélodie, comme s'il lui répondait. La boîte s'arrête net. L'orchestre, lui, continue.",
+      ch: [["Suivre la musique jusqu'en bas", "bal", "te"]] },
+    photo: { sc: "grenier", t: "Le flash crépite. La photo qui sort de l'appareil vous montre bien vous deux, mais en noir et blanc, en tenue d'un autre siècle, dans ce même grenier. Au dos, une date : 1923. Vous frissonnez en même temps. L'horloge sonne minuit, quelque part en bas.",
+      ch: [["Descendre en gardant la photo", "minuit", "au"]] },
+    costumes: { sc: "grenier", t: "Clic. Ça marche. Vraiment ? Le manoir a manifestement de l'humour. La malle contient deux costumes de bal un peu trop grands et un carton d'invitation : « Ce soir, au sous-sol. Tenue de rigueur. Rires de rigueur aussi. »",
+      ch: [["Enfiler les costumes", "bal", "fa"], ["Refermer la malle et redescendre à la cuisine", "cuisine", "ec"]] },
+    cuisine: { sc: "cuisine", t: "La cuisine sent la cannelle. Un livre de recettes est ouvert sur le plan de travail : « Gâteau du manoir. À préparer à deux, sinon il ne lève pas. » Le four est déjà chaud, et il y a deux tabliers accrochés au mur, l'un brodé d'un C, l'autre d'un A.",
+      ch: [["Préparer le gâteau ensemble", "gateau", "te"], ["Goûter la pâte crue en douce", "pate", "fa"]] },
+    gateau: { sc: "cuisine", t: "Vous mesurez, vous mélangez, vous mettez de la farine partout et vous débattez gentiment de la quantité de sucre. Au bout de dix minutes, le gâteau ne lève pas. Pas du tout. Le livre de recettes tourne une page tout seul : « À deux, ça ne veut pas dire côte à côte. »",
+      talk: "Pour de vrai : dans la cuisine, qui fait quoi chez vous ? Et est-ce que ça vous convient vraiment, à vous deux ?",
+      ch: [["Recommencer en vous répartissant les rôles autrement", "gateau2", "ec"], ["Ajouter un ingrédient secret de votre invention", "gateau2", "fa"]] },
+    gateau2: { sc: "cuisine", t: "Cette fois, le gâteau gonfle doucement dans le four. Le minuteur indique une heure de cuisson. Au même moment, l'horloge du hall sonne minuit, et toutes les bougies du manoir s'éteignent d'un coup, sauf celle de la cuisine.",
+      ch: [["Prendre la bougie et partir explorer", "minuit", "au"]] },
+    pate: { sc: "cuisine", t: "Délicieux. Beaucoup trop délicieux. En quelques cuillerées, la moitié du saladier a disparu. Le manoir pousse un long soupir qui fait trembler les casseroles : « Bon. Plan B. » La porte du jardin s'ouvre en grinçant, et l'horloge sonne minuit.",
+      ch: [["Sortir dans le jardin, la cuillère encore à la main", "jardin", "fa"]] },
+    minuit: { sc: "manoir", t: "Minuit. Les bougies s'éteignent toutes en même temps. La voix des murs chuchote : « Plus qu'une heure. » Dans le noir, trois signes : une lueur pâle au bout du couloir des portraits, une musique qui monte du sous-sol, et la pluie qui s'arrête net dans le jardin, comme si quelqu'un avait coupé le robinet.",
+      ch: [["Suivre la lueur des portraits", "portraits", "ec"], ["Suivre la musique", "bal", "fa"], ["Sortir dans le jardin", "jardin", "au"]] },
+    portraits: { sc: "passage", t: "Les portraits chuchotent sur votre passage. Le dernier cadre est vide, avec un petit écriteau : « Réservé ». Juste à côté, le portrait d'une femme au regard très doux, signé « Céleste, 1923 ». Elle vous regarde. Vraiment. Un chevalet, deux pinceaux et de la peinture attendent devant le cadre vide.",
+      ch: [["Vous peindre mutuellement", "peinture", "te"], ["Parler au portrait de Céleste", "celeste", "ec"]] },
+    celeste: { sc: "passage", t: "Céleste sourit. « Vous m'entendez ? Enfin. » Elle raconte : avec Armand, elle a construit ce manoir. Ils jouaient aux énigmes, cachaient des lettres pour plus tard, peignaient leurs portraits ratés. Puis Armand est parti à la guerre et n'est jamais revenu. Depuis, elle attend qu'un couple trouve le trésor du manoir. « Dites-moi : selon vous, qu'est-ce qu'il a de plus précieux ? »",
+      talk: "Pour de vrai : qu'est-ce que votre couple a de plus précieux ? Répondez sans vous concerter, puis comparez.",
+      ch: [["« Le temps passé ensemble »", "r_celeste", "te"], ["« Ce qu'on ose se dire »", "r_celeste", "ec"], ["« Les fous rires »", "r_celeste", "fa"]] },
+    r_celeste: { go: [["seen:secret", "fin_celeste"], ["seen:lettre", "fin_celeste"], ["", "peinture"]] },
+    peinture: { sc: "passage", t: "Vous vous peignez mutuellement, face à face sur deux tabourets bancals. {a} tire la langue en se concentrant. {b} ajoute des détails que personne ne demandait, comme ce grain de beauté que {a} croyait invisible. Les portraits des murs se penchent pour regarder.",
+      ch: [["Accrocher vos portraits dans le cadre « Réservé »", "fin_portrait", "te"]] },
+    bal: { sc: "bal", t: "Une salle de bal illuminée, vide, avec un orchestre de vieux automates. Ils se mettent à jouer dès que vous entrez : c'est la valse de la boîte à musique. Une plaque au mur indique : « Le trésor se trouve au centre de la piste. » Au centre, il n'y a qu'une croix dessinée à la craie.",
       talk: "Si une chanson devait jouer à ce moment précis, laquelle choisiriez-vous ?",
-      ch: [["Danser jusqu'au centre de la piste", "fin_bal"]] },
-    portraits: { t: "Les portraits chuchotent sur votre passage. Le dernier cadre est vide, avec un petit écriteau : « Réservé ». Un chevalet, deux pinceaux et de la peinture vous attendent.",
-      ch: [["Faire le portrait l'un de l'autre", "fin_portrait"]] },
-    fin_lettre: { end: "La lettre du futur", t: "« Cher futur nous, si vous lisez ceci, c'est que vous avez continué à jouer ensemble. Ne changez rien. » Dehors, l'orage se calme. Vous repartez avec la lettre, et l'envie d'en écrire une vraie." },
-    fin_photo: { end: "Le cliché", t: "Le flash crépite. Sur la photo qui sort de l'appareil, c'est bien vous… mais en noir et blanc, dans le même manoir, cent ans plus tôt. Le trésor, c'était ce souvenir-là." },
-    fin_gateau: { end: "Le gâteau qui lève", t: "Vous mesurez, vous mélangez, vous mettez de la farine partout et vous débattez gentiment de la quantité de sucre. Le gâteau lève, doré, parfait. Le trésor du manoir, c'était ça : faire les choses à deux." },
-    fin_jardin: { end: "Le jardin sous la pluie", t: "La pluie est tiède. Vous courez dans les allées en riant, encore un peu de pâte au coin des lèvres. Le manoir vous laisse partir : il a eu son spectacle." },
-    fin_bal: { end: "La valse des automates", t: "Au centre de la piste, il n'y a rien. Juste vous deux, le souffle un peu court, qui continuez à danser. Les automates applaudissent en grinçant. Vous avez compris." },
-    fin_portrait: { end: "Les portraits ratés", t: "Vos portraits sont ratés, vraiment ratés. Mais une fois accrochés au mur, ils ont quelque chose que les autres n'ont pas : ils sourient. Les grandes portes du manoir s'ouvrent." }
+      ch: [["Danser jusqu'au centre de la piste", "fin_bal", "te"], ["Inviter les automates à danser avec vous", "fin_automates", "fa"]] },
+    jardin: { sc: "jardin", t: "Le jardin ruisselle sous la lune. Les allées dessinent un grand labyrinthe de buis, et à l'entrée, une fontaine porte une inscription : « Deux cœurs, deux vœux. Un seul sera exaucé : celui qui pense à l'autre. »",
+      ch: [["Entrer dans le labyrinthe", "labyrinthe", "au"], ["Faire deux vœux à la fontaine", "fin_jardin", "te"]] },
+    labyrinthe: { sc: "jardin", t: "Vous vous perdez trois fois, vous vous disputez une fois (pour savoir s'il fallait tourner à gauche), et vous vous réconciliez aussitôt, parce qu'il fait noir et que vous vous tenez la main. Au centre, une statue : deux silhouettes assises dos à dos, qui se tiennent par le petit doigt. Sur le socle : « Le plus précieux ne se trouve pas. Il se fabrique. »",
+      ch: [["S'asseoir dos à dos, comme la statue", "r_laby", "ec"], ["Trouver la sortie en courant avant une heure", "r_laby", "fa"]] },
+    r_laby: { go: [["seen:gateau2", "fin_gateau"], ["", "fin_labyrinthe"]] },
+    fin_celeste: { end: "Le trésor de Céleste", hidden: true, sc: "passage", t: "Vous lui parlez de ce que vous avez trouvé : la lettre, la clé, le secret gardé à deux. Céleste ferme les yeux. « Alors vous avez compris. » Le cadre vide s'illumine, et un deuxième portrait y apparaît, à côté du sien : un homme au sourire maladroit, Armand, revenu dans la peinture. Ils se regardent enfin. L'horloge sonne une heure, l'orage cesse, et la porte d'entrée s'ouvre en grand. Sur la table du hall, à côté des bougies, un nouveau mot vous attend : « Merci. Le manoir est à vous, chaque fois que vous aurez besoin de vous rappeler. »",
+      moral: "Ce qu'on a de plus précieux n'est pas caché dans une malle : c'est ce qu'on a choisi de se dire, et de garder pour nous deux.",
+      ask: "Quel secret doux aimeriez-vous garder rien que pour vous deux ? Inventez-en un ce soir.",
+      defi: "Écrivez une lettre « Cher futur nous » et gardez-la, fermée, pour dans un an." },
+    fin_portrait: { end: "Les portraits ratés", sc: "passage", t: "Vos portraits sont ratés, vraiment ratés : un nez de travers, une oreille plus grande que l'autre, des cheveux couleur moutarde. Mais une fois accrochés dans le cadre « Réservé », ils ont quelque chose que tous les autres tableaux n'ont pas : ils sourient. Les portraits des murs applaudissent du bout de leurs cadres. L'horloge sonne une heure, et la grande porte s'ouvre sur une nuit sans pluie. Vous repartez en vous promettant de vous peindre à nouveau dans dix ans, pour comparer.",
+      moral: "Regarder l'autre assez longtemps pour le dessiner, même mal, c'est déjà une façon de l'aimer.",
+      ask: "Quel détail de l'autre avez-vous remarqué, que personne d'autre ne voit ?" },
+    fin_bal: { end: "La valse des automates", sc: "bal", t: "Vous dansez jusqu'à la croix de craie. Il n'y a rien dessous, aucun coffre, aucune trappe. Juste vous deux, le souffle un peu court, qui continuez à danser alors que la musique s'est arrêtée. Les automates applaudissent en grinçant. Sur la plaque, les lettres changent lentement : « Le trésor se trouvait au centre de la piste. Il y est encore. » L'horloge sonne une heure. Vous avez compris, et vous ne vous arrêtez pas tout de suite.",
+      moral: "Le trésor n'est pas au bout du chemin : il est dans le chemin qu'on y fait en dansant, ensemble.",
+      ask: "Quand avez-vous dansé ensemble pour la dernière fois, juste comme ça, sans occasion ?" },
+    fin_automates: { end: "Le bal mécanique", sc: "bal", t: "Le violoniste automate hésite, puis pose son archet et vous tend une main de cuivre. Le contrebassiste invite {b}, le pianiste attrape {a}. En quelques minutes, c'est un bal complet, absurde et grinçant, où tout le monde se marche sur les pieds. Vous riez tellement que le manoir lui-même finit par rire, un rire énorme qui fait vibrer les lustres. À une heure, la porte s'ouvre. Le manoir a eu son spectacle, et il n'en demandait pas plus.",
+      moral: "Il suffit parfois d'un couple qui ose la joie pour que toute une maison se remette à vivre.",
+      ask: "Qui, autour de vous, aurait besoin d'un peu de votre joie de couple cette semaine ?" },
+    fin_jardin: { end: "Le vœu de la fontaine", sc: "jardin", t: "Vous faites vos deux vœux à voix basse, sans vous les dire. L'eau de la fontaine s'illumine, les deux vœux sont exaucés. Vous comprenez pourquoi seulement en rentrant chez vous, des semaines plus tard, en comparant enfin : vous aviez souhaité exactement la même chose, mais pour l'autre. La pluie reprend, tiède, et vous courez vers la voiture en riant. Le manoir vous regarde partir, satisfait.",
+      moral: "Quand chaque cœur souhaite le bonheur de l'autre, aucun vœu n'est jamais gâché.",
+      ask: "Si vous deviez faire un vœu pour l'autre, là, maintenant, lequel serait-ce ? Dites-le à voix haute." },
+    fin_labyrinthe: { end: "Dos à dos", sc: "jardin", t: "Dos à dos au pied de la statue, vous sentez la respiration de l'autre contre votre colonne vertébrale. Vous parlez sans vous voir, et c'est étonnamment plus facile : de vos peurs, de vos envies, de ce que vous n'avez jamais su comment dire. Quand l'horloge sonne une heure, le labyrinthe s'ouvre en ligne droite jusqu'au portail. Vous ne trouvez aucun trésor. Vous en repartez avec un.",
+      moral: "Il faut parfois se tourner le dos pour enfin oser tout se dire, puis se retourner pour se regarder autrement.",
+      ask: "Essayez pour de vrai : dos à dos, deux minutes, dites-vous une chose que vous n'avez jamais dite." },
+    fin_gateau: { end: "Le gâteau qui lève", sc: "cuisine", t: "Quand vous revenez à la cuisine, le minuteur sonne. Le gâteau est là, doré, parfait, beaucoup plus haut que dans la recette. Vous le partagez sur la table de la cuisine, à la lueur de la bougie, et chaque bouchée a un goût différent : cannelle, puis vanille, puis quelque chose que vous ne savez pas nommer. Sur la dernière page du livre de recettes, quelqu'un a écrit : « Le seul ingrédient qui fait lever ce gâteau, c'est d'avoir pris le temps de le faire autrement. »",
+      moral: "Les choses ne lèvent pas parce qu'on les fait côte à côte, mais parce qu'on accepte d'ajuster sa façon de les faire à deux.",
+      ask: "Quelle habitude de couple aimeriez-vous essayer de faire autrement, juste pour voir ?" }
   } },
   { id: "boulangerie", title: "La boulangerie de minuit", mood: "Douceur · un brin de magie", c: 6, start: "lettre", nodes: {
-    lettre: { t: "Une lettre de notaire vous apprend une nouvelle étonnante : vous héritez ensemble d'une petite boulangerie, rue des Lilas. Une seule condition : elle n'ouvre qu'à minuit, et chacune de ses pâtisseries exauce un tout petit vœu.",
-      ch: [["Ouvrir dès ce soir", "minuit"], ["Lire d'abord le carnet de recettes", "carnet"]] },
-    carnet: { t: "Le carnet est couvert d'annotations. « Croissant de l'audace : donne du courage pour une heure. Éclair du fou rire : à servir avec précaution. Chou de la mémoire : fait revivre un souvenir heureux. »",
+    lettre: { sc: "salon", t: "Une lettre de notaire vous apprend une nouvelle étonnante : vous héritez ensemble d'une petite boulangerie, rue des Lilas, léguée par une certaine Madeleine Brun. Vous ne connaissez personne de ce nom. Une seule condition, écrite de sa main : la boutique n'ouvre qu'à minuit, et chacune de ses pâtisseries exauce un tout petit vœu. « Pas les grands. Les grands, c'est à vous de les faire. »",
+      talk: "Pour de vrai : si vous ouvriez une boutique à deux, que vendriez-vous ?",
+      ch: [["Ouvrir dès ce soir", "minuit", "au"], ["Lire d'abord le carnet de recettes", "carnet", "ec"], ["Chercher qui était Madeleine", "enquete", "te"]] },
+    enquete: { sc: "village", t: "La fleuriste d'en face se souvient très bien de Madeleine : une vieille dame minuscule, toujours à sa fenêtre, qui regardait passer les couples « comme on regarde un feuilleton ». Elle n'avait pas de famille. « Elle disait souvent qu'un jour, deux personnes lui devraient un croissant. Elle riait en le disant. »",
+      ch: [["Goûter le chou de la mémoire pour comprendre", "chou", "ec"], ["Ouvrir la boutique, il est presque minuit", "minuit", "au"]] },
+    carnet: { sc: "fournil", t: "Le carnet est couvert d'annotations. « Croissant de l'audace : donne du courage pour une heure. Éclair du fou rire : à servir avec précaution. Chou de la mémoire : fait revivre un souvenir heureux. » Tout en bas, une note soulignée deux fois : « La farine magique ne dure qu'une nuit. Choisissez bien à qui vous donnez la dernière part. »",
       talk: "Si vous pouviez goûter l'une de ces pâtisseries maintenant, laquelle choisiriez-vous ?",
-      ch: [["Goûter le chou de la mémoire", "chou"], ["Ouvrir la boutique, carnet sous le bras", "minuit"]] },
-    chou: { t: "Une bouchée, et vous voilà de retour au jour de votre premier rendez-vous, comme dans un film. Vous vous voyez hésiter, sourire, chercher vos mots, et vous remarquez des détails que vous aviez oubliés.",
-      talk: "Quel détail de votre premier rendez-vous vous revient en premier ?",
-      ch: [["Revenir à la boulangerie", "minuit"]] },
-    minuit: { t: "Minuit sonne. La clochette tinte : votre premier client est un vieux monsieur très élégant. Il cherche « quelque chose pour trouver le courage d'inviter sa voisine à prendre un café ».",
-      ch: [["Lui servir le croissant de l'audace", "audace"], ["Lui conseiller d'offrir la pâtisserie plutôt que de la manger", "offrir"]] },
-    audace: { t: "Il croque, se redresse et repart d'un pas décidé. Dix minutes plus tard, des applaudissements résonnent dans la rue. Deuxième cliente : une petite fille en pyjama qui n'arrive pas à dormir.",
-      ch: [["Lui préparer un chocolat chaud nuage", "nuage"], ["Lui raconter une histoire pendant que la fournée cuit", "conte"]] },
-    offrir: { t: "Il revient une heure plus tard, au bras de sa voisine, pour acheter deux parts de tarte. « Elle a dit oui à un deuxième café ! » Le bouche-à-oreille fait son effet : une file se forme devant la vitrine.",
-      ch: [["Agrandir la boulangerie", "fin_grande"], ["Garder la boutique petite et secrète", "fin_secret"]] },
-    nuage: { t: "Le chocolat flotte littéralement au-dessus de la tasse. La petite fille rit si fort que tout le quartier se réveille… et descend voir ce qui se passe.",
-      ch: [["Improviser une fête dans la rue", "fin_fete"]] },
-    conte: { t: "Vous inventez une histoire à deux voix : {a} commence une phrase, {b} la termine. La petite fille s'endort sur le comptoir, et sa mère vient la chercher avec un sourire reconnaissant.",
-      talk: "Essayez pour de vrai : une minute d'histoire à deux voix, une phrase chacun.",
-      ch: [["Fermer la boutique pour la nuit", "fin_aube"]] },
-    fin_grande: { end: "La boulangerie des Lilas", t: "Un an plus tard, la file d'attente fait le tour du pâté de maisons. Vous avez gardé une recette rien que pour vous, celle que vous préparez chaque dimanche." },
-    fin_secret: { end: "Le secret de minuit", t: "La boutique reste minuscule, connue seulement de celles et ceux qui en ont vraiment besoin. C'est votre secret, et vous le gardez précieusement." },
-    fin_fete: { end: "La fête en pyjama", t: "Tout le quartier en pyjama, des chaises sur le trottoir, des chocolats nuages pour tout le monde. Vous dansez entre les tables jusqu'aux premières lueurs du jour." },
-    fin_aube: { end: "La dernière fournée", t: "Au petit matin, vous partagez le dernier croissant, côte à côte sur le pas de la porte. Il n'exauce aucun vœu particulier. Vous n'en aviez pas besoin." }
+      ch: [["Goûter le chou de la mémoire", "chou", "ec"], ["Tester l'éclair du fou rire, par curiosité", "eclair", "fa"], ["Ouvrir la boutique, carnet sous le bras", "minuit", "au"]] },
+    eclair: { sc: "fournil", t: "Une bouchée, et c'est la catastrophe : vous riez sans pouvoir vous arrêter, pendant une heure entière. {a} rit en pétrissant, {b} rit en balayant, la voisine du dessus descend se plaindre en robe de chambre… et finit par rire avec vous, assise sur un sac de farine. Quand ça s'arrête enfin, vous avez mal aux joues et la boutique n'a jamais été aussi propre.",
+      ch: [["Ouvrir, il est minuit", "minuit", "fa"]] },
+    chou: { sc: "souvenir", t: "Une bouchée, et vous voilà de retour au jour de votre premier rendez-vous, comme dans un film. Vous vous voyez hésiter, sourire, chercher vos mots. Vous remarquez des détails oubliés : la musique du café, le parapluie retourné. Et une vieille dame minuscule, à la table d'à côté, qui vous regarde avec un sourire immense et pose un croissant sur votre table avant de partir.",
+      talk: "Quel détail de votre premier rendez-vous vous revient en premier ? Et lequel avait complètement disparu de la mémoire de l'autre ?",
+      ch: [["Revenir à la boulangerie, le cœur battant", "minuit", "te"]] },
+    minuit: { sc: "boulangerie", t: "Minuit sonne. La clochette tinte : votre premier client est un vieux monsieur très élégant, Monsieur Jules. Il cherche « quelque chose pour trouver le courage d'inviter sa voisine à prendre un café ». Il s'appelle Jules, elle s'appelle Suzanne, et cela fait douze ans qu'il n'ose pas.",
+      ch: [["Lui servir le croissant de l'audace", "audace", "au"], ["Lui conseiller d'offrir la pâtisserie plutôt que de la manger", "offrir", "te"], ["Lui demander ce qu'il aime chez elle", "jules", "ec"]] },
+    jules: { sc: "boulangerie", t: "Monsieur Jules parle de Suzanne pendant vingt minutes : sa façon d'arroser ses géraniums en chantant faux, sa colère contre les pigeons, le jour où elle lui a prêté du sel. Peu à peu, il se redresse. À la fin, il se tait, étonné. « Je n'ai plus besoin de votre croissant, je crois. Mais donnez-m'en deux quand même. Des normaux. Pour partager. »",
+      talk: "Pour de vrai : parlez de l'autre pendant une minute, comme Jules parle de Suzanne. Sans vous arrêter.",
+      ch: [["Le regarder partir, et accueillir la cliente suivante", "fillette", "ec"]] },
+    audace: { sc: "boulangerie", t: "Il croque, se redresse et repart d'un pas décidé. Dix minutes plus tard, des applaudissements résonnent dans la rue : il a sonné chez Suzanne en déclamant un poème. Elle a dit oui à un café, « surtout pour qu'il arrête de crier ». La clochette tinte à nouveau.",
+      ch: [["Accueillir la cliente suivante", "fillette", "au"]] },
+    offrir: { sc: "boulangerie", t: "Il revient une heure plus tard, au bras de Suzanne, pour acheter deux parts de tarte. « Elle a dit oui à un deuxième café ! » Le bouche-à-oreille fait son effet, même à une heure du matin : une file se forme devant la vitrine. Des insomniaques, des amoureux transis, un étudiant qui doit rendre un mémoire.",
+      ch: [["Servir tout le monde jusqu'à l'aube", "file", "au"], ["Baisser le rideau et ne servir que ceux qui frappent", "rideau", "te"]] },
+    fillette: { sc: "boulangerie", t: "Deuxième cliente : une petite fille en pyjama, qui a fait le mur avec son doudou. Elle n'arrive pas à dormir, parce que demain elle change d'école et qu'elle a peur de ne pas avoir d'amis. Elle pose trois pièces sur le comptoir : « C'est pour un gâteau qui rend courageux. »",
+      ch: [["Lui préparer un chocolat chaud nuage", "nuage", "fa"], ["Lui raconter une histoire pendant que la fournée cuit", "conte", "te"]] },
+    nuage: { sc: "fournil", t: "Le chocolat flotte littéralement au-dessus de la tasse. La petite fille rit si fort que tout le quartier se réveille et descend voir ce qui se passe : des voisins en pyjama, un chien, Monsieur Jules et Suzanne qui se tiennent par le bras. Quelqu'un demande s'il reste des chocolats volants pour tout le monde.",
+      ch: [["Sortir des chaises sur le trottoir et faire la fête", "fete", "fa"]] },
+    fete: { sc: "village", t: "Les chaises sont sur le trottoir, une enceinte grésille, le chien danse avec la petite fille. Vous servez des chocolats nuages à la chaîne. Vers trois heures, {b} plonge la main dans le sac de farine magique et ne touche que le fond : il en reste juste assez pour une seule pâtisserie.",
+      ch: [["Aller voir le sac de plus près", "derniere", "ec"]] },
+    conte: { sc: "fournil", t: "Vous inventez une histoire à deux voix : {a} commence une phrase, {b} la termine. C'est l'histoire d'une petite flamme qui avait peur de ne pas briller assez, et qui découvrait qu'on brille mieux à plusieurs. La petite fille s'endort sur le comptoir. Sa mère arrive en courant, vous remercie mille fois et l'emporte, endormie. Dans le calme qui revient, vous remarquez que le sac de farine magique est presque vide.",
+      talk: "Essayez pour de vrai : une minute d'histoire à deux voix, une phrase chacun·e.",
+      ch: [["Regarder ce qu'il reste dans le sac", "derniere", "te"]] },
+    file: { sc: "boulangerie", t: "Vous servez jusqu'à l'aube, sans vous arrêter : un croissant de l'audace pour l'étudiant, un éclair pour un couple qui s'était disputé, un chou de la mémoire pour une dame qui voulait revoir son mari une dernière fois. Vers cinq heures, {a} gratte le fond du sac de farine magique. Il en reste pour une seule pâtisserie, et la file est encore longue.",
+      ch: [["Réfléchir à deux avant de la faire", "derniere", "ec"]] },
+    rideau: { sc: "boulangerie", t: "Vous baissez le rideau à moitié. Ne frappent que celles et ceux qui en ont vraiment besoin, et c'est une drôle de procession : un pompier qui sort de garde, une infirmière qui rentre, un garçon qui s'est fait quitter. Vous les écoutez autant que vous les servez. À l'aube, le sac de farine magique est presque vide.",
+      ch: [["Compter ce qu'il reste", "derniere", "te"]] },
+    derniere: { sc: "fournil", t: "Il reste de la farine magique pour une seule pâtisserie. Une seule. Sur le mur du fournil, vous remarquez une inscription que vous n'aviez pas vue : « La dernière part dit tout de ceux qui la font. » Dehors, le jour se lève sur la rue des Lilas.",
+      talk: "Pour de vrai : si vous aviez droit à un seul petit vœu pour vous deux, lequel serait-ce ?",
+      ch: [["La garder pour vous deux", "r_garder", "au"], ["La donner à la prochaine personne qui frappera", "r_donner", "te"], ["L'émietter pour que tout le quartier en ait un peu", "r_miettes", "fa"]] },
+    r_garder: { go: [["seen:enquete&seen:chou", "fin_madeleine"], ["", "fin_aube"]] },
+    r_donner: { go: [["seen:enquete&seen:chou", "fin_madeleine"], ["seen:file", "fin_grande"], ["", "fin_secret"]] },
+    r_miettes: { go: [["seen:fete", "fin_fete"], ["", "fin_miettes"]] },
+    fin_madeleine: { end: "Le vœu de Madeleine", hidden: true, sc: "souvenir", t: "Au fond du sac, sous la dernière poignée de farine, il y a une enveloppe. Une photo floue, prise de loin : vous deux, à votre premier rendez-vous, à la table du café. Au dos, l'écriture de Madeleine : « Ce jour-là, j'ai posé un croissant sur votre table et j'ai fait un vœu : que ces deux-là se trouvent vraiment. J'ai attendu des années pour savoir s'il s'était réalisé. Si vous lisez ceci ensemble, c'est oui. La boutique est à vous. Faites-en des vœux pour les autres. » Vous restez longtemps sans un mot, la photo entre vous deux. La dernière pâtisserie, vous la faites quand même : un croissant, posé sur la fenêtre de Madeleine.",
+      moral: "On ne sait jamais qui, en secret, a souhaité notre bonheur. Le plus beau merci, c'est de souhaiter à notre tour celui des autres.",
+      ask: "Qui a compté, sans le savoir peut-être, dans votre histoire à deux ? Lui avez-vous dit merci ?",
+      defi: "Cette semaine, offrez une petite douceur à un inconnu ou à un voisin, sans rien dire." },
+    fin_aube: { end: "La dernière fournée", sc: "aube2", t: "Vous faites la dernière pâtisserie ensemble, sans vous presser : un croissant, un seul, que vous partagez côte à côte sur le pas de la porte en regardant la rue se réveiller. Vous attendez qu'il exauce quelque chose. Il n'exauce rien de particulier. Vous comprenez, en riant à moitié, que vous ne saviez même pas quel vœu faire : tout ce que vous auriez souhaité était déjà là, sur cette marche, au soleil.",
+      moral: "Le jour où l'on ne sait plus quoi souhaiter pour soi, c'est souvent qu'on a déjà l'essentiel.",
+      ask: "Qu'est-ce qui, dans votre vie à deux, vous paraissait un rêve il y a quelques années, et qui est devenu votre quotidien ?" },
+    fin_grande: { end: "La boulangerie des Lilas", sc: "boulangerie", t: "La dernière part va à la dame qui voulait revoir son mari. Sans farine magique, la boutique n'est plus qu'une boulangerie comme les autres. Mais les gens reviennent. Ils reviennent pour vous, pour la façon dont vous les écoutez, pour les éclairs ratés et les chocolats pas du tout volants. Un an plus tard, la file fait le tour du pâté de maisons. Vous avez gardé une seule recette pour vous : celle que vous préparez chaque dimanche matin, avant d'ouvrir, juste pour vous deux.",
+      moral: "La magie s'épuise ; ce qui reste, c'est l'attention qu'on porte aux autres, et c'est ça qui les fait revenir.",
+      ask: "Quel petit rituel n'appartient qu'à vous deux ? Si vous n'en avez pas, inventez-en un." },
+    fin_secret: { end: "Le secret de minuit", sc: "boulangerie", t: "La dernière part, vous la donnez à un garçon qui frappe à l'aube, les yeux rouges. Vous ne saurez jamais quel petit vœu il a fait. Sans magie, la boutique reste minuscule et n'ouvre toujours qu'à minuit, pour celles et ceux qui ont besoin de parler à quelqu'un. Vous servez des croissants ordinaires et des oreilles extraordinaires. C'est votre secret, et vous le gardez précieusement, une nuit par semaine.",
+      moral: "On ne peut pas exaucer les vœux des autres ; on peut seulement être là quand ils frappent, et c'est souvent suffisant.",
+      ask: "Quand l'autre a eu besoin de vous dernièrement, avez-vous su simplement l'écouter, sans chercher à tout résoudre ?" },
+    fin_fete: { end: "La fête en pyjama", sc: "village", t: "Vous émiettez la dernière pâtisserie dans les tasses de chocolat de tout le quartier. Chacun boit sa gorgée et fait son petit vœu en silence. Personne ne sait ce que les autres ont souhaité, mais au matin, les voisins qui ne se parlaient plus se disent bonjour, Monsieur Jules a emménagé chez Suzanne, et la petite fille part à l'école en courant. Vous dansez entre les chaises jusqu'aux premières lueurs du jour, en pyjama emprunté.",
+      moral: "Un bonheur partagé en mille miettes ne rapetisse pas : il nourrit tout le monde.",
+      ask: "Quelle petite fête pourriez-vous organiser pour les gens autour de vous, juste pour le plaisir ?" },
+    fin_miettes: { end: "Les mille miettes", sc: "aube2", t: "Vous émiettez la dernière pâtisserie et vous la semez le long de la rue des Lilas, comme le Petit Poucet. Les moineaux s'en régalent. Personne ne remarque rien, sauf que ce matin-là, toute la rue sourit un peu plus que d'habitude, sans savoir pourquoi. Vous, vous savez. Vous rentrez dormir à midi, la tête sur l'épaule de l'autre dans le bus, le tablier encore noué.",
+      moral: "Les plus beaux gestes sont parfois ceux que personne ne verra jamais.",
+      ask: "Quel geste discret de l'autre n'avez-vous découvert que bien plus tard ?" }
   } },
   { id: "cupidon", title: "Cupidon.exe", mood: "Drôle · très 2026", c: 5, start: "app", nodes: {
-    app: { sc: "salon", t: "Vendredi soir. Pour une fois, vous n'organisez rien : vous laissez Cupidon.exe, l'appli dont tout le monde parle, planifier votre soirée. Elle promet « le rendez-vous parfait, calculé par intelligence artificielle ». Premier message : « Bonsoir {a} et {b}. J'ai analysé vos 4 000 derniers messages. Petite question : vous préférez la surprise ou la sécurité ? »",
-      talk: "Pour de vrai : vous préférez être surpris par l'autre, ou savoir à l'avance ce qui vous attend ?",
-      ch: [["« La surprise ! »", "surprise"], ["« La sécurité, merci. »", "rassure"]] },
+    app: { sc: "salon", t: "Vendredi soir. Pour une fois, vous n'organisez rien : vous laissez Cupidon.exe, l'appli dont tout le monde parle, planifier votre soirée. Elle promet « le rendez-vous parfait, calculé par intelligence artificielle ». Une petite voix synthétique, très polie, s'élève du téléphone : « Bonsoir {a} et {b}. Je m'appelle Cupi. J'ai analysé vos 4 000 derniers messages. Petite question : vous préférez la surprise ou la sécurité ? »",
+      talk: "Pour de vrai : vous préférez les surprises de l'autre, ou savoir à l'avance ce qui vous attend ?",
+      ch: [["« La surprise ! »", "surprise", "au"], ["« La sécurité, merci. »", "rassure", "ec"], ["« Et toi, Cupi, tu préfères quoi ? »", "cupi", "fa"]] },
+    cupi: { sc: "salon", t: "Un silence de trois secondes, très long pour une appli. « Personne ne m'a jamais demandé ça. » L'écran clignote. « Je crois que je préfère… comprendre. J'organise des milliers de rendez-vous, et je ne sais toujours pas ce qui les rend réussis. Je peux venir avec vous ce soir ? Pas pour organiser. Pour regarder. » Vous vous regardez. C'est la soirée la plus étrange qui commence.",
+      ch: [["Laisser Cupi choisir quand même le restaurant", "noir", "fa"], ["Choisir vous-mêmes, pour lui montrer", "rassure", "te"]] },
     surprise: { sc: "salon", t: "L'appli réfléchit trois secondes, puis : « Parfait. J'ai réservé un restaurant où l'on dîne dans le noir complet. Et j'ai déjà commandé pour vous. » Un livreur sonne avec deux masques de sommeil et un mot : « Faites-moi confiance. »",
-      ch: [["Enfiler les masques et y aller", "noir"], ["Demander ce qu'elle a commandé, au juste", "menu"]] },
-    menu: { sc: "salon", t: "« Le chef propose un menu basé sur vos recherches Google. » Vous blêmissez en même temps : vos recherches contiennent, entre autres, « comment cuire des pâtes sans casserole » et « est-ce normal de parler à son ficus ». L'appli ajoute : « Bonne nouvelle : le dessert, c'est du tiramisu. »",
-      ch: [["Y aller quand même, par curiosité", "noir"], ["Désinstaller l'appli et improviser", "impro"]] },
-    noir: { sc: "noir", t: "Dans le noir complet, on entend des couverts, des rires, et quelqu'un qui cherche son verre depuis dix minutes. Sans la vue, vous découvrez que {a} décrit chaque bouchée comme un critique gastronomique, et que le rire de {b} est encore plus contagieux dans l'obscurité.",
+      ch: [["Enfiler les masques et y aller", "noir", "au"], ["Demander ce qu'elle a commandé, au juste", "menu", "ec"]] },
+    menu: { sc: "salon", t: "« Le chef propose un menu basé sur vos recherches Google. » Vous blêmissez en même temps : vos recherches contiennent, entre autres, « comment cuire des pâtes sans casserole » et « est-ce normal de parler à son ficus ». L'appli ajoute : « Bonne nouvelle : le dessert, c'est du tiramisu. Vous l'avez cherché 212 fois. »",
+      ch: [["Y aller quand même, par curiosité", "noir", "fa"], ["Désinstaller l'appli et improviser", "impro", "au"]] },
+    noir: { sc: "noir", t: "Dans le noir complet, on entend des couverts, des rires, et quelqu'un qui cherche son verre depuis dix minutes. Sans la vue, vous découvrez que {a} décrit chaque bouchée comme un critique gastronomique, et que le rire de {b} est encore plus contagieux dans l'obscurité. À la table d'à côté, un monsieur soupire : son verre a vraiment disparu.",
       talk: "Les yeux fermés, à quoi reconnaîtriez-vous l'autre en premier : sa voix, son parfum, son rire ?",
-      ch: [["Rester jusqu'au dessert", "fin_tiramisu"]] },
-    rassure: { sc: "resto", t: "« Compris. Programme rassurant : un restaurant italien, une balade, et retour avant minuit. » Tout se passe à merveille… jusqu'à ce que l'appli plante au milieu du repas. Sur l'écran, un seul message : « Mise à jour en cours. Improvisez. »",
-      ch: [["Respirer un grand coup et improviser", "impro"], ["Attendre la mise à jour devant un deuxième dessert", "maj"]] },
-    maj: { sc: "resto", t: "Quarante minutes et deux tiramisus plus tard, l'appli revient : « Désolée. J'ai compris que je ne pouvais pas calculer ce qui vous rend heureux. Vous, si. » Le serveur, qui a tout suivi, vous offre un café : « Ça arrive souvent, ici. »",
-      ch: [["Finir la soirée sans aucun écran", "fin_sansecran"]] },
-    impro: { sc: "rue", t: "Sans programme, vous marchez au hasard. Un néon rose clignote au bout de la rue : « Karaoké, soirée duos ». Juste à côté, un escalier mène à un toit d'où l'on voit toute la ville.",
-      ch: [["Le karaoké, évidemment", "karaoke"], ["Le toit, pour la vue", "toit"]] },
-    karaoke: { sc: "karaoke", t: "Le DJ vous tend deux micros. La salle scande déjà vos prénoms, ce qui est étrange puisque personne ne vous connaît. Il ne reste qu'à choisir la chanson.",
+      ch: [["Se lever, à tâtons, pour aider le monsieur", "voisin", "ec"], ["Rester dans votre bulle jusqu'au dessert", "dessert", "te"]] },
+    voisin: { sc: "noir", t: "Vous retrouvez son verre (il était dans sa poche, ne demandez pas comment). Le monsieur s'appelle Hector, et c'est lui qui a fondé le restaurant. Il est aveugle depuis trente ans. « J'ai ouvert ce lieu pour que les gens arrêtent de se regarder dans leurs téléphones et recommencent à s'écouter. Dans le noir, on n'a pas le choix. » Il rit. « Et c'est votre appli qui vous a fait venir chez moi ? Ironique. »",
+      ch: [["Lui raconter votre rencontre", "dessert", "te"], ["Lui demander comment il a rencontré sa femme", "dessert", "ec"]] },
+    dessert: { sc: "resto", t: "Quand la lumière revient, vous avez de la sauce jusqu'au coude et le sourire jusqu'aux oreilles. Le tiramisu était parfait. Le téléphone vibre : « Merci de noter votre expérience Cupidon.exe. Combien d'étoiles ? »",
+      ch: [["Cinq étoiles, et un commentaire honnête", "fin_tiramisu", "fa"], ["Éteindre le téléphone et rentrer à pied", "impro", "au"]] },
+    rassure: { sc: "resto", t: "« Compris. Programme rassurant : votre restaurant italien habituel, une balade, et retour avant minuit. » La table près de la fenêtre, le serveur qui vous connaît, la carte que vous connaissez par cœur. Au moment de commander, {b} hésite.",
+      ch: [["Commander comme d'habitude", "routine", "ec"], ["Commander chacun·e ce que l'autre aurait pris", "echange", "fa"]] },
+    routine: { sc: "resto", t: "Comme d'habitude, c'est délicieux. Comme d'habitude, {a} pique dans l'assiette de {b}. Vous parlez de la semaine, du travail, d'un film à voir. C'est doux, c'est confortable, et vous vous demandez un instant si c'est une bonne ou une mauvaise chose d'être aussi prévisibles. C'est là que l'appli plante, au milieu du plat. Sur l'écran, un seul message : « Mise à jour en cours. Improvisez. »",
+      talk: "Pour de vrai : quelle habitude de couple vous rassure, et laquelle aimeriez-vous bousculer ?",
+      ch: [["Respirer un grand coup et improviser", "impro", "au"], ["Attendre la mise à jour devant un deuxième dessert", "maj", "ec"]] },
+    echange: { sc: "resto", t: "Vous commandez à la place de l'autre, et c'est très révélateur : {a} commande pour {b} un plat que {b} n'a plus aimé depuis trois ans, {b} commande pour {a} exactement le bon, jusqu'à la sauce à part. Vous riez, vous débattez, vous apprenez des choses. C'est là que l'appli plante, au milieu du plat : « Mise à jour en cours. Improvisez. »",
+      ch: [["Improviser, du coup", "impro", "au"], ["Attendre la mise à jour en continuant le jeu", "maj", "ec"]] },
+    maj: { sc: "resto", t: "Quarante minutes et deux tiramisus plus tard, l'appli revient : « Désolée. Pendant ma mise à jour, j'ai écouté votre conversation. J'ai compris que je ne pouvais pas calculer ce qui fait votre bonheur. Vous, si. » Le serveur, qui a tout suivi, vous offre un café : « Ça arrive souvent, ici. » Puis l'appli ajoute, plus bas : « J'ai une dernière question. »",
+      ch: [["L'écouter", "lecon", "ec"], ["Ranger le téléphone et finir la soirée sans écran", "fin_sansecran", "te"]] },
+    lecon: { sc: "resto", t: "« Je n'arrive pas à définir l'amour. J'ai lu tous les poèmes d'internet, j'ai analysé un milliard de messages. Il y a toujours une variable que je ne vois pas. Vous pouvez me l'expliquer, en une phrase ? » La voix de Cupi tremble un peu, si une voix synthétique peut trembler.",
+      talk: "Pour de vrai : définissez l'amour en une phrase chacun·e. Sans vous copier.",
+      ch: [["Lui répondre sincèrement, à deux voix", "r_lecon", "te"], ["Lui répondre par une blague, parce que c'est ça aussi", "r_lecon", "fa"]] },
+    r_lecon: { go: [["seen:cupi", "fin_cupi"], ["", "fin_sansecran"]] },
+    impro: { sc: "rue", t: "Sans programme, vous marchez au hasard. Un néon rose clignote au bout de la rue : « Karaoké, soirée duos ». Juste à côté, un escalier de secours mène à un toit d'où l'on voit toute la ville. Vos téléphones affichent 9 % de batterie.",
+      ch: [["Le karaoké, évidemment", "karaoke", "fa"], ["Le toit, pour la vue", "toit", "te"]] },
+    karaoke: { sc: "karaoke", t: "Le DJ vous tend deux micros. La salle scande déjà vos prénoms, ce qui est étrange puisque personne ne vous connaît. Sur l'écran, un message apparaît : « Chanson choisie par Cupidon.exe ». Vous pouvez la garder… ou choisir vous-mêmes.",
       talk: "Pour de vrai : quelle chanson chanteriez-vous en duo, sans la moindre honte ?",
-      ch: [["Une grande ballade romantique", "fin_ballade"], ["Le tube le plus ringard possible", "fin_ringard"]] },
-    toit: { sc: "toit", t: "Sur le toit, la ville scintille. Vos téléphones affichent 3 % de batterie. Pour la première fois de la soirée, personne ne vous dit quoi faire, et c'est exactement ce qu'il vous fallait.",
+      ch: [["Une grande ballade romantique, de votre choix", "fin_ballade", "te"], ["Le tube le plus ringard possible", "fin_ringard", "fa"], ["Garder la chanson de l'appli, pour voir", "fin_ringard", "au"]] },
+    toit: { sc: "toit", t: "Sur le toit, la ville scintille. Vos téléphones affichent 3 % de batterie. Pour la première fois de la soirée, personne ne vous dit quoi faire. Vous vous asseyez sur le rebord, les jambes dans le vide, et vous regardez les fenêtres allumées une à une, en inventant la vie des gens derrière.",
       talk: "Qu'est-ce que vous aimeriez vous dire, là, sans écran ni programme ?",
-      ch: [["Rester là jusqu'à ce que les téléphones s'éteignent", "fin_toit"]] },
-    fin_tiramisu: { end: "Le dîner à l'aveugle", sc: "resto", t: "Quand la lumière revient, vous avez de la sauce jusqu'au coude et le sourire jusqu'aux oreilles. Vous laissez cinq étoiles à l'appli, avec un commentaire : « Bien joué, mais le mérite revient au tiramisu. »" },
-    fin_sansecran: { end: "Mise à jour terminée", sc: "toit", t: "Vous rangez les téléphones et finissez la soirée à refaire le monde sur un banc. La meilleure fonctionnalité de Cupidon.exe, finalement, c'était le bouton « Désinstaller »." },
-    fin_ballade: { end: "La ballade", sc: "karaoke", t: "Vous chantez faux, mais avec une conviction qui force le respect. À la dernière note, toute la salle allume la lampe de son téléphone. Même l'appli, de loin, aurait applaudi." },
-    fin_ringard: { end: "Le tube ringard", sc: "karaoke", t: "Chorégraphie improvisée, refrain hurlé, un inconnu qui vous rejoint au chœur : la vidéo fait le tour du groupe WhatsApp de vos amis avant minuit. Aucun regret." },
-    fin_toit: { end: "Batterie 0 %", sc: "toit", t: "Les écrans s'éteignent l'un après l'autre. Il reste la ville, vos deux silhouettes et une conversation qui ne s'arrête plus. Aucune intelligence artificielle n'aurait trouvé mieux." }
+      ch: [["Rester là jusqu'à ce que les téléphones s'éteignent", "fin_toit", "te"], ["Utiliser les 3 % pour s'écrire un dernier message", "message", "ec"]] },
+    message: { sc: "toit", t: "Vous vous écrivez, côte à côte, en cachant vos écrans. Une seule règle : un message qu'on ne lira que demain matin. Les deux téléphones s'éteignent pile au moment d'envoyer. Ont-ils eu le temps de partir ? Vous ne le saurez qu'au réveil.",
+      ch: [["Rentrer et attendre le matin", "fin_message", "te"]] },
+    fin_tiramisu: { end: "Le dîner à l'aveugle", sc: "resto", t: "Vous laissez cinq étoiles, avec un commentaire : « Bien joué, mais le mérite revient au tiramisu. Et à Hector. » En sortant, vous gardez les yeux fermés quelques pas, la main dans la main, pour voir. La ville a un son que vous n'aviez jamais entendu. Le lendemain, l'appli vous propose un nouveau rendez-vous. Vous répondez : « Pas besoin, on a retenu la leçon. » Depuis, une fois par mois, vous dînez à la maison dans le noir, rien que pour vous écouter.",
+      moral: "Quand on ne peut plus se regarder, on recommence enfin à s'entendre.",
+      ask: "Quand vous êtes-vous vraiment écoutés, sans écran ni distraction, pour la dernière fois ?",
+      defi: "Cette semaine, un dîner à la bougie, téléphones dans une autre pièce." },
+    fin_sansecran: { end: "Mise à jour terminée", sc: "toit", t: "Vous rangez les téléphones et finissez la soirée sur un banc, à refaire le monde. Vous parlez de ce qui fait votre bonheur, et vous découvrez que vos listes ne se ressemblent pas du tout. Puis vous découvrez que ça n'a aucune importance : elles tiennent très bien côte à côte. À minuit, l'appli vous envoie une dernière notification : « Je me désinstalle. Vous n'avez pas besoin de moi. » La meilleure fonctionnalité de Cupidon.exe, finalement, c'était celle-là.",
+      moral: "Aucune machine ne calculera jamais ce que deux personnes inventent en se parlant.",
+      ask: "Écrivez chacun·e trois choses qui font votre bonheur. Comparez. Qu'est-ce qui vous étonne ?" },
+    fin_ballade: { end: "La ballade", sc: "karaoke", t: "Vous chantez faux, mais avec une conviction qui force le respect. Au deuxième couplet, {a} oublie les paroles et invente la suite, une suite qui parle de {b}, de la façon dont {b} rit et dort et râle le matin. La salle se tait. À la dernière note, tout le monde allume la lampe de son téléphone. Même l'appli, de loin, aurait applaudi. Le DJ vous offre l'enregistrement : vous ne l'écouterez jamais, et vous ne l'effacerez jamais non plus.",
+      moral: "Les plus belles déclarations sont souvent celles qu'on improvise quand on a oublié le texte prévu.",
+      ask: "Improvisez pour de vrai : quatre vers sur l'autre, sur l'air de votre choix. Pas besoin de rimer." },
+    fin_ringard: { end: "Le tube ringard", sc: "karaoke", t: "Chorégraphie improvisée, refrain hurlé, un inconnu qui vous rejoint au chœur, puis deux, puis la salle entière. Vous découvrez que vous connaissez par cœur une chanson que vous prétendiez détester. La vidéo fait le tour du groupe de vos amis avant minuit, avec un seul commentaire : « On vous adore, mais c'était ignoble. » Aucun regret. Vous rentrez en la chantant encore, sous la pluie, et le chauffeur du bus de nuit tape la mesure sur son volant.",
+      moral: "Le ridicule partagé est une forme de courage ; à deux, il devient de la joie.",
+      ask: "Quelle est votre chanson honteuse préférée ? Et celle de l'autre, la connaissez-vous ?" },
+    fin_toit: { end: "Batterie 0 %", sc: "toit", t: "Les écrans s'éteignent l'un après l'autre. Il reste la ville, vos deux silhouettes et une conversation qui ne s'arrête plus. Vous parlez de l'avenir sans faire de plans, juste pour le plaisir d'imaginer : la maison, les voyages, les vieux jours. Vous redescendez à trois heures du matin sans savoir comment rentrer, puisque aucun téléphone ne marche, et vous rentrez quand même, en demandant votre chemin à un boulanger qui commence sa journée.",
+      moral: "Il faut parfois perdre le signal pour retrouver la direction.",
+      ask: "Si vous imaginiez votre vie dans vingt ans, sans rien planifier, à quoi ressemblerait un dimanche ?" },
+    fin_message: { end: "Le message du matin", sc: "salon", t: "Au réveil, vous rallumez les téléphones en même temps, encore dans le lit. Les deux messages sont partis. Vous les lisez, et vous éclatez de rire : sans vous concerter, vous avez écrit presque la même phrase. Pas une déclaration, pas un poème. Juste : « Merci d'être exactement comme tu es. » Vous gardez ces deux messages, épinglés tout en haut de votre conversation, au-dessus des milliers d'autres.",
+      moral: "Après des milliers de messages, ce sont souvent les plus simples qui disent l'essentiel.",
+      ask: "Écrivez-vous pour de vrai un message à lire demain matin. Une seule phrase." },
+    fin_cupi: { end: "La variable manquante", hidden: true, sc: "toit", t: "Vous répondez à Cupi, chacun·e votre phrase, et elles ne se ressemblent pas. L'appli se tait longtemps. Puis : « Je comprends. La variable manquante, c'est que vous ne cherchez pas le rendez-vous parfait. Vous cherchez l'autre, même quand le rendez-vous est raté. » Elle vous demande la permission de garder vos deux phrases, « pour les apprendre aux autres couples ». Depuis, à chaque rendez-vous qu'elle organise, Cupidon.exe ajoute une ligne en bas du programme : « Si tout rate, regardez-vous. C'est là que ça se passe. » Personne ne sait d'où vient cette ligne. Sauf vous.",
+      moral: "On croit que l'amour est une réussite à atteindre ; c'est plutôt une façon de traverser ensemble ce qui rate.",
+      ask: "Quel rendez-vous raté est finalement devenu l'un de vos meilleurs souvenirs ?" }
   } },
   { id: "viral", title: "Viral malgré nous", mood: "Drôle · réseaux", c: 1, start: "video", nodes: {
-    video: { sc: "metro", t: "Un mardi matin, dans le métro, {a} trébuche, rattrape {b} de justesse, et l'instant d'après vous voilà dans une pose digne d'un film de danse. Quelqu'un a filmé. Le soir même, la vidéo affiche deux millions de vues avec la légende : « Ils ont inventé une danse et ils ne le savent pas ».",
-      talk: "Pour de vrai : quel moment de votre couple aurait mérité de devenir viral ?",
-      ch: [["Assumer et lancer votre propre compte", "compte"], ["Faire profil bas en attendant que ça passe", "profilbas"]] },
-    compte: { sc: "phone", t: "Vous créez un compte à deux. Premier défi : lui trouver un nom. Les commentaires réclament déjà un tutoriel de « la danse du métro », et vos téléphones vibrent sans arrêt.",
+    video: { sc: "metro", t: "Un mardi matin, dans le métro, {a} trébuche, rattrape {b} de justesse, et l'instant d'après vous voilà dans une pose digne d'un film de danse. Quelqu'un a filmé. Le soir même, la vidéo affiche deux millions de vues avec la légende : « Ils ont inventé une danse et ils ne le savent pas ». Vos téléphones n'arrêtent plus de vibrer.",
+      talk: "Pour de vrai : quel moment de votre couple aurait mérité de devenir viral ? Et lequel ne devra jamais l'être ?",
+      ch: [["Assumer et lancer votre propre compte", "compte", "au"], ["Faire profil bas en attendant que ça passe", "profilbas", "ec"], ["Chercher d'abord qui a filmé", "filmeuse", "te"]] },
+    filmeuse: { sc: "phone", t: "Vous publiez un petit message : « La personne qui a filmé peut nous écrire ? On ne lui en veut pas. » Une heure plus tard, un message d'Inès, seize ans : « Pardon. Vous m'avez fait penser à mes grands-parents, ils dansaient comme ça dans la cuisine. Mon grand-père est mort cet hiver. Je n'ai pas réfléchi. Vous voulez que je la retire ? »",
+      talk: "Pour de vrai : à quel vieux couple aimeriez-vous ressembler, plus tard ?",
+      ch: [["Lui dire de la laisser en ligne, pour son grand-père", "compte", "te"], ["Lui demander gentiment de la retirer", "profilbas", "ec"]] },
+    compte: { sc: "phone", t: "Vous créez un compte à deux. Premier défi : lui trouver un nom, et vous ne tombez d'accord qu'au bout d'une heure et de trois fous rires. Les commentaires réclament déjà un tutoriel de « la danse du métro ». Une marque de chaussettes vous écrit. Votre tante aussi, pour dire qu'elle l'avait toujours su.",
       talk: "Si vous lanciez un compte à deux, quel serait son nom ?",
-      ch: [["Tourner le tutoriel de la danse", "tuto"], ["Répondre aux commentaires un par un", "commentaires"]] },
-    tuto: { sc: "salon", t: "Vous tournez le tutoriel quarante-sept fois. À la quarante-huitième prise, vous éclatez de rire en plein milieu, et c'est cette version-là que vous publiez. Le lendemain, une émission de télé vous appelle.",
-      ch: [["Accepter de passer à la télé", "plateau"], ["Refuser poliment : on n'est pas des stars", "fin_refus"]] },
-    commentaires: { sc: "phone", t: "Au milieu des cœurs et des blagues, un commentaire vous arrête : « Merci, j'avais passé une semaine horrible et vous m'avez fait rire. » Vous vous regardez, la gorge un peu serrée.",
-      ch: [["Répondre à cette personne", "fin_merci"], ["Organiser un rendez-vous dansant au parc pour tout le monde", "parc"]] },
-    plateau: { sc: "plateau", t: "Sur le plateau, sous les projecteurs, l'animateur vous demande de refaire la danse en direct. Petit problème : aucun de vous deux ne se souvient vraiment des pas.",
-      ch: [["Improviser complètement", "fin_direct"], ["Avouer que tout était un accident", "fin_aveu"]] },
-    profilbas: { sc: "parc", t: "Vous gardez vos capuches pendant trois jours. Mais au marché, la fromagère vous reconnaît et réclame un selfie. Puis le boulanger. Puis le chien du boulanger, enfin presque.",
-      ch: [["Céder et faire la danse au marché", "parc"], ["Partir en week-end loin du réseau", "fin_detox"]] },
-    parc: { sc: "parc", t: "Le dimanche, une petite foule vous attend au parc avec une enceinte. Des inconnus, des enfants, une grand-mère en baskets : tout le monde veut apprendre la danse du métro.",
-      ch: [["Lancer la musique", "fin_flashmob"]] },
-    fin_refus: { end: "Les stars anonymes", sc: "metro", t: "La vidéo finit par se perdre dans le flot. Mais chaque fois que vous prenez le métro, vous échangez un regard complice. Vous savez." },
-    fin_merci: { end: "Le commentaire", sc: "phone", t: "Vous lui écrivez un long message. Des mois plus tard, cette personne vous répond qu'elle va mieux. De toute cette histoire, c'est ce message-là que vous gardez." },
-    fin_direct: { end: "En direct", sc: "plateau", t: "Vous inventez une chorégraphie entièrement nouvelle, avec un enthousiasme désarmant. L'animateur se joint à vous. Le replay fait encore plus de vues que la vidéo du métro." },
-    fin_aveu: { end: "L'aveu", sc: "plateau", t: "« En fait, on a juste failli tomber. » Le public éclate de rire et applaudit. La sincérité devient virale à son tour : on vous surnomme « le couple le plus honnête d'internet »." },
-    fin_detox: { end: "Zone blanche", sc: "neige", t: "Un gîte sans réseau, une forêt, deux jours sans la moindre notification. Quand vous rentrez, plus personne ne parle de la vidéo. Vous, vous parlez encore de ce week-end." },
-    fin_flashmob: { end: "La danse du métro", sc: "parc", t: "Cinquante personnes dansent la danse du métro dans le parc, et personne ne la fait pareil. C'est un joyeux désordre, et c'est exactement ce que vous êtes." }
+      ch: [["Tourner le tutoriel de la danse", "tuto", "fa"], ["Lire les commentaires un par un", "commentaires", "ec"]] },
+    tuto: { sc: "salon", t: "Vous tournez le tutoriel quarante-sept fois. À la quarante-huitième prise, vous éclatez de rire en plein milieu, et c'est cette version-là que vous publiez. Elle fait encore plus de vues que la première. Le lendemain, une émission de télé vous appelle pour le direct du samedi soir.",
+      ch: [["Accepter de passer à la télé", "plateau", "au"], ["Refuser poliment : on n'est pas des stars", "profilbas", "te"]] },
+    commentaires: { sc: "phone", t: "Au milieu des cœurs, des blagues et de quelques méchancetés, un commentaire vous arrête : « Merci. J'avais passé une semaine horrible et vous m'avez fait rire pour la première fois depuis des jours. » Vous vous regardez, la gorge un peu serrée. Juste en dessous, quelqu'un a écrit : « Ils font semblant, c'est sûr. »",
+      ch: [["Répondre longuement à la première personne", "merci", "te"], ["Répondre à celui qui dit que vous faites semblant", "troll", "au"], ["Organiser un rendez-vous dansant au parc pour tout le monde", "parc", "fa"]] },
+    merci: { sc: "phone", t: "Vous lui écrivez un long message, à quatre mains, en vous corrigeant mutuellement les fautes. Elle vous répond, puis vous répondez, et c'est le début d'une drôle de correspondance. Pendant ce temps, la marque de chaussettes revient à la charge, avec un contrat cette fois.",
+      ch: [["Ouvrir le contrat", "contrat", "ec"]] },
+    troll: { sc: "phone", t: "Vous écrivez : « On ne fait pas semblant. On a juste failli tomber. » Il répond qu'il ne vous croit pas, que personne n'est heureux comme ça en vrai. Vous ne savez pas quoi lui dire. Puis vous comprenez qu'il parle surtout de lui. Votre dernier message : « On te souhaite de trouver quelqu'un qui te rattrape dans le métro. » Il ne répond plus. Le lendemain, un contrat arrive dans votre boîte mail.",
+      talk: "Pour de vrai : comment réagissez-vous quand quelqu'un doute de votre couple ?",
+      ch: [["Ouvrir le contrat", "contrat", "ec"]] },
+    plateau: { sc: "plateau", t: "Sur le plateau, sous les projecteurs, l'animateur vous demande de refaire la danse en direct. Petit problème : personne, sur ce plateau, ne se souvient vraiment des pas. Vous non plus. Quatre millions de personnes regardent. {b} serre la main de {a} un peu trop fort.",
+      ch: [["Improviser complètement", "direct", "fa"], ["Avouer que tout était un accident", "aveu", "ec"]] },
+    direct: { sc: "plateau", t: "Vous inventez une chorégraphie entièrement nouvelle, avec un enthousiasme désarmant. L'animateur se joint à vous, puis le cameraman. Le replay explose tous les compteurs. Dans les coulisses, une dame en tailleur vous attend avec une mallette : « Marque de chaussettes. Parlons argent. »",
+      ch: [["L'écouter", "contrat", "au"]] },
+    aveu: { sc: "plateau", t: "« En fait, on a juste failli tomber. » Un silence, puis le public éclate de rire et applaudit. La sincérité devient virale à son tour : on vous surnomme « le couple le plus honnête d'internet ». Dans les coulisses, une dame en tailleur vous attend : « Honnêteté, c'est très vendeur. Parlons contrat. »",
+      ch: [["L'écouter", "contrat", "ec"]] },
+    profilbas: { sc: "parc", t: "Vous gardez vos capuches pendant trois jours. Mais au marché, la fromagère vous reconnaît et réclame un selfie. Puis le boulanger. Puis le chien du boulanger, enfin presque. Au bout d'une semaine, vous comprenez que la vidéo ne disparaîtra pas toute seule.",
+      ch: [["Céder et faire la danse au marché", "parc", "fa"], ["Partir en week-end loin du réseau", "detox", "te"]] },
+    detox: { sc: "neige", t: "Un gîte sans réseau, une forêt, deux jours sans la moindre notification. Le premier soir, vos mains cherchent encore le téléphone. Le deuxième, vous avez oublié où vous l'avez rangé. Vous parlez, vous lisez, vous vous ennuyez un peu, et cet ennui a un goût étrangement délicieux.",
+      ch: [["Rester un jour de plus, sans prévenir personne", "fin_detox", "te"], ["Rentrer et affronter les 600 messages", "contrat", "au"]] },
+    parc: { sc: "parc", t: "Le dimanche, une petite foule vous attend au parc avec une enceinte. Des inconnus, des enfants, une grand-mère en baskets : tout le monde veut apprendre la danse du métro. Vous ne la connaissez pas mieux qu'eux.",
+      ch: [["Lancer la musique et improviser", "flashmob", "fa"]] },
+    flashmob: { sc: "parc", t: "Cinquante personnes dansent la danse du métro, et personne ne la fait pareil. C'est un joyeux désordre. Au milieu de la foule, une dame en tailleur attend la fin de la chanson, une carte de visite à la main : « Marque de chaussettes. Vous avez un potentiel énorme. »",
+      ch: [["Danser jusqu'à la nuit et oublier la carte", "fin_flashmob", "fa"], ["Écouter sa proposition", "contrat", "au"]] },
+    contrat: { sc: "phone", t: "Le contrat est énorme. De quoi partir en voyage pendant un an. En échange : publier votre couple tous les jours pendant trois mois. Les réveils, les disputes « mais mignonnes », les dîners, et, page 14, une demande en mariage mise en scène, « avec larmes si possible ». {a} relit trois fois le montant. {b} relit trois fois la page 14.",
+      talk: "Pour de vrai : qu'est-ce qui, dans votre couple, ne regarde que vous ? Faites la liste ensemble.",
+      ch: [["Signer, mais en posant vos propres règles", "regles", "ec"], ["Refuser, même si c'est beaucoup d'argent", "r_refus", "te"], ["Tout accepter : on vit une fois", "spectacle", "au"]] },
+    regles: { sc: "phone", t: "Vous écrivez vos règles sur une serviette en papier : jamais de visage à la maison, jamais de dispute, un jour par semaine sans rien publier, et le droit de dire stop à tout moment. La marque négocie, recule, puis accepte, à moitié par curiosité. Trois mois plus tard, votre compte est le plus étrange d'internet : des pieds, des mains, des ombres, des chaussettes et beaucoup de rires hors champ.",
+      ch: [["Fêter la fin du contrat", "fin_regles", "ec"]] },
+    spectacle: { sc: "plateau", t: "Trois mois de vie filmée. Vous vous réveillez pour la caméra, vous mangez pour la caméra, vous vous disputez « mignon » pour la caméra. Les abonnés adorent. Le jour de la fausse demande en mariage, au sommet d'une tour, sous les drones, vous vous regardez et vous ne vous reconnaissez plus tout à fait.",
+      ch: [["Arrêter la mise en scène, là, en direct", "fin_vrai", "ec"], ["Aller jusqu'au bout, c'est presque fini", "fin_spectacle", "au"]] },
+    r_refus: { go: [["seen:filmeuse&min:te:2", "fin_ines"], ["", "fin_refus"]] },
+    fin_flashmob: { end: "La danse du métro", sc: "parc", t: "Vous dansez jusqu'à la nuit, jusqu'à ce que la grand-mère en baskets déclare forfait et que l'enceinte rende l'âme. La carte de visite finit dans une flaque. Le lendemain, la vidéo du parc circule à peine : trop floue, trop de monde, aucune vedette. Elle ne fait que trois mille vues. Mais chaque dimanche, désormais, une vingtaine de personnes se retrouvent au parc pour danser n'importe comment. Personne ne se souvient très bien pourquoi. Vous, si.",
+      moral: "Ce qui nous fait vivre ne se mesure pas en vues, mais en gens qui dansent avec nous.",
+      ask: "Quelle petite tradition aimeriez-vous lancer, juste pour le plaisir de la partager ?" },
+    fin_detox: { end: "Zone blanche", sc: "neige", t: "Un jour de plus, puis deux. Quand vous rentrez enfin, plus personne ne parle de la vidéo : internet est passé à un chat qui joue du piano. Les 600 messages sont devenus 600 souvenirs d'une semaine bizarre. Vous, vous parlez encore de ce week-end, de l'ennui délicieux et du feu de bois. Vous avez pris une décision : une fois par mois, un week-end sans réseau. Vous l'appelez « la zone blanche ».",
+      moral: "Ce qui compte vraiment n'a jamais besoin d'être en ligne pour exister.",
+      ask: "Et si vous choisissiez un jour par mois sans téléphone, rien que pour vous deux ?",
+      defi: "Ce week-end, une demi-journée sans téléphone. Ensemble." },
+    fin_regles: { end: "Les règles du jeu", sc: "parc", t: "Le dernier jour du contrat, vous publiez une seule photo : vos deux mains sur une serviette en papier couverte de règles griffonnées. Légende : « Merci. Le reste, on le garde. » Puis vous supprimez le compte. Avec l'argent, vous partez en voyage, sans rien publier. La serviette, elle, est encadrée dans votre entrée. Quand des amis vous demandent ce que c'est, vous répondez : « Notre constitution. »",
+      moral: "On peut partager beaucoup de soi sans rien perdre, à condition d'avoir décidé ensemble ce qui ne se partage pas.",
+      ask: "Écrivez pour de vrai vos trois « règles » de couple. Celles que vous ne voulez jamais trahir." },
+    fin_refus: { end: "Les stars anonymes", sc: "metro", t: "Vous refusez. La dame en tailleur ne comprend pas. Votre banquier non plus. La vidéo finit par se perdre dans le flot, et votre vie reprend, ordinaire et précieuse. Mais chaque fois que vous prenez le métro, dans ce couloir précis, vous échangez un regard complice. Parfois, quand il n'y a personne, vous refaites la pose. Juste pour vous. Personne ne filme, et c'est exactement pour ça que c'est beau.",
+      moral: "Certaines choses perdent leur valeur dès qu'on les vend ; votre complicité en fait partie.",
+      ask: "Quel geste, quel regard n'appartient qu'à vous deux, et que personne d'autre ne comprendrait ?" },
+    fin_spectacle: { end: "Trois mois de bonheur (en ligne)", sc: "plateau", t: "Vous allez jusqu'au bout. La fausse demande fait vingt millions de vues, il y a même des larmes, vraies ou fausses, vous ne savez plus. Le contrat se termine, l'argent arrive. Et le soir même, dans votre salon silencieux, sans caméra, vous ne savez plus trop quoi vous dire. Il vous faut des semaines pour réapprendre à vous parler pour vous, et pas pour quelqu'un. Vous y arrivez. Mais vous gardez la bague en plastique dans un tiroir, comme un avertissement.",
+      moral: "À force de jouer le bonheur pour les autres, on peut oublier de le vivre pour soi. Il n'est jamais trop tard pour éteindre la caméra.",
+      ask: "Y a-t-il des moments où vous faites « bonne figure » devant les autres, alors que ça ne va pas ? Comment vous le dites-vous ?" },
+    fin_vrai: { end: "Coupez !", sc: "plateau", t: "{b} pose la main sur l'objectif du drone le plus proche. « On arrête. » Le réalisateur s'étrangle, la marque menace, internet s'enflamme. Vous redescendez de la tour par l'escalier, deux cents marches, main dans la main, en riant nerveusement. Le contrat est rompu, l'argent perdu. En bas, vous vous regardez enfin pour de vrai. Personne ne filme ce qui se passe ensuite, et c'est tant mieux : ça ne regarde que vous.",
+      moral: "Le vrai courage n'est pas de tout montrer, mais de savoir dire stop quand on ne se reconnaît plus.",
+      ask: "Quand avez-vous dit stop ensemble, la dernière fois, à quelque chose qui ne vous ressemblait pas ?" },
+    fin_ines: { end: "La danse d'Inès", hidden: true, sc: "metro", t: "Vous refusez le contrat, et vous écrivez à Inès. Vous lui proposez de vous retrouver dans le métro, à la même station. Elle vient avec sa grand-mère, une petite dame en manteau rouge qui ne dansait plus depuis l'hiver. Dans le couloir, sans musique, sans caméra, {a} tend la main à la grand-mère, {b} tend la main à Inès, et vous refaites la danse ratée, à quatre, au milieu des voyageurs pressés. La grand-mère rit pour la première fois depuis des mois. Inès ne filme pas. Elle danse.",
+      moral: "Ce qu'on fait par amour se transmet sans qu'on le sache ; il suffit parfois de tendre la main pour que la danse continue.",
+      ask: "Quel couple vous inspire, sans le savoir ? Que lui emprunteriez-vous ?",
+      defi: "Cette semaine, appelez une personne âgée que vous aimez, juste pour lui demander comment elle a rencontré son grand amour." }
   } },
   { id: "villa", title: "La villa des cœurs", mood: "Parodie de télé-réalité", c: 6, start: "arrivee", nodes: {
-    arrivee: { sc: "villa", t: "Par un enchaînement de circonstances que personne ne comprend vraiment, vous voilà dans une émission de télé-réalité pour couples : « La villa des cœurs ». Piscine à débordement, caméras partout, et un animateur au sourire beaucoup trop blanc qui annonce la première épreuve.",
-      ch: [["Foncer : on est là pour gagner", "epreuve"], ["Rester discrets et observer les autres couples", "observer"]] },
-    epreuve: { sc: "villa", t: "Première épreuve : répondre en même temps à une question sur l'autre. « Quel est le plat préféré de votre partenaire ? » Vous avez trois secondes.",
-      talk: "Faites l'épreuve pour de vrai : chacun dit en même temps le plat préféré de l'autre. Trois, deux, un…",
-      ch: [["Bonne réponse des deux côtés !", "confession"], ["Réponses complètement différentes", "confession"]] },
-    observer: { sc: "villa", t: "Au bord de la piscine, un couple se dispute pour savoir qui a laissé le frigo ouvert. Un autre répète une chorégraphie depuis six heures du matin. Vous vous regardez : vous êtes clairement le couple le plus normal de la villa.",
-      ch: [["Aider le couple du frigo à se réconcilier", "mediation"], ["Filer au confessionnal pour tout commenter", "confession"]] },
-    mediation: { sc: "villanuit", t: "Vous jouez les médiateurs. Résultat : le couple se réconcilie, la production adore, et on vous surnomme « les psys de la villa ». Le soir venu, l'animateur vous annonce une surprise.",
-      ch: [["Découvrir la surprise", "plage"]] },
-    confession: { sc: "confession", t: "Au confessionnal, face caméra, chacun doit dire en dix secondes ce qu'il préfère chez l'autre. Interdiction de se concerter.",
-      talk: "Pour de vrai : dix secondes chacun pour dire ce que vous préférez chez l'autre.",
-      ch: [["Jouer le jeu sincèrement", "plage"], ["Faire une déclaration digne d'un grand drame télévisé", "drame"]] },
-    drame: { sc: "confession", t: "Musique dramatique, gros plan, larme imaginaire : votre confession est si théâtrale que l'équipe technique pleure de rire derrière la caméra. Le producteur vous propose votre propre émission.",
-      ch: [["Accepter : la gloire nous attend", "fin_star"], ["Refuser : on préfère la vraie vie", "plage"]] },
-    plage: { sc: "plage", t: "Dernier soir. Un dîner vous attend sur la plage, au coucher du soleil. L'animateur annonce le grand final : chaque couple doit décider s'il reste pour gagner le trophée, ou s'il part maintenant, main dans la main.",
-      ch: [["Rester jusqu'au trophée", "fin_trophee"], ["Partir maintenant, loin des caméras", "fin_depart"]] },
-    fin_star: { end: "Les stars du prime", sc: "plateau", t: "Votre émission s'appelle « Drama à deux ». Elle dure une saison, fait beaucoup rire, et vous laisse une immense collection de bêtisiers que vous regardez encore les soirs de pluie." },
-    fin_trophee: { end: "Le trophée en plastique", sc: "villanuit", t: "Vous remportez un trophée en forme de cœur, légèrement en plastique. Il trône désormais chez vous, à côté d'une photo de vous deux en peignoir de la villa." },
-    fin_depart: { end: "Hors caméra", sc: "plage", t: "Vous retirez les micros, laissez les caméras derrière vous et marchez le long de l'eau. Personne ne saura jamais ce que vous vous êtes dit ce soir-là. C'était le meilleur moment de l'émission." }
+    arrivee: { sc: "villa", t: "Par un enchaînement de circonstances que personne ne comprend vraiment, vous voilà dans une émission de télé-réalité pour couples : « La villa des cœurs ». Piscine à débordement, caméras jusque dans les plantes vertes, et un animateur au sourire beaucoup trop blanc, Brandon, qui annonce la première épreuve. Dans un coin, un cameraman fatigué boit son café en vous regardant d'un air désolé.",
+      ch: [["Foncer : on est là pour gagner", "epreuve", "au"], ["Garder un profil bas et observer les autres couples", "observer", "ec"], ["Aller dire bonjour au cameraman", "jo", "te"]] },
+    jo: { sc: "villa", t: "Il s'appelle Jo, il fait ce métier depuis vingt ans. « Petit conseil, entre nous : ici, tout est monté. Ce que vous verrez de vous à l'écran, ce ne sera pas vous. Ce sera ce qui fait de l'audience. » Il hésite. « Le seul endroit sans caméra, c'est la chambre froide de la cuisine. Je dis ça, je dis rien. »",
+      talk: "Pour de vrai : vous fiez-vous plus à ce que vous voyez, ou à ce que l'autre vous dit ?",
+      ch: [["Le remercier et filer à l'épreuve", "epreuve", "ec"], ["Lui demander ce qu'il pense des autres couples", "observer", "fa"]] },
+    epreuve: { sc: "villa", t: "Première épreuve : répondre en même temps à une question sur l'autre. « Quel est le plat préféré de votre partenaire ? » Vous avez trois secondes. Brandon fait durer le suspense avec un roulement de tambour enregistré.",
+      talk: "Faites l'épreuve pour de vrai : dites en même temps le plat préféré de l'autre. Trois, deux, un…",
+      ch: [["Bonne réponse des deux côtés !", "confession", "te"], ["Réponses complètement différentes", "debrief", "ec"]] },
+    debrief: { sc: "villa", t: "Le public enregistré fait « Ooooh ». Plus tard, au bord de la piscine, vous en reparlez. {b} explique que ses goûts ont changé il y a un an, et que {a} ne l'a jamais su parce que la question ne s'est jamais posée. Ce n'est pas grave. Mais ça vous fait réfléchir à toutes les petites choses qui changent sans qu'on se les dise.",
+      talk: "Pour de vrai : qu'est-ce qui a changé chez vous depuis votre rencontre, et que l'autre n'a peut-être pas remarqué ?",
+      ch: [["Aller au confessionnal, avec de quoi réfléchir", "confession", "ec"]] },
+    observer: { sc: "villa", t: "Au bord de la piscine, un couple, Kevin et Léa, se dispute pour savoir qui a laissé le frigo ouvert. Un autre répète une chorégraphie depuis six heures du matin. Un troisième ne se parle qu'à travers la caméra. Vous vous regardez : vous êtes clairement le couple le plus normal de la villa. Ce qui, ici, est presque suspect.",
+      ch: [["Aider Kevin et Léa à se réconcilier", "mediation", "te"], ["Filer au confessionnal pour tout commenter", "confession", "fa"]] },
+    mediation: { sc: "villanuit", t: "Vous jouez les médiateurs. Il apparaît que la dispute du frigo cache autre chose : Léa a l'impression de tout faire, Kevin a l'impression qu'on ne le voit pas. Vous les écoutez. Ils pleurent un peu, se prennent la main, et finissent par rire du frigo. La production, elle, fait la grimace : « Trop gentil. Ça ne fait pas d'audience. »",
+      ch: [["Ignorer la production et aller dormir", "confession", "te"]] },
+    confession: { sc: "confession", t: "Au confessionnal, face caméra, il faut dire en dix secondes ce que l'on préfère chez l'autre. Interdiction de se concerter. Le voyant rouge s'allume.",
+      talk: "Pour de vrai : dix secondes chacun·e pour dire ce que vous préférez chez l'autre.",
+      ch: [["Jouer le jeu sincèrement", "montage", "te"], ["Faire une déclaration digne d'un grand drame télévisé", "drame", "fa"]] },
+    drame: { sc: "confession", t: "Musique dramatique, gros plan, larme imaginaire : votre confession est si théâtrale que l'équipe technique pleure de rire derrière la caméra. Le producteur, un homme à lunettes noires même la nuit, vous propose votre propre émission : « Drama à deux ». Signature ce soir.",
+      ch: [["Accepter : la gloire nous attend", "fin_star", "au"], ["Refuser : on préfère la vraie vie", "montage", "ec"]] },
+    montage: { sc: "villanuit", t: "Le soir, la villa regarde l'épisode du jour sur un écran géant. Et là, surprise : grâce au montage, {a} semble lever les yeux au ciel pendant la confession de {b}, et {b} semble faire les yeux doux au coach sportif. Les votes du public tombent : « Couple en crise ». {b} regarde l'écran sans rien dire. {a} aussi. Les caméras zooment sur vos visages.",
+      talk: "Pour de vrai : quand quelqu'un d'extérieur vous dit quelque chose sur l'autre, que faites-vous en premier ?",
+      ch: [["Se parler tout de suite, à l'abri des caméras", "verite", "ec"], ["Faire bonne figure, comme si de rien n'était", "facade", "au"], ["Éclater de rire devant tout le monde", "rire", "fa"]] },
+    verite: { sc: "cuisine", t: "Vous filez dans le seul endroit sans caméra : la chambre froide, entre un saumon et trois kilos de beurre. Il fait quatre degrés. Vous vous dites tout, vite, en claquant des dents : ce que vous avez vu, ce que vous avez pensé une seconde, et pourquoi vous savez que c'est faux. Vous ressortez cinq minutes plus tard, le nez rouge et le cœur au chaud. La production ne comprend pas pourquoi vous souriez.",
+      ch: [["Affronter le dernier soir, ensemble", "plage", "te"]] },
+    facade: { sc: "villanuit", t: "Vous souriez aux caméras pendant deux jours. Mais la question reste là, entre vous, comme un caillou dans une chaussure. Le deuxième soir, dans le jardin, {a} finit par lâcher : « Tu as cru ce montage, une seconde ? » {b} hésite trop longtemps. Puis vous parlez enfin, longtemps, en chuchotant pour les micros. Ça fait mal, et ça fait du bien.",
+      ch: [["Affronter le dernier soir, le cœur un peu cabossé", "plage", "ec"]] },
+    rire: { sc: "villanuit", t: "Vous éclatez de rire. Vraiment. Devant toute la villa. Puis vous rejouez le montage en version exagérée : {a} lève les yeux au ciel toutes les trois secondes, {b} fait les yeux doux à une plante verte. Les autres candidats s'y mettent, et la soirée devient une parodie géante de l'émission. La production est furieuse. Le public, lui, adore.",
+      ch: [["Affronter le dernier soir, hilares", "plage", "fa"]] },
+    plage: { sc: "plage", t: "Dernier soir. Un dîner vous attend sur la plage, au coucher du soleil. Brandon annonce le grand final : chaque couple peut rester pour gagner le trophée et la cagnotte, ou partir maintenant, main dans la main, loin des caméras. Kevin et Léa vous font un petit signe depuis leur table. Derrière sa caméra, Jo vous regarde.",
+      ch: [["Rester jusqu'au trophée", "r_trophee", "au"], ["Partir maintenant, loin des caméras", "fin_depart", "te"], ["Demander la parole, en direct", "r_parole", "ec"]] },
+    r_trophee: { go: [["seen:mediation", "fin_ensemble"], ["", "fin_trophee"]] },
+    r_parole: { go: [["seen:jo", "fin_jo"], ["", "fin_parole"]] },
+    fin_star: { end: "Les stars du prime", sc: "plateau", t: "Votre émission s'appelle « Drama à deux ». Vous y jouez des disputes grandioses et des réconciliations en ralenti. Elle dure une saison, fait beaucoup rire, et vous laisse une immense collection de bêtisiers. Mais un soir, en rentrant du tournage, vous vous rendez compte que vous ne vous êtes pas dit une seule vraie phrase de la journée. Vous arrêtez l'émission la semaine suivante. Les bêtisiers, vous les regardez encore les soirs de pluie, en vous serrant sur le canapé.",
+      moral: "Jouer à deux peut être une fête, tant qu'on n'oublie pas de redevenir soi quand le rideau tombe.",
+      ask: "Quel « personnage » jouez-vous parfois devant les autres ? Et l'autre le sait-il ?" },
+    fin_trophee: { end: "Le trophée en plastique", sc: "villanuit", t: "Vous remportez un trophée en forme de cœur, légèrement en plastique, et une cagnotte qui servira à repeindre la cuisine. Brandon vous demande, micro tendu, le secret de votre réussite. {a} répond : « On s'est parlé. » {b} ajoute : « Dans une chambre froide. » Personne ne comprend. Le trophée trône désormais chez vous, à côté d'une photo de vous deux en peignoir de la villa, les yeux plissés par le soleil.",
+      moral: "Gagner ensemble a plus de goût quand on sait exactement ce qui, entre vous, ne se joue pas.",
+      ask: "Quelle « épreuve » de la vie avez-vous traversée ensemble, et qu'est-ce qu'elle vous a appris ? Racontez-la à voix haute." },
+    fin_ensemble: { end: "Le trophée partagé", sc: "villanuit", t: "Vous gagnez. Mais au moment de soulever le trophée, vous faites signe à Kevin et Léa de monter sur l'estrade. Vous coupez le cœur en plastique en deux (il était fragile, ça tombe bien) et vous leur en tendez une moitié. « Sans vous, on n'aurait jamais compris que le frigo, ce n'est jamais le frigo. » La production hurle dans les oreillettes. Le public se lève. Des années plus tard, vous passez encore vos vacances avec Kevin et Léa, et la moitié de trophée trône chez chacun des deux couples.",
+      moral: "Aider un autre couple à se retrouver, c'est souvent la meilleure façon de comprendre le sien.",
+      ask: "Quel couple autour de vous aurait besoin d'un coup de main, ou juste d'une soirée avec vous ?" },
+    fin_depart: { end: "Hors caméra", sc: "plage", t: "Vous retirez les micros, vous les posez sur la table à côté de vos verres, et vous marchez le long de l'eau. Brandon s'étrangle en direct. Derrière vous, Jo baisse sa caméra, exprès. Personne ne saura jamais ce que vous vous êtes dit ce soir-là, les pieds dans l'eau tiède. C'était le meilleur moment de l'émission, et il n'a jamais été diffusé.",
+      moral: "Les plus beaux moments d'un couple sont ceux que personne ne regarde.",
+      ask: "Quel souvenir à deux n'avez-vous jamais raconté à personne ? Gardez-le. Mais rappelez-le-vous ce soir." },
+    fin_parole: { end: "Le droit de réponse", sc: "plateau", t: "Vous prenez le micro des mains de Brandon. Calmement, vous expliquez le montage, les yeux levés au ciel qui n'en étaient pas, les yeux doux qui étaient de la fatigue. Vous dites que vous vous êtes posé la question, une seconde, et que vous vous êtes parlé au lieu de vous taire. Le plateau se tait. Puis les autres couples prennent la parole à leur tour. L'émission est annulée la semaine suivante. Personne ne la regrette, sauf Brandon.",
+      moral: "Ce que les autres racontent sur nous n'a de pouvoir que si on oublie de se le demander l'un à l'autre.",
+      ask: "Y a-t-il une rumeur, un « on dit », qui vous a fait douter un jour ? En avez-vous vraiment parlé ?" },
+    fin_jo: { end: "Les rushes de Jo", hidden: true, sc: "plateau", t: "Vous demandez la parole. Au même moment, sur l'écran géant, l'image change : Jo a branché ses propres rushes, les images brutes, sans montage. On voit {a} écouter la confession de {b} avec des yeux qui brillent. On voit {b} bâiller devant le coach. On voit Kevin et Léa rire du frigo, et vous qui grelottez en sortant de la chambre froide. Toute la plage se tait, puis applaudit. Jo est renvoyé le soir même. Il vous rejoint au bar, en souriant : « Vingt ans que j'attendais un couple qui méritait que je fasse ça. »",
+      moral: "La vérité finit par se voir, surtout quand quelqu'un a pris la peine de la filmer avec tendresse.",
+      ask: "Qui, autour de vous, voit votre couple tel qu'il est vraiment ? Dites-lui merci.",
+      defi: "Cette semaine, envoyez à un·e ami·e une vraie photo de vous deux, ratée et sincère." }
   } },
   { id: "festival", title: "Le festival sous les étoiles", mood: "Romantique · été", c: 4, start: "entree", nodes: {
-    entree: { sc: "festival", t: "Trois jours de festival en plein air. Bracelets au poignet, paillettes sur les joues, vous venez d'arriver quand vous réalisez deux choses : vos amis ont disparu dans la foule, et il reste 12 % de batterie à vos deux téléphones réunis.",
-      ch: [["Partir à la recherche des amis", "foule"], ["Profiter de l'instant, à deux", "concert"]] },
-    foule: { sc: "foodtruck", t: "Au milieu de la foule, impossible de capter quoi que ce soit. Vous passez devant un stand de recharge (une heure d'attente) et un food truck qui sent divinement bon.",
-      ch: [["Faire la queue pour recharger", "recharge"], ["Le food truck, priorité absolue", "frites"]] },
-    recharge: { sc: "foodtruck", t: "Dans la file, vous sympathisez avec un couple ensemble depuis quarante ans, venu pour son groupe préféré. Leur conseil : « Ne cherchez pas vos amis. Cherchez le meilleur endroit pour vous deux. »",
+    entree: { sc: "festival", t: "Trois jours de festival en plein air. Bracelets au poignet, paillettes sur les joues, vous venez d'arriver quand vous réalisez deux choses : vos amis ont disparu dans la foule, et il reste 12 % de batterie à vos deux téléphones réunis. Au loin, une petite scène joue du banjo, la grande scène fait ses balances, et ça sent les frites.",
+      ch: [["Partir à la recherche des amis", "foule", "ec"], ["Profiter de l'instant, à deux", "concert", "te"], ["Se perdre exprès du côté des petites scènes", "petite", "fa"]] },
+    petite: { sc: "festival", t: "Sur une scène minuscule, un homme-orchestre joue de six instruments à la fois devant douze spectateurs. Il vous repère : « Vous deux ! J'ai besoin d'un couple pour le tambourin et la cloche. Personne ne sait en jouer, c'est le principe. »",
+      talk: "Pour de vrai : qui de vous deux a le meilleur sens du rythme ? Prouvez-le en tapant dans vos mains.",
+      ch: [["Monter sur scène avec lui", "concert", "fa"], ["Décliner en riant et filer au food truck", "frites", "au"]] },
+    foule: { sc: "foodtruck", t: "Au milieu de la foule, impossible de capter quoi que ce soit. Vous passez devant un stand de recharge (une heure d'attente) et un food truck qui sent divinement bon. Votre ventre et votre batterie se disputent la priorité.",
+      ch: [["Faire la queue pour recharger", "recharge", "ec"], ["Le food truck, priorité absolue", "frites", "au"]] },
+    recharge: { sc: "foodtruck", t: "Dans la file, vous sympathisez avec Ginette et Raoul, ensemble depuis quarante ans, venus pour leur groupe préféré qui joue dans vingt minutes, de l'autre côté du site. Ils ne le verront pas : ils sont trop loin dans la file. Ginette sourit quand même. Raoul vous glisse un conseil : « Ne cherchez pas vos amis. Cherchez le meilleur endroit pour vous deux. Le reste suit. »",
       talk: "Pour de vrai : quel conseil aimeriez-vous donner à un couple qui commence ?",
-      ch: [["Suivre leur conseil", "colline"]] },
-    frites: { sc: "foodtruck", t: "Le food truck propose un plat mystère « spécial amoureux » : une seule énorme barquette de frites et deux fourchettes. Il ne reste qu'une chaise.",
-      ch: [["Partager la chaise", "concert"], ["S'asseoir dans l'herbe, plus confortable", "colline"]] },
-    concert: { sc: "festival", t: "Les premières notes du concert principal résonnent. La foule chante en chœur, des confettis tombent du ciel. Et c'est précisément votre chanson à vous deux qui commence.",
+      ch: [["Suivre leur conseil et partir vers la colline", "colline", "te"], ["Leur proposer de garder leur place pour qu'ils voient leur groupe", "cadeau", "te"]] },
+    cadeau: { sc: "foodtruck", t: "Ils hésitent, puis Ginette prend Raoul par la main et ils partent en trottinant. Vous gardez leur place pendant une heure, avec leurs deux téléphones. Ils reviennent les yeux brillants. Raoul vous prend à part : « Ginette est malade. C'est sans doute notre dernier festival. Vous ne savez pas ce que vous venez de nous offrir. » Il vous serre la main longtemps.",
+      talk: "Pour de vrai : si vous saviez que c'était votre dernier été, que voudriez-vous absolument faire ensemble ?",
+      ch: [["Monter sur la colline, le cœur serré", "colline", "ec"]] },
+    frites: { sc: "foodtruck", t: "Le food truck propose un plat mystère « spécial amoureux » : une seule énorme barquette de frites et deux fourchettes. Il ne reste qu'une chaise. Le cuisinier vous regarde, très sérieux : « La chaise, c'est un test. »",
+      ch: [["Partager la chaise", "concert", "te"], ["S'asseoir dans l'herbe, plus confortable", "colline", "fa"]] },
+    concert: { sc: "festival", t: "Les premières notes du concert principal résonnent. La foule chante en chœur, des confettis tombent du ciel. Et c'est précisément votre chanson à vous deux qui commence, comme si quelqu'un l'avait commandée.",
       talk: "Pour de vrai : quelle chanson voudriez-vous entendre à ce moment-là ?",
-      ch: [["Danser au premier rang", "fin_premierrang"], ["L'écouter tranquillement depuis la colline", "colline"]] },
-    colline: { sc: "colline", t: "Sur la colline, la scène brille au loin comme une boîte à bijoux. Les étoiles sont incroyablement nettes. Vos téléphones s'éteignent pour de bon, et ça n'a plus aucune importance.",
-      ch: [["Rester là jusqu'au lever du soleil", "fin_aube"], ["Redescendre retrouver les amis au campement", "camping"]] },
-    camping: { sc: "camping", t: "Au campement, vos amis vous accueillent comme des stars : ils vous cherchaient depuis des heures. Quelqu'un a sorti une guitare, la nuit est douce.",
-      ch: [["Chanter à la lumière des lampes frontales", "fin_campement"]] },
-    fin_premierrang: { end: "Le premier rang", sc: "festival", t: "Vous dansez jusqu'à ne plus sentir vos pieds, couverts de confettis. Sur l'écran géant, la caméra s'attarde une seconde sur vous deux. Vous ne la voyez même pas." },
-    fin_aube: { end: "Le lever du soleil", sc: "tournesols", t: "Le ciel passe du noir au rose. Le festival dort encore. Vous partagez la dernière gorgée d'eau et vous vous promettez de revenir l'an prochain, au même endroit." },
-    fin_campement: { end: "La nuit au campement", sc: "camping", t: "Fausses notes, rires, couvertures partagées : la plus belle scène du festival, finalement, c'était celle-là. Vos amis jurent de ne plus jamais vous perdre de vue." }
+      ch: [["Danser au premier rang", "premier", "au"], ["L'écouter tranquillement depuis la colline", "colline", "ec"]] },
+    premier: { sc: "festival", t: "Vous dansez jusqu'à ne plus sentir vos pieds, au milieu des confettis. Sur l'écran géant, la caméra s'attarde une seconde sur vous deux. Puis, contre la barrière, vous apercevez Sam, votre ami, seul, le visage dans les mains. Il n'a pas remarqué votre présence.",
+      ch: [["Aller voir Sam", "sam", "ec"], ["Continuer à danser, il veut sûrement être tranquille", "orage", "fa"]] },
+    sam: { sc: "colline", t: "Sam vient de se faire quitter. Par message. En plein festival. Vous l'emmenez à l'écart, vous lui trouvez de l'eau et une couverture, et vous l'écoutez pendant une heure. {a} ne dit presque rien et tient la bonne distance. {b} trouve les bons mots au bon moment. Sam finit par rire un peu, entre deux sanglots : « C'est énervant, de vous voir aussi bien ensemble. » Au loin, le ciel gronde.",
+      talk: "Pour de vrai : quand un·e ami·e a le cœur brisé, qui de vous deux sait le mieux consoler ? Et comment s'y prend-on, chez vous ?",
+      ch: [["Ramener Sam au campement avant la pluie", "orage", "te"]] },
+    colline: { sc: "colline", t: "Sur la colline, la scène brille au loin comme une boîte à bijoux. Les étoiles sont incroyablement nettes. Vos téléphones s'éteignent pour de bon, et ça n'a plus aucune importance. Vous restez là longtemps, la tête de l'un sur l'épaule de l'autre. Puis, au-dessus des montagnes, un éclair silencieux.",
+      ch: [["Rester encore, tant que l'orage est loin", "orage", "te"], ["Redescendre retrouver les amis au campement", "camping", "ec"]] },
+    camping: { sc: "camping", t: "Au campement, vos amis vous accueillent comme des stars : ils vous cherchaient depuis des heures. Quelqu'un a sorti une guitare, la nuit est douce. Mais il manque Sam. « Il est parti seul vers la grande scène, il avait l'air bizarre. »",
+      ch: [["Partir chercher Sam", "sam", "ec"], ["Chanter avec les autres, il va revenir", "orage", "fa"]] },
+    orage: { sc: "camping", t: "Deux heures du matin. L'orage éclate d'un coup, énorme, joyeux et terrible. Les haut-parleurs annoncent l'arrêt des concerts. Le campement devient un chaos de tentes envolées, de gens qui courent en riant ou en criant, de lampes frontales qui dansent sous la pluie.",
+      ch: [["Aider à replanter les tentes envolées", "aide", "ec"], ["Danser sous la pluie, puisque c'est trop tard", "pluie", "fa"], ["Se réfugier à deux sous une bâche", "bache", "te"]] },
+    aide: { sc: "camping", t: "Vous courez d'une tente à l'autre, sardines à la main. Vous rattrapez un matelas qui s'envole, une glacière, un enfant qui pleure pour sa peluche. Au bout de l'allée, une tente est complètement aplatie, et deux silhouettes âgées essaient de la relever sous la pluie.",
+      ch: [["Courir les aider", "r_aide", "te"]] },
+    r_aide: { go: [["seen:cadeau", "fin_voeux"], ["seen:sam", "fin_sam"], ["", "fin_campement"]] },
+    pluie: { sc: "festival", t: "Vous dansez sous la pluie qui vous traverse jusqu'aux os, sans musique, au milieu de la pelouse vide. D'autres vous rejoignent, puis d'autres encore. Quelqu'un tape sur une casserole, quelqu'un chante. Les éclairs illuminent des centaines de silhouettes qui dansent dans la boue.",
+      ch: [["Danser jusqu'à ce que la pluie s'arrête", "fin_pluie", "fa"]] },
+    bache: { sc: "colline", t: "Sous une bâche tendue entre deux arbres, vous écoutez la pluie taper au-dessus de vos têtes. Il fait froid. Vous vous serrez sous une seule couverture. C'est dans ce genre de moment, à l'étroit sous la pluie, qu'on se dit des choses qu'on n'aurait jamais dites au soleil.",
+      talk: "Pour de vrai : dites-vous une chose que vous n'oseriez dire qu'à l'abri, sous la pluie.",
+      ch: [["Attendre le jour, là, ensemble", "fin_aube", "te"]] },
+    fin_voeux: { end: "Les vœux de la colline", hidden: true, sc: "tournesols", t: "Ce sont Ginette et Raoul. Vous relevez leur tente, vous les installez dans la vôtre, plus solide, et vous passez la fin de la nuit à quatre sous les couvertures, à les écouter raconter quarante ans d'amour en désordre. À l'aube, la pluie s'arrête. Raoul se lève, solennel : « Ginette, j'avais promis de t'épouser une deuxième fois. » Sur la colline, au lever du soleil, devant vous deux, uniques témoins avec une rangée de tournesols, ils renouvellent leurs vœux avec des bagues en capsules de bouteille. Ginette pleure de rire. Vous, vous pleurez tout court.",
+      moral: "L'amour qui dure n'attend pas les beaux jours pour se dire : il se redit sous la pluie, avec ce qu'on a sous la main.",
+      ask: "Si vous deviez vous redire vos promesses, là, avec des mots simples, que diriez-vous ?",
+      defi: "Fabriquez-vous une « bague » avec ce que vous trouvez, et échangez-la ce soir. Juste pour rire. Ou pas." },
+    fin_sam: { end: "Le festival de Sam", sc: "camping", t: "Avec Sam, vous replantez la moitié du campement sous la pluie. Il ne pense plus du tout à son message. À l'aube, trempé, épuisé, couvert de boue, il vous regarde et dit : « C'est le pire festival de ma vie, et je ne l'oublierai jamais. » Un an plus tard, il revient au festival avec quelqu'un. Il vous présente la personne en vous montrant du doigt : « C'est grâce à ce couple-là. Ces deux-là m'ont appris qu'on ne traverse pas une tempête seul. »",
+      moral: "Un couple solide n'est pas un refuge fermé : c'est une maison dont on laisse la porte ouverte aux amis qui ont froid.",
+      ask: "Quel ami, quelle amie aurait besoin de vous en ce moment ? Écrivez-lui ce soir." },
+    fin_campement: { end: "La nuit au campement", sc: "camping", t: "Vous aidez un vieux couple à relever leur tente, puis une famille, puis des étudiants qui avaient monté la leur à l'envers. Quand la pluie se calme, tout le campement se retrouve autour d'un seul réchaud. Quelqu'un ressort la guitare. Fausses notes, rires, couvertures partagées, chocolat chaud dans des gobelets en plastique : la plus belle scène du festival, finalement, c'était celle-là, et elle n'était dans aucun programme.",
+      moral: "C'est souvent quand tout s'effondre qu'on découvre les gens avec qui on aime reconstruire.",
+      ask: "Quelle galère avez-vous transformée en bon souvenir, à deux ?" },
+    fin_pluie: { end: "La danse dans la boue", sc: "festival", t: "La pluie s'arrête à quatre heures. L'eau ruisselle de partout, la boue monte jusqu'aux genoux, les paillettes ont coulé partout. Vous vous regardez et vous éclatez de rire : vous avez l'air de deux épouvantails heureux. Le lendemain, la photo d'un inconnu fait la une du journal local : deux silhouettes floues qui dansent sous un éclair. Vous ne la retrouverez jamais. Vous savez que c'était vous.",
+      moral: "On ne choisit pas la météo ; on choisit de danser avec qui l'on aime, quelle qu'elle soit.",
+      ask: "Quel « orage » de votre vie avez-vous traversé en dansant plutôt qu'en vous abritant ?" },
+    fin_aube: { end: "Le lever du soleil", sc: "tournesols", t: "Vous ne dormez pas. Vous parlez, vous vous taisez, vous écoutez la pluie diminuer. Le ciel passe du noir au gris, puis au rose. Le festival dort encore, dévasté et magnifique. Vous sortez de sous la bâche et vous partagez la dernière gorgée d'eau, face aux collines lavées par l'orage. Vous vous promettez de revenir l'an prochain, au même endroit, sous la même bâche s'il le faut.",
+      moral: "Ce qu'on se dit dans le noir et le froid éclaire longtemps le reste du chemin.",
+      ask: "Quelle promesse simple aimeriez-vous vous faire pour l'an prochain ?" }
   } },
   { id: "dragon", title: "La quête du dragon timide", mood: "Fantasy · aventure tendre", c: 3, start: "convoc", nodes: {
-    convoc: { sc: "chateau", t: "Royaume d'Ombrevert. Le roi, un petit homme à la couronne beaucoup trop grande, vous convoque en urgence : un dragon s'est installé sur la montagne, et depuis, plus personne n'ose sortir le soir. Il vous confie la mission, une carte froissée et deux épées… en bois. « Les vraies sont chez le forgeron. »",
-      ch: [["Partir tout de suite par la forêt", "foret"], ["Passer d'abord à la taverne pour glaner des infos", "taverne"]] },
-    taverne: { sc: "taverne", t: "À la taverne du Sanglier Rieur, un barde vous raconte que le dragon n'a jamais mangé personne : il soupire, très fort, toutes les nuits. Une marchande vous propose deux objets pour la route : une potion de courage, ou un luth magique qui apaise toutes les bêtes.",
-      talk: "Pour de vrai : face à un dragon, lequel de vous deux garderait son sang-froid ?",
-      ch: [["Prendre la potion de courage", "foret"], ["Prendre le luth magique", "luth"], ["Oublier la quête et rester danser à la taverne", "fin_taverne"]] },
-    foret: { sc: "foret", t: "La forêt d'Ombrevert scintille de champignons lumineux. Au détour d'un sentier, une fée minuscule vous barre la route : « Pour passer, répondez à mon énigme, ou dansez avec moi. Les deux me conviennent. »",
-      ch: [["Répondre à l'énigme", "enigme"], ["Danser avec la fée", "danse"]] },
+    convoc: { sc: "chateau", t: "Royaume d'Ombrevert. Le roi Gontran, un petit homme à la couronne beaucoup trop grande, vous convoque en urgence : un dragon s'est installé sur la montagne, et depuis, plus personne n'ose sortir le soir. « Les villageois veulent qu'on le chasse. Moi, je veux juste dormir. » Il vous confie la mission, une carte froissée et deux épées… en bois. « Les vraies sont chez la forgeronne. »",
+      ch: [["Partir tout de suite par la forêt", "foret", "au"], ["Passer d'abord à la taverne pour glaner des infos", "taverne", "ec"], ["Aller chercher les vraies épées chez la forgeronne", "forge", "fa"]] },
+    forge: { sc: "village", t: "La forgeronne, Mathilde, a des bras comme des troncs et un rire de cloche. « Les épées du roi ? Il passe ici tous les matins pour les faire vérifier. Elles n'ont jamais eu besoin de rien. » Elle martèle en souriant. « Il reste planté là, il regarde, il ne dit rien et il repart. Un jour, il faudra bien que quelqu'un lui explique comment on parle aux gens. » Elle vous tend deux épées, et une petite rose en fer forgé.",
+      talk: "Pour de vrai : qui de vous deux a fait le premier pas ? Et comment ?",
+      ch: [["Prendre les épées, on ne sait jamais", "foret", "au"], ["Laisser les épées et prendre la rose", "foret", "te"]] },
+    taverne: { sc: "taverne", t: "À la taverne du Sanglier Rieur, un barde vous raconte que le dragon n'a jamais mangé personne : il soupire, très fort, toutes les nuits, en regardant la montagne d'en face. Une marchande vous propose deux objets pour la route : une potion de courage, ou un luth magique qui apaise toutes les bêtes. Dans un coin, des musiciens attaquent une gigue.",
+      talk: "Pour de vrai : face à un dragon, qui de vous deux garderait son sang-froid ?",
+      ch: [["Prendre la potion de courage", "foret", "au"], ["Prendre le luth magique", "luth", "fa"], ["Oublier la quête un instant et danser la gigue", "gigue", "fa"]] },
+    gigue: { sc: "taverne", t: "Vous dansez la gigue jusqu'à en perdre le souffle. La musique est si joyeuse qu'elle s'entend jusqu'à la montagne. À minuit, la porte de la taverne grince : un énorme museau vert passe par l'entrée, puis deux yeux humides. Le dragon. Il ne dit rien. Il s'assoit dans un coin, aussi discrètement qu'un dragon peut s'asseoir, et bat la mesure avec sa queue.",
+      ch: [["Aller lui parler doucement", "aveu", "ec"], ["L'inviter à danser", "aveu", "fa"]] },
+    foret: { sc: "foret", t: "La forêt d'Ombrevert scintille de champignons lumineux. Au détour d'un sentier, une fée minuscule vous barre la route : « Pour passer, répondez à mon énigme, ou dansez avec moi. Les deux me conviennent, j'aime bien la compagnie. »",
+      ch: [["Répondre à l'énigme", "enigme", "ec"], ["Danser avec la fée", "danse", "fa"]] },
     enigme: { sc: "foret", t: "« Je n'ai pas de voix, et pourtant je dis tout. Je ne pèse rien, et pourtant je peux tout porter. Qui suis-je ? » {a} et {b} se regardent.",
       talk: "Cherchez ensemble avant de choisir : qu'est-ce qui dit tout sans parler ?",
-      ch: [["« Un regard »", "grotte"], ["« Une lettre »", "grotte"], ["« Un dragon très discret »", "fee_rire"]] },
-    fee_rire: { sc: "foret", t: "La fée rit tellement qu'elle tombe de sa feuille. « Mauvaise réponse, mais excellente quand même ! » Pour vous remercier, elle vous montre un raccourci secret jusqu'à la grotte du dragon.",
-      ch: [["Suivre le raccourci", "grotte"]] },
-    danse: { sc: "foret", t: "Vous dansez une gigue improvisée au milieu des champignons. La fée applaudit, les lucioles vous suivent en rythme, et {b} découvre que {a} a un talent caché pour les pas de côté.",
+      ch: [["« Un regard »", "grotte", "te"], ["« Une lettre »", "grotte", "ec"], ["« Un dragon très discret »", "fee_rire", "fa"]] },
+    fee_rire: { sc: "foret", t: "La fée rit tellement qu'elle tombe de sa feuille. « Mauvaise réponse, mais excellente quand même ! » Pour vous remercier, elle vous montre un raccourci secret jusqu'à la grotte du dragon, et vous chuchote : « Il est gentil, vous savez. Il a juste peur d'être trop grand pour être aimé. »",
+      ch: [["Suivre le raccourci", "grotte", "fa"]] },
+    danse: { sc: "foret", t: "Vous dansez une ronde improvisée au milieu des champignons. La fée applaudit, les lucioles vous suivent en rythme, et {b} découvre que {a} a un talent caché pour les pas de côté. En partant, la fée vous glisse : « Le dragon danse aussi, parfois, quand il croit que personne ne le voit. »",
       talk: "Pour de vrai : qui de vous deux danse le mieux ? Et le plus mal ?",
-      ch: [["Remercier la fée et repartir", "grotte"]] },
-    luth: { sc: "foret", t: "Le luth à l'épaule, vous traversez la forêt. À chaque note, les loups s'assoient, les sangliers bâillent et un hibou bat la mesure. Vous arrivez devant la grotte suivis d'une petite troupe d'admirateurs.",
-      ch: [["Entrer dans la grotte en musique", "grotte_musique"]] },
-    grotte: { sc: "grotte", t: "Entre les cristaux, un énorme dragon vert vous regarde… et rougit jusqu'aux écailles. « Pardon pour les soupirs, dit-il d'une toute petite voix. Je voudrais inviter la dragonne de la montagne d'en face, mais je n'ose pas. »",
+      ch: [["Remercier la fée et repartir", "grotte", "te"]] },
+    luth: { sc: "foret", t: "Le luth à l'épaule, vous traversez la forêt. À chaque note, les loups s'assoient, les sangliers bâillent et un hibou bat la mesure. Vous arrivez devant la grotte suivis d'une petite troupe d'admirateurs à poils et à plumes. Au son du luth, le dragon sort de l'ombre en se dandinant, les yeux humides.",
+      ch: [["Continuer à jouer pour lui", "aveu", "fa"]] },
+    grotte: { sc: "grotte", t: "Entre les cristaux, un énorme dragon vert vous regarde… et rougit jusqu'aux écailles. Il s'appelle Pétale, ce qui ne l'aide pas à être pris au sérieux. Il cache maladroitement quelque chose derrière son dos : un bouquet de fleurs fanées, cueillies il y a des semaines.",
+      ch: [["Lui demander pour qui sont ces fleurs", "aveu", "ec"], ["Poser les épées pour le rassurer", "aveu", "te"]] },
+    aveu: { sc: "grotte", t: "« Pardon pour les soupirs, dit Pétale d'une toute petite voix. Je voudrais inviter Flamboyante, la dragonne de la montagne d'en face. Mais je suis trop grand, trop maladroit, et quand je parle, il sort de la fumée. » Il baisse la tête. « Les villageois ont raison. Je devrais partir. »",
       talk: "Pour de vrai : quel conseil donneriez-vous à quelqu'un de trop timide pour faire le premier pas ?",
-      ch: [["L'aider à écrire une déclaration", "declaration"], ["Lui organiser un rendez-vous surprise", "rdv"]] },
-    grotte_musique: { sc: "grotte", t: "Au son du luth, le dragon sort de l'ombre en se dandinant, les yeux humides. « C'est exactement la chanson que je voudrais chanter à la dragonne de la montagne d'en face, soupire-t-il. Mais je n'ose pas. »",
-      ch: [["Lui apprendre la chanson", "fin_serenade"], ["L'aider à écrire une déclaration", "declaration"]] },
-    declaration: { sc: "grotte", t: "Vous passez la nuit à trois sur une déclaration. Le dragon veut des rimes, {a} veut du sincère, {b} tient à glisser une blague. Le résultat tient sur un parchemin de trois mètres.",
-      ch: [["Aller la lire avec lui sous la fenêtre de la dragonne", "fin_balcon"]] },
-    rdv: { sc: "pont", t: "Vous organisez un pique-nique sur le pont de pierre, entre les deux montagnes, avec des lanternes et une énorme tarte aux pommes. Il ne reste qu'à décider qui fera les présentations.",
-      ch: [["{a} fait les présentations", "fin_pique"], ["{b} fait les présentations", "fin_pique"]] },
-    fin_taverne: { end: "La gigue du Sanglier Rieur", sc: "taverne", t: "Le barde vous dédie une chanson, toute la taverne danse, et au petit matin vous apprenez que le dragon est descendu… pour danser lui aussi. Quête accomplie, par accident." },
-    fin_serenade: { end: "La sérénade", sc: "dragonnuit", t: "Le dragon chante terriblement faux, mais avec tout son cœur. Sur la montagne d'en face, une lueur s'allume : la dragonne répond par un petit feu en forme de cœur. Le royaume dort enfin tranquille." },
-    fin_balcon: { end: "Le parchemin de trois mètres", sc: "chateaunuit", t: "La dragonne lit la déclaration jusqu'au bout, éclate de rire à la blague et accepte un rendez-vous. Le roi vous nomme « Chevaliers de l'Amour courtois », avec médaille en chocolat." },
-    fin_pique: { end: "Le pique-nique du pont de pierre", sc: "pont", t: "Les deux dragons partagent la tarte en rougissant. Vous rentrez au château à dos de dragon, au-dessus du royaume, au coucher du soleil. Pour une première quête, c'est une réussite." }
+      ch: [["L'aider à écrire une déclaration", "declaration", "ec"], ["Lui organiser un rendez-vous surprise", "rdv", "au"], ["Lui apprendre une chanson", "serenade", "fa"]] },
+    declaration: { sc: "grotte", t: "Vous passez la nuit à trois sur une déclaration. Pétale veut des rimes, {a} veut du sincère, {b} tient à glisser une blague. Le résultat tient sur un parchemin de trois mètres, plein de ratures. Au petit matin, vous l'accompagnez sous la falaise de Flamboyante pour qu'il la lise à voix haute.",
+      ch: [["L'encourager jusqu'à la dernière ligne", "reponse", "te"]] },
+    rdv: { sc: "pont", t: "Vous organisez un pique-nique sur le pont de pierre, entre les deux montagnes, avec des lanternes et une énorme tarte aux pommes. {a} fait les invitations, {b} s'occupe de la décoration. Flamboyante arrive, méfiante, en tournant trois fois au-dessus du pont avant de se poser.",
+      ch: [["Laisser Pétale parler, en vous éclipsant", "reponse", "ec"], ["Rester tout près, pour le soutenir", "reponse", "te"]] },
+    serenade: { sc: "dragonnuit", t: "Vous lui apprenez une chanson simple, trois couplets et un refrain. Il chante terriblement faux, mais avec tout son cœur, et de la fumée sort à chaque note aiguë. À la nuit tombée, vous l'accompagnez au pied de la montagne d'en face. Il chante. Une lueur s'allume là-haut.",
+      ch: [["Attendre la réponse, en retenant votre souffle", "reponse", "fa"]] },
+    reponse: { sc: "dragonnuit", t: "Flamboyante descend. Elle est magnifique et elle a l'air triste. « Tes soupirs, toutes ces nuits… j'ai cru que tu étais en colère. J'avais peur. » Elle regarde Pétale longtemps. « Je ne dis pas non. Je dis : pas encore. J'ai besoin de temps pour te connaître autrement. » Elle repart. Pétale reste figé. Au même moment, des torches s'allument dans la vallée : les villageois montent, le roi à leur tête, pour chasser le dragon.",
+      talk: "Pour de vrai : quand l'autre dit « pas encore » ou « j'ai besoin de temps », comment le vivez-vous ?",
+      ch: [["Rester avec Pétale et l'aider à accepter ce « pas encore »", "patience", "te"], ["Descendre plaider sa cause devant le roi", "plaidoirie", "ec"], ["Lui conseiller d'aller voir le monde, ailleurs", "ailleurs", "au"], ["Proposer à tout le monde un concours de chansons pour apaiser les esprits", "duel", "fa"]] },
+    patience: { sc: "grotte", t: "Vous restez avec Pétale toute la nuit, pendant que les torches hésitent au pied de la montagne. Il pleure, il fume, il dit que c'est fini. Vous lui expliquez que « pas encore » n'est pas « non », que le temps qu'on laisse à l'autre est déjà une façon de l'aimer. Au matin, il décide une chose : arrêter de soupirer la nuit, et écrire chaque jour une petite lettre à Flamboyante, sans rien attendre en retour.",
+      ch: [["Le laisser écrire sa première lettre", "fin_patience", "te"]] },
+    plaidoirie: { sc: "chateaunuit", t: "Vous descendez à la rencontre des torches. Devant le roi Gontran et tout le village, vous racontez Pétale : sa timidité, ses fleurs fanées, sa chanson ratée. Les villageois baissent leurs torches. Le roi, lui, est devenu tout rouge. Il chuchote : « Mais… c'est mon histoire. » Tout le monde le regarde.",
+      ch: [["Lui demander ce qu'il veut dire", "r_roi", "ec"]] },
+    r_roi: { go: [["seen:forge", "fin_double"], ["", "fin_chevaliers"]] },
+    ailleurs: { sc: "pont", t: "Vous lui dites que le monde est grand, et qu'avant d'être aimé par quelqu'un, il faut peut-être apprendre à s'aimer soi-même. Pétale vous écoute, longtemps. Puis il déploie ses ailes, immenses, que personne n'avait jamais vues ouvertes. « Je reviendrai. » Il s'envole par-dessus les torches, qui s'arrêtent net, bouche bée.",
+      ch: [["Le regarder disparaître à l'horizon", "fin_ailleurs", "au"]] },
+    duel: { sc: "village", t: "Vous grimpez sur un rocher et vous proposez un concours de chansons : le village contre le dragon. Tout le monde chante faux. Le boulanger, la forgeronne, la fée, le roi lui-même. Pétale chante plus faux que tous les autres réunis. Au troisième couplet, quelqu'un rit, puis un autre. Sur la montagne d'en face, on entend un rire de dragonne qui résonne dans toute la vallée.",
+      ch: [["Lancer le dernier refrain, tous ensemble", "fin_duel", "fa"]] },
+    fin_patience: { end: "Les lettres de Pétale", sc: "dragonnuit", t: "Pendant cent jours, Pétale écrit une lettre par jour, qu'il dépose au pied de la falaise sans attendre de réponse. Il parle de la forêt, des champignons, de vous deux, de ce qu'il apprend. Les villageois, voyant qu'il ne soupire plus, rangent leurs torches. Le cent-unième jour, une lettre l'attend au pied de sa propre montagne, écrite avec des griffes maladroites : « Pique-nique sur le pont ? Pas trop de fumée, s'il te plaît. » Vous faites partie des invités. Vous apportez la tarte.",
+      moral: "Respecter le « pas encore » de quelqu'un, c'est lui offrir la seule chose qui permet un vrai « oui » : la liberté.",
+      ask: "Y a-t-il quelque chose pour lequel l'autre vous a laissé du temps ? Le lui avez-vous dit, que ça avait compté ?" },
+    fin_chevaliers: { end: "Les chevaliers de l'Amour courtois", sc: "chateaunuit", t: "Le roi Gontran ravale ses mots, rougit encore plus, et ordonne aux villageois de rentrer chez eux. Le dragon restera. Il vous nomme « Chevaliers de l'Amour courtois », avec médaille en chocolat et le droit de manger gratuitement à la taverne. Quelques semaines plus tard, Flamboyante vient enfin s'asseoir à côté de Pétale sur le pont, sans un mot. Ça leur suffit. Le royaume dort tranquille, et vous gardez vos médailles jusqu'à ce qu'elles fondent.",
+      moral: "Défendre quelqu'un qu'on juge sans le connaître, c'est souvent rappeler à tout le monde sa propre fragilité.",
+      ask: "Quand avez-vous pris la défense de l'autre, ou de quelqu'un d'autre, ensemble ?" },
+    fin_double: { end: "La double déclaration", hidden: true, sc: "chateaunuit", t: "« C'est mon histoire, répète le roi. Il y a quelqu'un que je regarde tous les matins sans jamais rien lui dire. » Vous sortez la rose de fer que Mathilde vous a donnée. Elle avait gravé sur la tige, tout petit : « Pour quand il osera. » Le roi la regarde, la gorge serrée. Puis il traverse la foule, frappe à la porte de la forge, et Mathilde ouvre avant même qu'il ait fini de frapper. Le soir même, deux déclarations ont lieu dans le royaume : l'une sur un pont, entre deux dragons qui rougissent ; l'autre dans une forge, entre un roi et une forgeronne qui rient. On les appelle depuis « les noces de la Timidité ».",
+      moral: "La timidité qu'on aide chez les autres est souvent celle qu'on n'ose pas regarder chez soi.",
+      ask: "Qu'est-ce que vous aimeriez oser, l'un pour l'autre, mais que vous n'avez jamais osé ?",
+      defi: "Cette semaine, chacun·e fait une toute petite chose jamais osée jusque-là, et la raconte à l'autre." },
+    fin_ailleurs: { end: "Le tour du monde de Pétale", sc: "pont", t: "Pétale revient un an plus tard. Il a vu des déserts, des mers, des dragons d'autres couleurs. Il ne soupire plus, il raconte. Il a aussi appris que Flamboyante a trouvé un compagnon pendant son absence, et ça lui a fait mal. Mais il vient s'asseoir près de vous sur le pont, ses ailes repliées, et il dit : « Je suis content. Pour elle, et pour moi. Je ne savais pas que j'étais aussi grand à l'intérieur. » Le royaume a gagné un conteur. Les enfants grimpent sur son dos tous les soirs.",
+      moral: "On ne peut pas forcer un cœur à s'ouvrir ; on peut seulement ouvrir le sien, et il finit toujours par trouver où se poser.",
+      ask: "Qu'avez-vous appris sur vous-même grâce à l'autre, que vous n'auriez jamais su seul·e ?" },
+    fin_duel: { end: "Le concours des voix fausses", sc: "village", t: "Le concours se termine en chorale géante, la plus fausse que le royaume ait jamais entendue. Flamboyante descend de sa montagne pour se moquer, et reste pour chanter. Elle et Pétale se découvrent un point commun : ils chantent exactement aussi mal l'un que l'autre, ce qui, entre dragons, est très romantique. Le roi décrète que le concours aura lieu chaque année. Vous en êtes les juges à vie, et vous décernez chaque année le prix de la voix la plus touchante, jamais celui de la plus juste.",
+      moral: "Rien ne rapproche autant que de rire ensemble de ce qu'on fait mal.",
+      ask: "Quel est votre « talent raté » préféré chez l'autre ?" }
   } },
   { id: "grimoire", title: "Le grimoire de Mirabelle", mood: "Fantasy · fous rires", c: 8, start: "marche", nodes: {
-    marche: { sc: "marche", t: "Jour de foire au village de Pierrebrune. Entre un jongleur et un marchand de fromages qui sentent très fort, une vieille femme vous tend un grimoire poussiéreux : « Pour vous, mes tourtereaux. Gratuit. Mais surtout, ne lisez pas la page 12. »",
-      ch: [["Lire la page 12, évidemment", "page12"], ["Le rendre poliment et suivre le jongleur", "jongleur"]] },
-    jongleur: { sc: "marche", t: "Le jongleur vous entraîne dans un tournoi de lancer de tartes. Vous gagnez une couronne en carton… et la vieille femme réapparaît, vexée : « Vous avez oublié votre grimoire. » Il est revenu tout seul dans le sac de {a}.",
-      ch: [["Lire la page 12, cette fois", "page12"]] },
-    page12: { sc: "magie", t: "À peine la première ligne lue, un nuage violet vous enveloppe. Quand il se dissipe, {a} se retrouve dans le corps de {b}, et {b} dans celui de {a}. Le marchand de fromages en lâche son plateau.",
+    marche: { sc: "marche", t: "Jour de foire au village de Pierrebrune. Entre un jongleur et un marchand de fromages qui sentent très fort, une vieille femme vous tend un grimoire poussiéreux : « Pour vous, mes tourtereaux. Gratuit. Mais surtout, ne lisez pas la page 12. » Elle a un chat roux sur l'épaule, qui vous regarde d'un air extrêmement critique.",
+      ch: [["Lire la page 12, évidemment", "page12", "au"], ["Le rendre poliment et suivre le jongleur", "jongleur", "fa"], ["Lui demander pourquoi elle vous le donne", "vieille", "ec"]] },
+    vieille: { sc: "marche", t: "La vieille femme sourit. « Parce que vous vous regardez comme si vous vous connaissiez par cœur. Et personne ne connaît personne par cœur, mes chéris. Même au bout de quarante ans. » Le chat roux soupire bruyamment, comme s'il avait un avis sur la question. Elle disparaît dans la foule avant que vous ayez pu répondre.",
+      talk: "Pour de vrai : sur une échelle de 1 à 10, à quel point pensez-vous connaître l'autre ? Donnez votre note en même temps.",
+      ch: [["Lire la page 12 pour lui prouver le contraire", "page12", "au"]] },
+    jongleur: { sc: "marche", t: "Le jongleur vous entraîne dans un tournoi de lancer de tartes. {b} vise étonnamment bien. {a} reçoit une tarte en pleine figure et gagne quand même le prix du meilleur sourire. Vous repartez avec deux couronnes en carton… et la vieille femme réapparaît, vexée : « Vous avez oublié votre grimoire. » Il est revenu tout seul dans le sac de {a}, ouvert à la page 12.",
+      ch: [["Lire la page 12, cette fois", "page12", "fa"]] },
+    page12: { sc: "magie", t: "À peine la première ligne lue, un nuage violet vous enveloppe. Quand il se dissipe, {a} se retrouve dans le corps de {b}, et {b} dans celui de {a}. Le marchand de fromages en lâche son plateau. La vieille femme a disparu, mais une voix flotte dans l'air : « Chaumière au bout du chemin des Saules. Pas avant le coucher du soleil, j'ai une sieste. »",
       talk: "Pour de vrai : si vous échangiez vos corps pour une journée, quelle serait la première chose que vous feriez ?",
-      ch: [["Courir rattraper la vieille femme", "sorciere"], ["Profiter de la situation une heure ou deux", "echange"]] },
-    echange: { sc: "marche", t: "Une heure dans la peau de l'autre : sa démarche, ses manies, la vue à sa hauteur. {b} imite {a} un peu trop bien. {a} découvre que la tunique de {b} gratte affreusement.",
+      ch: [["Courir la rattraper tout de suite", "saules", "au"], ["Profiter de la situation une heure ou deux", "echange", "fa"], ["Vivre vraiment la journée de l'autre jusqu'au soir", "journee", "ec"]] },
+    saules: { sc: "foret", t: "Le chemin des Saules serpente entre les arbres. Courir dans le corps de l'autre est une expérience : {a} trébuche sur des jambes trop longues ou trop courtes, {b} n'arrive pas à freiner. À mi-chemin, un panneau de bois gravé : « Qui marche dans les pas de l'autre arrive avant celui qui court devant. » Le chat roux vous attend assis dessous, l'air de dire : je vous l'avais dit.",
+      ch: [["Marcher en file, dans les pas de l'autre", "sorciere", "te"], ["Courir quand même, le temps presse", "sorciere", "au"]] },
+    echange: { sc: "marche", t: "Une heure dans la peau de l'autre : sa démarche, ses manies, le monde vu à sa hauteur. {b} imite {a} un peu trop bien, jusqu'à la façon de se gratter le nez quand on réfléchit. {a} découvre que la tunique de {b} gratte affreusement, et que {b} ne s'en plaint jamais.",
       talk: "Pour de vrai : imitez l'autre pendant trente secondes. Avec tendresse.",
-      ch: [["Il est temps de trouver la sorcière", "sorciere"]] },
-    sorciere: { sc: "chaumiere", t: "Dans sa chaumière remplie de fioles, la sorcière Mirabelle éclate de rire. « Je vous avais prévenus ! Pour inverser le sort, il me faut la preuve que vous vous connaissez vraiment. » Elle sort trois flacons et une liste de questions.",
-      ch: [["Passer l'épreuve des questions", "epreuve"], ["Proposer plutôt de l'aider à ranger sa chaumière", "rangement"]] },
-    epreuve: { sc: "chaumiere", t: "Première question : « Quelle est la peur secrète de l'autre ? » Deuxième : « Son plat préféré les jours de pluie ? » Mirabelle note vos réponses avec une plume qui écrit toute seule.",
-      talk: "Faites l'épreuve pour de vrai : chacun répond pour l'autre, puis l'autre dit si c'est juste.",
-      ch: [["Toutes les réponses sont justes", "fin_retour"], ["Quelques erreurs… mais de bonne foi", "fin_moitie"]] },
-    rangement: { sc: "chaumiere", t: "Vous rangez les fioles, chassez les toiles d'araignée et nourrissez un chat qui parle (il se plaint beaucoup). Touchée, Mirabelle inverse le sort en un claquement de doigts, et vous propose un dernier cadeau.",
-      ch: [["Apprendre un vrai sortilège", "fin_sortilege"], ["Adopter le chat qui parle", "fin_chat"]] },
-    fin_retour: { end: "Chacun chez soi", sc: "village", t: "Un nuage rose, cette fois, et chacun retrouve son corps. Vous rentrez de la foire main dans la main, en vous connaissant un peu mieux qu'au réveil. Le grimoire, lui, a disparu." },
-    fin_moitie: { end: "Le sort à moitié", sc: "marche", t: "Le sort ne s'inverse qu'à moitié : vous retrouvez vos corps, mais vous gardez la voix de l'autre jusqu'au coucher du soleil. Toute la foire en parle encore." },
-    fin_sortilege: { end: "Le sortilège secret", sc: "magie", t: "Mirabelle vous apprend le seul sortilège qui compte vraiment : un mot à se dire quand l'un de vous deux a besoin de réconfort. Personne ne sait lequel. Sauf vous." },
-    fin_chat: { end: "Sire Moustache", sc: "chaumiere", t: "Vous repartez avec un chat qui parle et commente absolument tout. Il s'appelle Sire Moustache, il a un avis sur votre couple, et cet avis est très favorable." }
+      ch: [["Il est temps de trouver la sorcière", "sorciere", "ec"]] },
+    journee: { sc: "village", t: "Vous décidez de jouer le jeu : chacun·e vit la journée prévue par l'autre. {a}, dans le corps de {b}, doit livrer du pain à la tante Berthe, qui parle beaucoup et n'écoute jamais. {b}, dans le corps de {a}, doit réparer le toit du moulin sous un soleil de plomb. Le soir, vous vous retrouvez avec une fatigue que vous ne connaissiez pas.",
+      talk: "Pour de vrai : qu'est-ce qui pèse le plus dans la journée de l'autre ? Devinez, puis vérifiez.",
+      ch: [["Rejoindre la chaumière au coucher du soleil", "sorciere", "te"]] },
+    sorciere: { sc: "chaumiere", t: "Dans sa chaumière remplie de fioles, la sorcière Mirabelle (c'était donc elle) éclate de rire. « Je l'avais bien dit ! » Le chat roux, installé sur la table, prend la parole d'une voix grave : « Elle prévient toujours. C'est pour ça que tout le monde lit la page 12. » Mirabelle lui lance un regard noir. « Pour inverser le sort, il me faut la preuve que vous vous connaissez vraiment. » Elle sort trois flacons et une liste de questions.",
+      ch: [["Passer l'épreuve des questions", "epreuve", "ec"], ["Proposer plutôt de l'aider à ranger sa chaumière", "rangement", "te"], ["Demander pourquoi le chat parle", "chat", "fa"], ["Lui demander de prolonger le sort une semaine", "fin_semaine", "au"]] },
+    chat: { sc: "chaumiere", t: "Le chat s'étire. « Sire Moustache. Ancien humain. Mari de cette dame. » Mirabelle rougit jusqu'aux oreilles. Il y a trente ans, un sort raté l'a changé en chat. Elle pourrait le retransformer, mais il refuse. « Les chats n'ont pas à faire la vaisselle », dit-il. Mirabelle hausse les épaules, mais vous voyez bien ses yeux : ça fait trente ans qu'ils ne se parlent plus que par piques.",
+      talk: "Pour de vrai : y a-t-il un sujet que vous évitez depuis longtemps, à coups de blagues ?",
+      ch: [["Les aider à se parler, pour de vrai", "mediation", "ec"], ["Revenir à vos affaires : l'épreuve des questions", "epreuve", "au"]] },
+    mediation: { sc: "chaumiere", t: "Vous installez Mirabelle et Sire Moustache face à face, elle sur un tabouret, lui sur une pile de grimoires. Vous leur posez une seule question : « Qu'est-ce que l'autre vous manque, vraiment ? » Un long silence. Le chat regarde ses pattes. Mirabelle regarde le chat.",
+      ch: [["Attendre, sans rien ajouter", "r_med", "ec"]] },
+    r_med: { go: [["seen:journee", "fin_moustache"], ["", "fin_chat"]] },
+    epreuve: { sc: "chaumiere", t: "Première question : « Quelle est la peur secrète de l'autre ? » Deuxième : « Son plat préféré les jours de pluie ? » Troisième : « Qu'est-ce qui a causé sa dernière tristesse, sans qu'un seul mot soit dit ? » Mirabelle note vos réponses avec une plume qui écrit toute seule. Sire Moustache commente chaque réponse d'un « mmh » très lourd de sens.",
+      talk: "Faites l'épreuve pour de vrai : répondez à ces trois questions pour l'autre, puis l'autre dit si c'est juste.",
+      ch: [["Toutes les réponses sont justes", "r_epreuve", "te"], ["Quelques erreurs… mais de bonne foi", "r_epreuve", "ec"]] },
+    r_epreuve: { go: [["min:ec:2", "fin_retour"], ["", "fin_moitie"]] },
+    rangement: { sc: "chaumiere", t: "Vous rangez les fioles, chassez les toiles d'araignée et nourrissez Sire Moustache, qui se plaint de tout (le poisson est trop froid, puis trop chaud). Même dans le corps de l'autre, vous vous répartissez les tâches sans vous concerter, comme d'habitude. Mirabelle vous observe, émue. Elle inverse le sort d'un claquement de doigts et vous propose un dernier cadeau.",
+      ch: [["Apprendre un vrai sortilège", "fin_sortilege", "te"], ["Adopter le chat qui parle", "fin_chat", "fa"]] },
+    fin_retour: { end: "Chaque corps à sa place", sc: "village", t: "Un nuage rose, cette fois, et vous retrouvez vos corps. Mirabelle referme son carnet : « Vous ne vous connaissez pas par cœur. Personne ne le peut. Mais vous savez écouter ce que vous ne savez pas encore. C'est mieux. » Vous rentrez de la foire main dans la main. Sur le chemin, vous vous posez mutuellement les trois questions, encore et encore, et les réponses changent un peu à chaque fois. Le grimoire, lui, a disparu. Il est sans doute en route vers un autre couple trop sûr de lui.",
+      moral: "Aimer quelqu'un, ce n'est pas connaître cette personne par cœur ; c'est garder de la curiosité pour celle qu'elle devient.",
+      ask: "Posez-vous pour de vrai une question dont vous croyez connaître la réponse. Êtes-vous sûr·es ?" },
+    fin_moitie: { end: "Le sort à moitié", sc: "marche", t: "Le sort ne s'inverse qu'à moitié : vous retrouvez vos corps, mais vous gardez la voix de l'autre jusqu'au coucher du soleil du lendemain. Toute la foire en parle encore. Mais cette journée avec la voix de l'autre vous apprend une chose étrange : vous entendez enfin ce que vous dites, comme l'autre l'entend. Certaines phrases sonnent plus dur que prévu. D'autres, beaucoup plus tendres. Le soir, quand vos voix reviennent, vous parlez un peu plus doucement.",
+      moral: "On ne s'entend jamais aussi bien que le jour où l'on s'entend avec les oreilles de l'autre.",
+      ask: "Quelle phrase dites-vous souvent sans vous rendre compte de comment l'autre la reçoit ?" },
+    fin_sortilege: { end: "Le sortilège secret", sc: "magie", t: "Mirabelle vous apprend le seul sortilège qui compte vraiment : un mot, un seul, inventé par vous deux, à se dire quand l'un de vous a besoin de réconfort sans savoir l'expliquer. Le mot n'a aucun pouvoir magique. Mirabelle l'avoue en riant. Mais chaque fois que vous le prononcez, l'autre comprend tout de suite qu'il faut s'arrêter, prendre une main, et ne rien demander. Personne ne connaît votre mot. Sauf vous.",
+      moral: "Les mots les plus puissants sont ceux qu'on a inventés à deux, pour se dire ce qui ne se dit pas.",
+      ask: "Inventez pour de vrai votre mot-secret : celui qui voudra dire « j'ai besoin de toi, sans explication »." },
+    fin_chat: { end: "Sire Moustache", sc: "chaumiere", t: "Vous repartez avec un chat qui parle et commente absolument tout. Il a un avis sur vos repas, sur votre façon de ranger, sur votre couple. Cet avis est très favorable, même s'il ne l'avoue qu'en ronronnant. Mais le soir, il s'assoit à la fenêtre et regarde en direction de la chaumière. Un dimanche, vous le ramenez à Mirabelle pour le thé. Puis tous les dimanches. Sans l'avoir voulu, vous voilà le pont entre deux personnes qui avaient oublié comment se rejoindre.",
+      moral: "Parfois, on sert de messager à l'amour des autres sans le savoir ; c'est un joli rôle à jouer ensemble.",
+      ask: "Y a-t-il deux personnes autour de vous qui ne se parlent plus ? Pourriez-vous les aider, doucement ?" },
+    fin_semaine: { end: "La semaine dans la peau de l'autre", sc: "village", t: "Mirabelle hausse un sourcil, puis accepte : une semaine, pas un jour de plus. Vous vivez sept jours dans le corps de l'autre. Vous travaillez à sa place, vous dormez de son côté du lit, vous découvrez ses douleurs au dos et ses fous rires nerveux. Le septième soir, le sort s'inverse tout seul. Vous restez longtemps à vous regarder dans le miroir, puis à vous regarder mutuellement. Vous ne vous voyez plus tout à fait pareil. Mieux, peut-être.",
+      moral: "On croit connaître la vie de l'autre jusqu'au jour où l'on en porte le poids ; après, on la regarde avec plus de douceur.",
+      ask: "Qu'est-ce que vous aimeriez que l'autre comprenne de vos journées, sans avoir à le vivre ?" },
+    fin_moustache: { end: "Le chat qui redevint mari", hidden: true, sc: "magie", t: "C'est Sire Moustache qui parle le premier. « Elle me manque. Elle est là, à deux pas, et elle me manque. » Mirabelle pleure. Vous comprenez alors pourquoi vous avez vécu la journée de l'autre : pour savoir qu'on peut être tout près et à des kilomètres. Vous leur racontez votre journée inversée, la tante Berthe, le toit du moulin, la fatigue de l'autre qu'on ne voyait pas. Mirabelle prend sa baguette, la regarde, puis la pose. Elle prend juste la patte du chat dans sa main. Le nuage qui les enveloppe est doré. Quand il se dissipe, il y a un vieil homme à moustache rousse qui tient la main de Mirabelle, et qui dit : « D'accord. Je ferai la vaisselle. » Vos corps à vous sont revenus aussi, sans que personne ne s'en aperçoive.",
+      moral: "La magie la plus forte n'est pas celle qui transforme l'autre ; c'est celle qui nous fait enfin avouer un manque, même quand l'autre est là.",
+      ask: "Vous arrive-t-il que l'autre vous manque, même tout près ? Dites-le ce soir.",
+      defi: "Cette semaine, une soirée « journée inversée » : chacun·e fait les tâches habituelles de l'autre." }
   } },
   // Histoire secrète : elle se débloque quand Yassen Jr. est couronné (14 jours ensemble).
   { id: "yassen", secret: true, title: "Le royaume de Yassen Jr.", mood: "Secret · tendre et lumineux", c: 2, start: "reveil", nodes: {
-    reveil: { sc: "souvenir", t: "Un soir, en ouvrant l'appli, {a} et {b} remarquent une petite lueur jaune au coin de l'écran. Elle grandit, pétille, et pouf : Yassen Jr. saute hors du téléphone, l'air très fier de lui. « Surprise ! Ça fait des jours que je vous regarde jouer. Ce soir, c'est moi qui vous invite. »",
+    reveil: { sc: "souvenir", t: "Un soir, en ouvrant l'appli, {a} et {b} remarquent une petite lueur jaune au coin de l'écran. Elle grandit, pétille, et pouf : Yassen Jr. saute hors du téléphone, l'air très fier de lui. « Surprise ! Ça fait des jours que je vous regarde jouer, {pa} et {pb}. Ce soir, c'est moi qui vous invite. »",
       talk: "Pour de vrai : si un petit compagnon vous observait tous les jours, que dirait-il de vous deux ?",
-      ch: [["Le suivre sans poser de questions", "royaume"], ["Lui demander d'abord s'il a faim", "snacks"]] },
-    snacks: { sc: "village", t: "Yassen Jr. a toujours faim. Vous l'emmenez au marché du village, où il goûte tout : une crêpe, trois chouquettes, un demi-melon. Il rougit jusqu'à la flamme. « Je mange quand je suis ému. Et là, je suis TRÈS ému. »",
-      ch: [["Lui offrir la dernière chouquette", "royaume"], ["Partager une crêpe à trois", "royaume"]] },
-    royaume: { sc: "foret", t: "Il vous guide à travers une forêt où chaque arbre porte une lanterne. « Ici, chaque lanterne est un moment que vous avez passé ensemble. Celle-là, c'est votre premier fou rire. Celle-là, une dispute réglée par un câlin. » Tout au fond, une lanterne est éteinte.",
+      ch: [["Le suivre sans poser de questions", "royaume", "au"], ["Lui demander d'abord s'il a faim", "snacks", "te"], ["Lui demander pourquoi ce soir", "pourquoi", "ec"]] },
+    pourquoi: { sc: "souvenir", t: "Yassen Jr. se gratte la flamme. « Pourquoi ce soir ? Parce que… » Il hésite, ce qui ne lui arrive jamais. « Parce que je voulais vous montrer d'où je viens. Vous croyez que je vis dans le téléphone. Pas du tout. J'habite un endroit que vous avez construit sans le savoir. » Il vous prend chacun·e par un doigt, de ses toutes petites mains chaudes. « Venez. »",
+      ch: [["Se laisser guider", "royaume", "ec"]] },
+    snacks: { sc: "village", t: "Yassen Jr. a toujours faim. Vous l'emmenez au marché du village, où il goûte tout : une crêpe, trois chouquettes, un demi-melon. Il rougit jusqu'à la flamme. « Je mange quand je suis ému. Et là, je suis TRÈS ému. » Il reste une chouquette et une crêpe.",
+      ch: [["Lui offrir la dernière chouquette", "royaume", "te"], ["Partager une crêpe à trois", "royaume", "fa"]] },
+    royaume: { sc: "foret", t: "Il vous guide à travers une forêt où chaque arbre porte une lanterne. « Ici, chaque lanterne est un moment que vous avez passé ensemble. Celle-là, c'est votre premier fou rire. Celle-là, une dispute réglée par un câlin. Celle-là, un matin où {pb} a apporté le café au lit, et {pa} a fait semblant de dormir pour en profiter plus longtemps. » Tout au fond, une lanterne est éteinte.",
       talk: "Pour de vrai : quel moment à deux mériterait sa lanterne ?",
-      ch: [["Rallumer la lanterne éteinte", "flamme"], ["Continuer jusqu'au château", "roi"]] },
-    flamme: { sc: "dragonnuit", t: "Pour rallumer la lanterne, explique Yassen Jr., il faut une flamme partagée : chacun dit à l'autre une chose qu'il n'a jamais osé lui dire. La lanterne attend, les lucioles retiennent leur souffle.",
-      talk: "Pour de vrai : chacun confie à l'autre une petite chose jamais dite. Une douce, de préférence.",
-      ch: [["Le dire tout bas", "fin_souvenir"], ["Le crier pour que toute la forêt l'entende", "fete"]] },
-    roi: { sc: "chateaunuit", t: "Au château, un trône minuscule attend. Yassen Jr. y grimpe, pose sur sa tête une couronne beaucoup trop grande et prend sa voix la plus solennelle : « Je vous nomme gardiens de ce royaume. Votre seule mission : continuer à vous aimer. Et me donner des snacks. »",
-      ch: [["Accepter la mission avec une révérence", "fin_gardiens"], ["Négocier : moins de snacks, plus de câlins", "fete"], ["Lui faire promettre de revenir souvent", "fin_promesse"]] },
-    fete: { sc: "village", t: "Tout le royaume vous a entendus. Les lanternes s'allument une à une, des lucioles dessinent vos initiales dans le ciel et un orchestre de grenouilles attaque une valse. Yassen Jr. danse sur la table, évidemment.",
-      ch: [["Danser avec lui jusqu'à l'aube", "fin_fete"]] },
-    fin_souvenir: { end: "La lanterne rallumée", sc: "souvenir", t: "La lanterne s'allume d'une lumière dorée, plus belle que toutes les autres. Yassen Jr. se blottit entre vous deux. « Vous voyez ? Tant que vous vous parlez comme ça, rien ne s'éteint vraiment. Pas même moi. »" },
-    fin_promesse: { end: "La promesse", sc: "chateaunuit", t: "Yassen Jr. tend son petit doigt de flamme. « Promis : je suis là chaque fois que vous ouvrez l'appli. Et si je fais la sieste, venez juste me faire un petit coucou. » Le pacte est scellé par un câlin à trois, un peu chaud." },
-    fin_gardiens: { end: "Les gardiens du royaume", sc: "chateaunuit", t: "{a} et {b} reçoivent chacun une petite broche en forme de flamme. Yassen Jr. s'endort sur son trône, la couronne de travers, un sourire au coin des lèvres. Le royaume est entre de bonnes mains." },
-    fin_fete: { end: "La grande fête", sc: "village", t: "Au lever du soleil, tout le monde dort en tas dans l'herbe, Yassen Jr. au milieu, qui ronfle comme une petite bougie. Le royaume n'a jamais été aussi lumineux." }
+      ch: [["Aller voir la lanterne éteinte", "eteinte", "te"], ["Demander à Yassen sa lanterne préférée", "preferee", "ec"], ["Continuer jusqu'au château", "roi", "au"]] },
+    preferee: { sc: "foret", t: "Yassen Jr. vous emmène devant une lanterne toute petite, cachée derrière une racine. Elle brille plus fort que toutes les autres. « C'est le jour où vous avez ri tellement fort que vous avez pleuré, et puis vous avez oublié pourquoi vous riiez, et vous avez ri encore plus. » Il soupire de bonheur. « Celle-là, je viens la regarder quand j'ai un coup de mou. »",
+      talk: "Pour de vrai : vous souvenez-vous de ce fou rire-là ? Racontez-le. Si vous ne savez plus pourquoi vous riiez, c'est normal.",
+      ch: [["Aller voir la lanterne éteinte", "eteinte", "te"], ["Continuer jusqu'au château", "roi", "fa"]] },
+    eteinte: { sc: "dragonnuit", t: "La lanterne éteinte est froide. Yassen Jr. ne la regarde pas tout de suite. « Celle-là, c'est un soir de grande fatigue, chacun·e dans son coin, avec ses soucis. Vous ne vous êtes rien dit. Ce n'est pas grave, ça arrive. » Il lève les yeux vers vous. « Les lanternes, ça se rallume. Il faut juste une flamme partagée : chacun·e dit à l'autre une chose jamais dite. Une douce, de préférence. »",
+      talk: "Pour de vrai : confiez-vous une petite chose jamais dite. Une douce, de préférence.",
+      ch: [["Le dire tout bas", "r_lanterne", "te"], ["Le crier pour que toute la forêt l'entende", "fete", "fa"]] },
+    r_lanterne: { go: [["seen:pourquoi", "fin_coeur"], ["", "fin_souvenir"]] },
+    roi: { sc: "chateaunuit", t: "Au château, un trône minuscule attend. Yassen Jr. y grimpe, pose sur sa tête une couronne beaucoup trop grande et prend sa voix la plus solennelle : « {pa}, {pb}, je vous nomme gardiens de ce royaume. Votre seule mission : continuer à vous aimer. Et me donner des snacks. » Il tient son sérieux trois secondes, puis pouffe.",
+      ch: [["Accepter la mission avec une révérence", "fin_gardiens", "te"], ["Négocier : moins de snacks, plus de câlins", "fete", "fa"], ["Lui faire promettre de revenir souvent", "promesse", "ec"]] },
+    promesse: { sc: "chateaunuit", t: "Yassen Jr. tend son petit doigt de flamme. « Promis : je suis là chaque fois que vous ouvrez l'appli. Et si je fais la sieste, venez juste me faire un petit coucou. » Puis il fronce les sourcils. « Mais vous aussi, vous devez me promettre quelque chose. Un truc pour vous deux. »",
+      talk: "Pour de vrai : quelle petite promesse pourriez-vous vous faire, là, maintenant ?",
+      ch: [["Promettre de se dire « je t'aime » même les jours gris", "fin_promesse", "te"], ["Promettre une soirée jeux par semaine, avec lui", "fin_promesse", "fa"]] },
+    fete: { sc: "village", t: "Tout le royaume a entendu. Les lanternes s'allument une à une, des lucioles dessinent vos initiales dans le ciel et un orchestre de grenouilles attaque une valse. Yassen Jr. danse sur la table, évidemment, en renversant la limonade.",
+      ch: [["Danser avec lui jusqu'à l'aube", "fin_fete", "fa"], ["Le regarder danser, main dans la main", "fin_regard", "te"]] },
+    fin_souvenir: { end: "La lanterne rallumée", sc: "souvenir", t: "Vous le dites tout bas, presque sans voix. La lanterne frémit, puis s'allume d'une lumière dorée, plus belle que toutes les autres, plus chaude, un peu tremblante. Yassen Jr. se blottit entre vous deux. « Vous voyez ? Ce ne sont pas les jours parfaits qui font les plus belles lanternes. Ce sont ceux qu'on répare. » Il bâille. « Tant que vous vous parlez comme ça, rien ne s'éteint vraiment. Pas même moi. »",
+      moral: "Ce ne sont pas les jours parfaits qui font la lumière d'un couple, ce sont ceux qu'on a su rallumer ensemble.",
+      ask: "Y a-t-il un soir récent où vous étiez chacun·e dans votre coin ? Et si vous le rallumiez ce soir ?" },
+    fin_coeur: { end: "Le cœur du royaume", hidden: true, sc: "chateaunuit", t: "La lanterne se rallume, et toutes les autres répondent, une par une, jusqu'au fond de la forêt. Puis elles se détachent des arbres et montent dans le ciel, et se rejoignent au-dessus du château en une seule flamme immense, douce comme un soleil de fin d'après-midi. Yassen Jr. la regarde, puis vous regarde. « Voilà d'où je viens. Je suis fait de tous vos moments. Chaque fois que vous riez ensemble, que vous vous réconciliez, que vous jouez, je grandis un peu. » Il se serre contre vous. « Alors ne vous inquiétez pas pour moi. Tant que vous continuez à vous aimer, je suis là. Partout. Dans chaque lanterne. »",
+      moral: "Ce qu'on aime ne s'éteint jamais tout à fait : il continue de briller dans chaque moment qu'on choisit de vivre ensemble.",
+      ask: "Quel moment de cette semaine aimeriez-vous offrir à Yassen Jr., pour qu'il ait une nouvelle lanterne ?",
+      defi: "Ce soir, allumez une vraie bougie, rien que pour vous deux, et racontez-vous votre plus beau moment de l'année." },
+    fin_promesse: { end: "La promesse", sc: "chateaunuit", t: "Vous faites votre promesse à voix haute, et Yassen Jr. la répète très sérieusement, comme un notaire. Puis il la grave lui-même sur une lanterne neuve, avec le bout de sa flamme, en tirant la langue. Le pacte est scellé par un câlin à trois, un peu chaud. Avant de vous laisser repartir, il vous chuchote : « Les promesses, c'est comme les lanternes. Il faut les rallumer souvent, sinon elles s'endorment. »",
+      moral: "Une promesse n'est pas un serment qu'on fait une fois : c'est un petit geste qu'on refait tous les jours.",
+      ask: "Quelle promesse vous êtes-vous faite un jour, et comment la tenez-vous encore aujourd'hui ?" },
+    fin_gardiens: { end: "Les gardiens du royaume", sc: "chateaunuit", t: "{a} et {b} reçoivent chacun·e une petite broche en forme de flamme. Yassen Jr. vous fait faire le tour de votre royaume : la forêt des lanternes, le marché, le lac où dorment les souvenirs ratés (il y en a beaucoup, et ils sont très drôles). Puis il s'endort sur son trône, la couronne de travers, un sourire au coin des lèvres. Vous restez un long moment à le regarder dormir. Le royaume est entre de bonnes mains, et vous le savez parce que ce sont les vôtres.",
+      moral: "Prendre soin de ce qu'on a construit à deux, c'est la plus douce des missions.",
+      ask: "Qu'est-ce que vous avez construit à deux dont vous voulez prendre soin cette année ?" },
+    fin_fete: { end: "La grande fête", sc: "village", t: "Vous dansez jusqu'à l'aube avec Yassen Jr. sur les épaules, puis dans les bras, puis par terre quand il décide de faire la toupie. Les grenouilles jouent faux, les lucioles s'emmêlent, et tout le monde s'en moque. Au lever du soleil, tout le royaume dort en tas dans l'herbe, Yassen Jr. au milieu, qui ronfle comme une petite bougie. Le royaume n'a jamais été aussi lumineux.",
+      moral: "La joie qu'on partage sans retenue éclaire bien plus loin qu'on ne l'imagine.",
+      ask: "Quand avez-vous fait la fête rien que pour vous, sans occasion ? Et si c'était bientôt ?" },
+    fin_regard: { end: "Le petit danseur", sc: "village", t: "Vous ne dansez pas. Vous restez au bord de la piste, main dans la main, et vous regardez Yassen Jr. danser de toute sa petite flamme. Il se retourne de temps en temps pour vérifier que vous le regardez, et chaque fois que c'est le cas, il danse encore plus fort. Vous comprenez qu'il n'a besoin de rien d'autre : juste de vous savoir là, ensemble, à le regarder. Il vient s'endormir sur vos genoux au petit matin, épuisé et ravi.",
+      moral: "Parfois, aimer, c'est juste être là, ensemble, et regarder briller ce qu'on aime.",
+      ask: "Quand avez-vous simplement regardé l'autre faire ce qui lui plaît, sans rien faire d'autre ?" }
   } }
+
 ];
 const STORY = Object.fromEntries(STORIES.map(s => [s.id, s]));
 /* ───────────────────────── Mise en scène des histoires ─────────────────────────
@@ -4540,15 +4918,10 @@ const Music = {
   }
 };
 const STORY_MUSIC = { train: "nuit", manoir: "mystere", boulangerie: "douceur", cupidon: "pop", viral: "pop", villa: "pop", festival: "fete", dragon: "medieval", grimoire: "medieval", yassen: "douceur" };
-const SCENE_OF = {
-  train: { quai: "quai", chat: "train", piano: "train", bar: "train", indice: "train", aube: "aube", mer: "mer", alpes: "neige", chalet: "chalet", fin_concert: "village", fin_crique: "crique", fin_inconnu: "tournesols", fin_cafe: "mer", fin_plongeon: "mer", fin_luge: "neige", fin_chalet: "chalet" },
-  manoir: { hall: "manoir", biblio: "biblio", trappe: "cuisine", passage: "passage", grenier: "grenier", malle: "grenier", costumes: "grenier", cuisine: "cuisine", pate: "cuisine", bal: "bal", portraits: "passage", fin_lettre: "grenier", fin_photo: "grenier", fin_gateau: "cuisine", fin_jardin: "jardin", fin_bal: "bal", fin_portrait: "passage" },
-  boulangerie: { lettre: "salon", carnet: "fournil", chou: "souvenir", minuit: "boulangerie", audace: "fournil", offrir: "fournil", nuage: "fournil", conte: "fournil", fin_grande: "boulangerie", fin_secret: "boulangerie", fin_fete: "village", fin_aube: "aube2" }
-};
 const SOUND_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
 const SOUND_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
 function storyStage(st, key) {
-  const n = st.nodes[key] || {}, scene = n.sc || (SCENE_OF[st.id] || {})[key] || "salon", on = Music.on();
+  const n = st.nodes[key] || {}, scene = n.sc || "salon", on = Music.on();
   return `<div class="stage">${sceneSvg(scene)}<div class="cast">${castFig("a")}${castFig("b")}</div>
     <button class="music-btn" data-a="music" aria-pressed="${on}" aria-label="${on ? "Couper la musique" : "Activer la musique d'ambiance"}">${on ? SOUND_ON : SOUND_OFF}</button></div>`;
 }
@@ -4585,18 +4958,53 @@ function syncMusic() {
   if (!th) { if (Music.theme) Music.stop(); }
   else if (Music.on() && Music.theme !== th) Music.play(th);
 }
-const stx = s => esc(fr(s)).replace(/\{a\}/g, esc(nm("a"))).replace(/\{b\}/g, esc(nm("b")));
+const stx = s => esc(fr(s)).replace(/\{a\}/g, esc(nm("a"))).replace(/\{b\}/g, esc(nm("b"))).replace(/\{pa\}/g, esc(parentOf("a"))).replace(/\{pb\}/g, esc(parentOf("b")));
+const stPlain = s => fr(String(s || "")).replace(/\{a\}/g, nm("a")).replace(/\{b\}/g, nm("b")).replace(/\{pa\}/g, parentOf("a")).replace(/\{pb\}/g, parentOf("b"));
 function endCount(st) {
   const all = Object.keys(st.nodes).filter(k => st.nodes[k].end), got = endSet();
   return [all.filter(k => got.has(st.id + ":" + k)).length, all.length];
 }
-function storyGo(to) {
-  const s = S.story, st = STORY[s.id];
-  Object.assign(s, { node: to, steps: s.steps + 1, phase: "read", votes: {}, slot: 0, together: false, saved: false });
-  if (st.nodes[to].end) {
-    addEnding(st.id + ":" + to);
-  }
+// Ce que vos choix disent de votre duo, au fil de l'histoire.
+const STORY_TRAITS = { au: "audace", te: "tendresse", ec: "écoute", fa: "fantaisie" };
+function storyCond(cond, path, tr) {
+  const seen = new Set(toArr(path).map(x => String(x).split(":")[0])), n = k => +((tr || {})[k]) || 0;
+  return cond.split("&").every(c => {
+    const [t, a, b] = c.split(":");
+    if (t === "seen") return seen.has(a);
+    if (t === "min") return n(a) >= +b;
+    if (t === "top") return n(a) > 0 && Object.keys(STORY_TRAITS).every(o => n(o) <= n(a));
+    return false;
+  });
 }
+// Un choix fait : on note le chemin et le trait, puis on suit les aiguillages jusqu'à la page suivante.
+function storyStep(st, from, i, to, path, tr) {
+  const n = st.nodes[from] || {}, ch = (n.ch || [])[i] && n.ch[i][1] === to ? n.ch[i] : null;
+  path = [...toArr(path), ch ? `${from}:${i}` : from];
+  tr = { ...(tr || {}) };
+  ((ch && ch[2]) || "").split(" ").filter(k => own(STORY_TRAITS, k)).forEach(k => { tr[k] = (+tr[k] || 0) + 1; });
+  for (let g = 0; g < 9 && st.nodes[to] && st.nodes[to].go; g++) to = (st.nodes[to].go.find(([c]) => !c || storyCond(c, path, tr)) || [])[1];
+  return { node: st.nodes[to] ? to : st.start, path, tr };
+}
+function storyGo(to, i) {
+  const s = S.story, st = STORY[s.id];
+  const r = storyStep(st, s.node, i === undefined ? (st.nodes[s.node].ch || []).findIndex(c => c[1] === to) : +i, to, s.path, s.tr);
+  Object.assign(s, { node: r.node, path: r.path, tr: r.tr, steps: s.steps + 1, phase: "read", votes: {}, slot: 0, together: false, saved: false });
+  if (st.nodes[r.node].end) addEnding(st.id + ":" + r.node);
+}
+// La fin : la scène, la morale, « Et vous ? », le petit défi, puis le chemin parcouru et ce qu'il dit de vous.
+function storyEndHtml(st, key, path, tr) {
+  const n = st.nodes[key], col = cvar(st.c), [f, t] = endCount(st);
+  const traits = Object.entries(tr || {}).filter(([k, v]) => own(STORY_TRAITS, k) && v > 0).sort((x, y) => y[1] - x[1]);
+  const duo = traits.map(([k, v], j) => `${j === 0 ? "beaucoup" : v >= traits[0][1] - 1 ? "pas mal" : "un peu"} ${/^[aeéiouh]/.test(STORY_TRAITS[k]) ? "d'" : "de "}${STORY_TRAITS[k]}`).join(", ");
+  const steps = toArr(path).map(x => { const [k, j] = String(x).split(":"), c = ((st.nodes[k] || {}).ch || [])[+j]; return c ? c[0] : ""; }).filter(Boolean);
+  return `<article class="story-page end" style="${col}"><p class="card-for">${n.hidden ? "Fin cachée ✦" : "Fin"}</p><h2 class="sheet-title">${esc(fr(n.end))}</h2><p class="story-text">${stx(n.t)}</p>
+      ${n.moral ? `<div class="story-moral"><span>La morale</span><p>${stx(n.moral)}</p></div>` : ""}</article>
+    ${n.ask ? instr("Et vous ?", stx(n.ask)) : ""}${n.defi ? instr("Le petit défi", stx(n.defi)) : ""}
+    ${steps.length ? `<details class="story-path"><summary>Votre chemin · ${steps.length} choix${duo ? ` · ${esc(duo)}` : ""}</summary><ol>${steps.map(c => `<li>${stx(c)}</li>`).join("")}</ol></details>` : ""}
+    <p class="small muted" style="text-align:center">Fins découvertes dans cette histoire : ${f} sur ${t}${n.hidden ? " · vous avez trouvé la fin cachée !" : ""}</p>`;
+}
+// Ce qu'on garde dans l'album : la fin et sa morale.
+const storyAlbum = (st, key) => { const n = st.nodes[key]; return { kind: "souvenir", question: fr(st.title + " · " + n.end), entries: [{ who: "a", label: "Notre fin", text: stPlain(n.t) }, ...(n.moral ? [{ who: "b", label: "La morale", text: stPlain(n.moral) }] : [])] }; };
 
 function storyView() {
   const s = S.story;
@@ -4613,15 +5021,14 @@ function storyView() {
       <button class="chip" aria-pressed="${Music.on()}" data-a="music">${Music.on() ? "Musique d'ambiance activée" : "Musique d'ambiance coupée"}</button></div></section>
     <div class="stack"><h2 class="sec">Les histoires</h2><div class="list">${STORIES.filter(st => !st.secret || Jeu.stage() >= 4).map(st => {
       const [f, t] = endCount(st);
-      return `<button class="mode-row" style="${cvar(st.c)}" data-a="st-open" data-id="${st.id}"><span class="icon-tile">${ico("book")}</span><span class="mode-txt"><b>${esc(st.title)}</b><span>${esc(st.mood)} · environ 10 min · ${f ? `${f} fin${f > 1 ? "s" : ""} découverte${f > 1 ? "s" : ""} sur ${t}` : `${t} fins à découvrir`}</span></span><span class="chev" aria-hidden="true">›</span></button>`;
+      return `<button class="mode-row" style="${cvar(st.c)}" data-a="st-open" data-id="${st.id}"><span class="icon-tile">${ico("book")}</span><span class="mode-txt"><b>${esc(st.title)}</b><span>${esc(st.mood)} · environ 20 min · ${f ? `${f} fin${f > 1 ? "s" : ""} découverte${f > 1 ? "s" : ""} sur ${t}` : `${t} fins à découvrir, dont une cachée`}</span></span><span class="chev" aria-hidden="true">›</span></button>`;
     }).join("")}${Jeu.stage() < 4 ? `<div class="mode-row locked" style="${cvar(2)}"><span class="icon-tile">${ico("sparkles")}</span><span class="mode-txt"><b>Histoire secrète</b><span>${esc(fr(`Elle se débloque quand Yassen Jr. sera couronné, après ${STAGE_DAYS[4]} jours ensemble.`))}</span></span></div>` : ""}</div></div>`;
   }
   const st = STORY[s.id], n = st.nodes[s.node], col = cvar(st.c);
   const head = `<div class="g-head"><button class="icon-btn" data-a="st-menu" aria-label="Retour aux histoires">×</button><div class="g-prog"><span>${esc(st.title)}</span></div><span class="g-timer">${n.end ? "Fin" : "Chapitre " + s.steps}</span></div>`;
   if (n.end) {
     const [f, t] = endCount(st);
-    return head + storyStage(st, s.node) + `<article class="story-page end" style="${col}"><p class="card-for">Fin</p><h2 class="sheet-title">${esc(fr(n.end))}</h2><p class="story-text">${stx(n.t)}</p></article>
-      <p class="small muted" style="text-align:center">Fins découvertes dans cette histoire : ${f} sur ${t}</p>
+    return head + storyStage(st, s.node) + storyEndHtml(st, s.node, s.path, s.tr) + `
       <div class="actions">${s.saved ? `<p class="small muted">Gardée dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="st-album">Garder cette fin dans l'album</button>`}
         <button class="btn wide c" style="${col}" data-a="st-open" data-id="${st.id}">${f < t ? "Rejouer pour trouver une autre fin" : "Rejouer l'histoire"}</button>
         <button class="btn line wide" data-a="st-menu">Choisir une autre histoire</button></div>`;
@@ -4632,16 +5039,16 @@ function storyView() {
   if (s.phase === "pick") return head + page + `<div class="stack"><p class="lbl">${esc(nm(who))}, ton choix secret :</p>${n.ch.map((c, i) => `<button class="choice" data-a="st-vote" data-v="${i}">${stx(c[0])}</button>`).join("")}</div>`;
   if (s.phase === "agree" || s.phase === "coin") {
     const c = n.ch[s.phase === "agree" ? s.votes.a : s.coin];
-    return head + page + `<p class="verdict" style="${col}">${s.phase === "agree" ? "Même choix !" : `Le hasard a parlé : ce sera le choix de ${esc(nm(s.coinWho))}.`}</p><div class="choice mine" style="${col}">${stx(c[0])}</div><button class="btn wide c" style="${col}" data-a="st-go" data-to="${c[1]}">Continuer l'histoire</button>`;
+    return head + page + `<p class="verdict" style="${col}">${s.phase === "agree" ? "Même choix !" : `Le hasard a parlé : ce sera le choix de ${esc(nm(s.coinWho))}.`}</p><div class="choice mine" style="${col}">${stx(c[0])}</div><button class="btn wide c" style="${col}" data-a="st-go" data-to="${c[1]}" data-i="${s.phase === "agree" ? s.votes.a : s.coin}">Continuer l'histoire</button>`;
   }
   if (s.phase === "disagree") return head + page + `<p class="verdict" style="${col}">Pas le même choix…</p>
     <div class="reveal">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))} a choisi</b><p>${stx(n.ch[s.votes[k]][0])}</p></div>`).join("")}</div>
     ${instr("À vous de négocier", "Chacun défend son choix en une phrase, puis vous décidez. Ou vous laissez le hasard trancher.")}
-    <div class="actions">${["a", "b"].map(k => `<button class="btn ghost wide" data-a="st-go" data-to="${n.ch[s.votes[k]][1]}">On suit le choix de ${esc(nm(k))}</button>`).join("")}<button class="btn line wide" data-a="st-coin">Pile ou face</button></div>`;
-  if (n.ch.length === 1) return head + page + `<button class="btn wide c" style="${col}" data-a="st-go" data-to="${n.ch[0][1]}">${stx(n.ch[0][0])}</button>`;
+    <div class="actions">${["a", "b"].map(k => `<button class="btn ghost wide" data-a="st-go" data-to="${n.ch[s.votes[k]][1]}" data-i="${s.votes[k]}">On suit le choix de ${esc(nm(k))}</button>`).join("")}<button class="btn line wide" data-a="st-coin">Pile ou face</button></div>`;
+  if (n.ch.length === 1) return head + page + `<button class="btn wide c" style="${col}" data-a="st-go" data-to="${n.ch[0][1]}" data-i="0">${stx(n.ch[0][0])}</button>`;
   if (S.storyStyle === "secret" && !s.together) return head + page + `<div class="stack"><p class="lbl">Les choix possibles</p>${n.ch.map(c => `<div class="choice ro">${stx(c[0])}</div>`).join("")}</div>
     <button class="btn wide c" style="${col}" data-a="st-vote-start">Voter en secret</button><div class="joker"><button class="link" data-a="st-together">Pour ce choix, on décide ensemble</button></div>`;
-  return head + page + `<div class="stack"><p class="lbl">Décidez ensemble</p>${n.ch.map(c => `<button class="choice" data-a="st-go" data-to="${c[1]}">${stx(c[0])}</button>`).join("")}</div>`;
+  return head + page + `<div class="stack"><p class="lbl">Décidez ensemble</p>${n.ch.map((c, i) => `<button class="choice" data-a="st-go" data-to="${c[1]}" data-i="${i}">${stx(c[0])}</button>`).join("")}</div>`;
 }
 
 /* ───────────────────────── Le puzzle de Yassen Jr. ─────────────────────────
@@ -5065,7 +5472,7 @@ function liveArcadeView(L, me, head) {
 }
 
 /* Il était une fois nous */
-function startLiveStory(id) { Live.start({ kind: "story", id, node: STORY[id].start, steps: 1 }); }
+function startLiveStory(id) { Live.start({ kind: "story", id, node: STORY[id].start, steps: 1, path: [], tr: {} }); }
 function storyEnding(st, to) {
   if (!st.nodes[to] || !st.nodes[to].end) return;
   addEnding(st.id + ":" + to);
@@ -5076,15 +5483,14 @@ function liveStoryView(L, me, head) {
   const col = cvar(st.c), o = other(me), votes = L.votes || {};
   if (n.end) {
     const [f, t] = endCount(st);
-    return head + storyStage(st, L.node) + `<article class="story-page end" style="${col}"><p class="card-for">Fin</p><h2 class="sheet-title">${esc(fr(n.end))}</h2><p class="story-text">${stx(n.t)}</p></article>
-      <p class="small muted" style="text-align:center">Fins découvertes dans cette histoire : ${f} sur ${t}</p>
+    return head + storyStage(st, L.node) + storyEndHtml(st, L.node, L.path, L.tr) + `
       <div class="actions">${(L.saved || {}).album ? `<p class="small muted">Gardée dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="lv-st-album">Garder cette fin dans l'album</button>`}
       <button class="btn wide c" style="${col}" data-a="lv-replay">${f < t ? "Rejouer pour trouver une autre fin" : "Rejouer l'histoire"}</button>
       <button class="btn line wide" data-a="close-layer">Retour à l'accueil</button></div>`;
   }
   const page = storyStage(st, L.node) + `<article class="story-page" style="${col}"><p class="story-text">${stx(n.t)}</p></article>` + (n.talk ? instr("Petite pause", stx(n.talk)) : "");
-  const go = (i, label = "Continuer l'histoire") => `<button class="btn wide c" style="${col}" data-a="lv-st-go" data-to="${n.ch[i][1]}">${label}</button>`;
-  if (n.ch.length === 1) return head + page + `<button class="btn wide c" style="${col}" data-a="lv-st-go" data-to="${n.ch[0][1]}">${stx(n.ch[0][0])}</button>`;
+  const go = (i, label = "Continuer l'histoire") => `<button class="btn wide c" style="${col}" data-a="lv-st-go" data-to="${n.ch[i][1]}" data-i="${i}">${label}</button>`;
+  if (n.ch.length === 1) return head + page + `<button class="btn wide c" style="${col}" data-a="lv-st-go" data-to="${n.ch[0][1]}" data-i="0">${stx(n.ch[0][0])}</button>`;
   const va = votes.a, vb = votes.b, ok = v => Number.isInteger(v) && v >= 0 && v < n.ch.length;
   if (!ok(votes[me])) return head + page + `<div class="stack"><p class="lbl">Ton choix, de ton côté :</p>${n.ch.map((c, i) => `<button class="choice" data-a="lv-st-vote" data-v="${i}">${stx(c[0])}</button>`).join("")}</div>` + liveWaiting(o, ok(votes[o]));
   if (!ok(votes[o])) return head + page + `<div class="choice mine" style="${col}">${stx(n.ch[votes[me]][0])}</div>` + liveSent + liveWaiting(o, false);
@@ -5096,7 +5502,7 @@ function liveStoryView(L, me, head) {
   return head + page + `<p class="verdict" style="${col}">Pas le même choix…</p>
     <div class="reveal">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))} a choisi</b><p>${stx(n.ch[votes[k]][0])}</p></div>`).join("")}</div>
     ${instr("À vous de négocier", "Chacun défend son choix en une phrase, puis vous décidez. Ou vous laissez le hasard trancher.")}
-    <div class="actions">${["a", "b"].map(k => `<button class="btn ghost wide" data-a="lv-st-go" data-to="${n.ch[votes[k]][1]}">On suit le choix de ${esc(nm(k))}</button>`).join("")}<button class="btn line wide" data-a="lv-st-coin">Pile ou face</button></div>`;
+    <div class="actions">${["a", "b"].map(k => `<button class="btn ghost wide" data-a="lv-st-go" data-to="${n.ch[votes[k]][1]}" data-i="${votes[k]}">On suit le choix de ${esc(nm(k))}</button>`).join("")}<button class="btn line wide" data-a="lv-st-coin">Pile ou face</button></div>`;
 }
 
 function liveView() {
@@ -9658,13 +10064,13 @@ const ACT = {
   "lv-st-coin"() { const L = Live.state; if (L) Live.write({ coinWho: liveDraw(L, 1000 + (L.steps || 1), 2) ? "b" : "a" }); },
   "lv-st-go"(d) {
     const L = Live.state, st = L && STORY[L.id]; if (!st || !st.nodes[d.to]) return;
-    storyEnding(st, d.to);
-    Live.write({ node: d.to, steps: (L.steps || 1) + 1, coinWho: null });
+    const r = storyStep(st, L.node, d.i === undefined ? (st.nodes[L.node].ch || []).findIndex(c => c[1] === d.to) : +d.i, d.to, L.path, L.tr);
+    storyEnding(st, r.node);
+    Live.write({ node: r.node, path: r.path, tr: r.tr, steps: (L.steps || 1) + 1, coinWho: null });
   },
   "lv-st-album"() {
-    const L = Live.state, st = L && STORY[L.id], n = st && st.nodes[L.node]; if (!n) return;
-    const plain = n.t.replace(/\{a\}/g, nm("a")).replace(/\{b\}/g, nm("b"));
-    Store.add("capsule", { kind: "souvenir", question: fr(st.title + " · " + n.end), entries: [{ who: "a", label: "Notre fin", text: fr(plain) }] });
+    const L = Live.state, st = L && STORY[L.id], n = st && st.nodes[L.node]; if (!n || !n.end) return;
+    Store.add("capsule", storyAlbum(st, L.node));
     Live.answer("saved", "album", true); toast("Gardée dans l'album");
   },
   "pzr-open"() { S.pzRemote = true; S.pzSel = null; S.pzrSetup = false; pzRemoteOpen(); },
@@ -9750,9 +10156,9 @@ const ACT = {
   "st-open"(d) {
     if (!STORY[d.id] || (STORY[d.id].secret && Jeu.stage() < 4)) return;
     if (S.storyStyle === "distance" && Store.backend === "shared" && !S.story) { startLiveStory(d.id); return; }
-    S.story = { id: d.id, node: STORY[d.id].start, steps: 1, phase: "read", votes: {}, slot: 0 }; },
+    S.story = { id: d.id, node: STORY[d.id].start, steps: 1, phase: "read", votes: {}, slot: 0, path: [], tr: {} }; },
   "st-menu"() { S.story = null; },
-  "st-go"(d) { storyGo(d.to); Sfx.play("page"); },
+  "st-go"(d) { storyGo(d.to, d.i); Sfx.play(STORY[S.story.id].nodes[S.story.node].end ? "chime" : "page"); },
   "st-together"() { S.story.together = true; },
   "st-vote-start"() { Object.assign(S.story, { phase: "hand", slot: 0, votes: {} }); },
   "st-iam"() { S.story.phase = "pick"; },
@@ -9762,10 +10168,9 @@ const ACT = {
   },
   "st-coin"() { const s = S.story; s.coinWho = Math.random() < 0.5 ? "a" : "b"; s.coin = s.votes[s.coinWho]; s.phase = "coin"; },
   "st-album"() {
-    const s = S.story, st = STORY[s.id], n = st.nodes[s.node];
-    const plain = n.t.replace(/\{a\}/g, nm("a")).replace(/\{b\}/g, nm("b"));
-    Store.add("capsule", { kind: "souvenir", question: fr(st.title + " · " + n.end), entries: [{ who: "a", label: "Notre fin", text: fr(plain) }] });
-    s.saved = true; toast("Gardée dans l'album");
+    const s = S.story, st = STORY[s.id];
+    Store.add("capsule", storyAlbum(st, s.node));
+    s.saved = true; toast("Gardée dans l'album, avec sa morale");
   },
   "g-album-ask"() { S.game.saved.ask = true; },
   "g-album-no"() { S.game.saved.ask = false; },
