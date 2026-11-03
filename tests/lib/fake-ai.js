@@ -20,6 +20,7 @@ export const getGenerativeModel = (ai, o) => ({ async generateContentStream(prom
   window.__cfg = o.generationConfig; await new Promise(r => setTimeout(r, window.__aiDelay || 400));
   window.__aiCalls = (window.__aiCalls || 0) + 1;
   let out;
+  if (/Jeu du Contact/.test(prompt)) { window.__ctPrompt = prompt; return { response: { text: () => JSON.stringify({ mot: window.__ctMot || 'montagne', confiance: window.__ctConf == null ? 90 : window.__ctConf }) } }; }
   if (/Nouveau message de/.test(prompt)) { window.__yjPrompt = prompt; out = { reponse: "*fait des étincelles* Coucou ! Je suis trop content que tu me parles. On fait le puzzle ce soir ?", humeur: "calin" }; }
   else if (/Voici une conversation récente/.test(prompt)) { window.__learnPrompt = prompt; out = { faits: ["Yanis adore les crêpes au caramel", "Sarah prépare un week-end à Amsterdam en novembre"] }; }
   else if (/petit mot du jour/.test(prompt)) out = { mot: "Aujourd'hui, je parie que vous allez vous faire au moins trois câlins. Je compte !" };

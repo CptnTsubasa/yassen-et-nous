@@ -165,7 +165,7 @@ async function onEvent(env, code, type, id) {
     const x = await rtdb(`couples/${code}/live/game`);
     if (!x || x.ended || Date.now() - (+x.startAt || 0) > 600000) return 0;
     if (!(await once(code, `partie_${x.startAt}`))) return 0;
-    const by = x.by === "b" ? "b" : "a", what = x.kind === "story" ? "une histoire à deux" : x.kind === "arcade" ? "un jeu d'arcade" : "une partie de cartes";
+    const by = x.by === "b" ? "b" : "a", what = x.kind === "story" ? "une histoire à deux" : x.kind === "arcade" ? "un jeu d'arcade" : x.kind === "contact" ? "une partie de Contact avec Yassen Jr." : "une partie de cartes";
     return notify(env, code, other(by), "partie", { title: `🎲 ${nm(by)} t'invite à jouer`, body: `On t'attend pour ${what}, à distance.`, tag: "partie" });
   }
   return 0;

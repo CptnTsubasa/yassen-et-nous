@@ -40,6 +40,7 @@ Un `FAIL`, une erreur de page (`errors [...]`) ou un plantage font échouer le s
 | `push` | Activation des notifications, préférences, mise à jour de l'appli au retour |
 | `lvcards`, `lvother`, `live3`, `lvstop` | Jeux à distance sur deux téléphones, arrêt d'un commun accord |
 | `recit` | « Il était une fois nous » : 10 histoires jouées au hasard, fin cachée, morale, chemin, album, à distance |
+| `contact` | Contact : Yassen coupe un indice trop facile, lâche une lettre après un contact, mot deviné, mode soirée, à distance |
 | `lot1` … `lot4` | Vérifications générales (synchro, jeux, interface, hors ligne) |
 | `yjchat`, `yjfast`, `yjsens`, `yjmem` | Yassen Jr. : discussion, réponse en continu, sans IA, mémoire et actualités, quota épuisé |
 | `ia3` | IA en relais : Gemini épuisé → Groq → Workers AI, Gemini injoignable, tâches légères |

@@ -454,6 +454,21 @@ body { background: var(--bg); }
 .yr-typing i:nth-child(2) { animation-delay: .2s; } .yr-typing i:nth-child(3) { animation-delay: .4s; }
 .yr-end { display: flex; gap: 10px; margin-top: 10px; }
 .yr .btn.ghost { background: rgba(255, 255, 255, .5); color: #2E2333; }
+/* Contact */
+.ct-word { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+.ct-word span { min-width: 2.1rem; padding: 8px 6px; border-radius: 12px; background: var(--c, #F2A93B); color: var(--on-c, #fff); font: 800 1.6rem/1 var(--f-body); text-align: center; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .15); animation: deal .35s ease both; }
+.ct-word span.more { background: var(--surface-2); color: var(--muted); box-shadow: none; }
+.ct-word.big span { min-width: 1.8rem; font-size: 1.3rem; }
+.ct-yj { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, #FFD25A 16%, var(--surface)); }
+.ct-yj > span { flex: none; width: 56px; } .ct-yj > span svg { width: 100%; height: auto; }
+.ct-yj.small-yj > span { width: auto; }
+.ct-yj p { margin: 0; font-style: italic; }
+.ct-yj.cut { background: color-mix(in srgb, #E0554B 16%, var(--surface)); animation: deal .3s ease both; }
+.ct-clue .big-word { font-size: 1.5rem; }
+.ct-contact { width: 100%; padding: 26px 16px; border-radius: 26px; background: radial-gradient(circle at 30% 25%, #FFB46A, #E0554B); color: #fff; font: 800 2rem/1 var(--f-body); letter-spacing: .02em; box-shadow: 0 8px 0 #9C3328; transition: transform .08s; }
+.ct-contact:active { transform: translateY(6px); box-shadow: 0 2px 0 #9C3328; }
+.ct-count { font-size: 4rem; text-align: center; }
+.ct-secret { -webkit-text-security: disc; text-security: disc; letter-spacing: .2em; }
 /* L'évasion de Yassen Jr. */
 .esc-time { font-variant-numeric: tabular-nums; font-size: .85rem; color: var(--muted); font-weight: 600; min-width: 3.4em; text-align: right; }
 .esc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -1746,6 +1761,7 @@ const MODES = {
   conte: { title: "Notre histoire sur mesure", desc: "Votre contexte, vos détails : une histoire à choix écrite pour vous, par l'IA.", c: 8, glyph: "✎" },
   epopee: { title: "L'épopée", desc: "Un jeu de rôle à deux : classes, statistiques, objets, combats et boss.", c: 7, glyph: "⚔" },
   arcade: { title: "Arcade", desc: "Quatre mini-jeux rapides, à jouer côte à côte.", c: 7, glyph: "◎" },
+  contact: { title: "Contact", desc: "Yassen Jr. garde un mot secret : faites-vous deviner des mots pour lui arracher ses lettres.", c: 5, glyph: "✸" },
   recit: { title: "Il était une fois nous", desc: "Une histoire dont vous êtes les héros.", c: 8, glyph: "❦" },
   puzzle: { title: "Le puzzle de Yassen Jr.", desc: "Reconstituez, pièce par pièce, le portrait de votre compagnon de série.", c: 2, glyph: "◧" },
   surprise: { title: "Surprise", desc: "Un peu de tout, accordé à votre humeur du moment.", c: 6, glyph: "✺" }
@@ -1961,7 +1977,7 @@ function cleanMeta(m, v) {
 // Une partie à distance : seuls les réponses et les mots écrits gardent du texte libre ; tout le reste
 // doit être un mot-clé, un nombre ou un booléen, et renvoyer à un contenu qui existe.
 function cleanLive(v) {
-  if (!isObj(v) || !["cards", "arcade", "story"].includes(v.kind)) return null;
+  if (!isObj(v) || !["cards", "arcade", "story", "contact"].includes(v.kind)) return null;
   const walk = (x, free, depth) => {
     if (depth > 6) return undefined;
     if (typeof x === "number") return Number.isFinite(x) ? x : undefined;
@@ -1972,7 +1988,7 @@ function cleanLive(v) {
     const o = {};
     for (const [k, y] of Object.entries(x)) {
       if (!okId(k)) continue;
-      const w = walk(y, free || ["ans", "words", "prompt"].includes(k), depth + 1);
+      const w = walk(y, free || ["ans", "words", "prompt"].includes(k) || v.kind === "contact" && ["secret", "w", "g", "clue", "hist", "yj"].includes(k), depth + 1);
       if (w !== undefined) o[k] = w;
     }
     return o;
@@ -1985,6 +2001,14 @@ function cleanLive(v) {
   ["by", "first", "coinWho"].forEach(k => { if (k in s && s[k] !== "a" && s[k] !== "b") delete s[k]; });
   if ("stopReq" in s && !(isObj(s.stopReq) && (s.stopReq.by === "a" || s.stopReq.by === "b"))) delete s.stopReq;
   if (s.kind === "cards") { if (!own(MODES, s.mode)) return null; s.deck = (s.deck || []).filter(id => own(CARDS, id)); }
+  if (s.kind === "contact") {
+    s.secret = ctNorm(s.secret); if (s.secret.length < 2) return null;
+    s.level = own(CT_LEVELS, s.level) ? s.level : "malin"; s.mode = "yassen";
+    s.shown = cInt(s.shown, 1, s.secret.length, 1); s.round = cInt(s.round, 1, 99, 1);
+    if (!["word", "clue", "end"].includes(s.phase)) s.phase = "word";
+    if (s.turn !== "a" && s.turn !== "b") s.turn = "a";
+    s.hist = toArr(s.hist).filter(isObj).slice(-30);
+  }
   if (s.kind === "arcade") {
     if (!own(ARCADE, s.game)) return null;
     const list = { tp: TP, flags: FLAGS, onde: SPECTRA }[s.game];
@@ -2846,9 +2870,9 @@ const PATHS = {
   puzzle: '<path d="M5 9h3.2a2 2 0 1 1 3.6 0H15v3.2a2 2 0 1 1 0 3.6V19H5z"/><path d="M15 9h4v10h-4"/>'
 };
 const ARC_ICON = { tp: "fork", flags: "flag", onde: "gauge", synchro: "sync" };
-const MODE_ICON = { conte: "quill", epopee: "sword", questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle" };
+const MODE_ICON = { conte: "quill", epopee: "sword", questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle", contact: "bubbles" };
 const ico = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name] || ""}</svg>`;
-const MODE_GROUPS = [["Se découvrir", ["questions", "qui", "etsi"]], ["Vivre une histoire", ["conte", "epopee", "recit"]], ["Se souvenir", ["histoire", "puzzle"]], ["S'amuser", ["arcade", "defis"]]];
+const MODE_GROUPS = [["Se découvrir", ["questions", "qui", "etsi"]], ["Vivre une histoire", ["conte", "epopee", "recit"]], ["Se souvenir", ["histoire", "puzzle"]], ["S'amuser", ["contact", "arcade", "defis"]]];
 const modeRow = k => { const m = MODES[k]; return `<button class="mode-row" style="${cvar(m.c)}" data-a="open-mode" data-mode="${k}"><span class="icon-tile">${ico(MODE_ICON[k])}</span><span class="mode-txt"><b>${esc(fr(m.title))}</b><span>${esc(fr(m.desc))}</span></span><span class="chev" aria-hidden="true">›</span></button>`; };
 const syncLine = () => (navigator.onLine === false ? "Hors ligne pour le moment : vos changements partiront au retour du réseau. " : "") + (Store.backend === "shared" ? "Votre progression est commune à vos deux téléphones."
   : Store.backend === "db" ? "Vos souvenirs, aventures et lettres sont partagés entre les personnes qui ont accès à cette page."
@@ -5299,7 +5323,7 @@ const Live = {
   },
   active() { const s = this.state; return !!(s && !s.ended && Date.now() - (s.updatedAt || 0) < 12 * 3600 * 1000); }
 };
-const liveTitle = L => L.kind === "cards" ? (MODES[L.mode] || {}).title || "Partie" : L.kind === "arcade" ? (ARCADE[L.game] || {}).title || "Arcade" : (STORY[L.id] || {}).title || "Histoire";
+const liveTitle = L => L.kind === "contact" ? "Contact" : L.kind === "cards" ? (MODES[L.mode] || {}).title || "Partie" : L.kind === "arcade" ? (ARCADE[L.game] || {}).title || "Arcade" : (STORY[L.id] || {}).title || "Histoire";
 function liveBanner() {
   if (Store.backend !== "shared" || !Live.active()) return "";
   const L = Live.state;
@@ -5508,12 +5532,12 @@ function liveStoryView(L, me, head) {
 function liveView() {
   const L = Live.state, me = whoAmI();
   if (!L) return layerHead("") + empty("Aucune partie à distance en cours", "Lancez-en une depuis un jeu, en choisissant « À distance ».");
-  const right = L.kind === "cards" && !L.ended ? `Carte ${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && !L.ended && L.game !== "synchro" ? `${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && L.game === "synchro" ? `Manche ${L.round}` : L.kind === "story" ? `Chapitre ${L.steps || 1}` : "";
+  const right = L.kind === "cards" && !L.ended ? `Carte ${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && !L.ended && L.game !== "synchro" ? `${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && L.game === "synchro" ? `Manche ${L.round}` : L.kind === "story" ? `Chapitre ${L.steps || 1}` : L.kind === "contact" ? `Manche ${Math.min(L.round || 1, CT_MAX)}` : "";
   const head = `<div class="g-head"><button class="icon-btn" data-a="close-layer" aria-label="Fermer">×</button><div class="g-prog"><span>${esc(fr(liveTitle(L)))} · à distance</span></div><span class="g-timer">${right}</span></div>`;
   if (!me) return head + `<div class="panel" style="text-align:center;${cvar(7)}"><p class="card-for">Sur ce téléphone…</p><p class="big-word" style="font-size:1.7rem">Qui es-tu ?</p></div>
     <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${cvar(7)}" data-a="pzr-me" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
     <p class="small muted" style="text-align:center">${esc(fr("Ce choix reste enregistré sur ce téléphone. Chacun fait le sien sur son propre téléphone."))}</p>`;
-  const body = L.kind === "cards" ? liveCardsView(L, me, head) : L.kind === "arcade" ? liveArcadeView(L, me, head) : liveStoryView(L, me, head);
+  const body = L.kind === "cards" ? liveCardsView(L, me, head) : L.kind === "arcade" ? liveArcadeView(L, me, head) : L.kind === "contact" ? contactGame(L, me, head) : liveStoryView(L, me, head);
   return body + (L.ended ? "" : liveStopBox(L, me));
 }
 
@@ -8193,6 +8217,212 @@ function hapView() {
     </div></div>`;
 }
 
+/* ───────────────────────── Contact ─────────────────────────
+   Le jeu de mots de TikTok, à deux grâce à Yassen Jr. : il garde un mot secret et n'en montre que le début.
+   À tour de rôle, l'un·e de vous pense à un mot qui commence pareil et en donne un indice ; si l'autre croit
+   l'avoir trouvé, « Contact ! » : trois secondes, et vous dites votre mot en même temps. Même mot, et Yassen
+   n'a pas deviné ? Il doit dévoiler une lettre de plus. Vous gagnez en trouvant son mot.
+   Yassen essaie de vous couper : il devine le mot de l'indice (par l'IA, sinon avec ses propres mots).
+   En soirée, sur un seul téléphone, c'est un·e ami·e qui garde le mot.
+   La partie vit dans S.ct (sur ce téléphone) ou dans la partie à distance (Live, kind « contact »). */
+const CT_LEVELS = {
+  endormi: { name: "Endormi", desc: "Yassen ne coupe que les indices vraiment trop faciles.", conf: 92, coin: 0.5 },
+  malin: { name: "Malin", desc: "Il coupe quand l'indice est évident. Misez sur la subtilité.", conf: 70, coin: 1 },
+  redoutable: { name: "Redoutable", desc: "Il coupe dès qu'il a une bonne idée. Indices tordus obligatoires.", conf: 45, coin: 1 }
+};
+const CT_MAX = 20;
+// Les mots que Yassen peut garder (sans accent à la saisie, ça ne change rien : tout est comparé sans accents).
+const CT_WORDS = ("montagne parapluie chocolat aventure tournesol papillon bibliotheque cerf-volant coquillage croissant dauphin escargot framboise girafe horloge kangourou lanterne marmotte navire oreiller pastèque pingouin quartier renard sapin tambour trampoline ukulele vacances violoncelle wagon yaourt zèbre "
+  + "ananas baleine bougie cabane champignon citrouille clémentine coccinelle dinosaure écureuil éléphant étoile fantôme fusée grenouille hamac hérisson igloo jardin licorne limonade loup manège marionnette méduse moustache nuage orange panda perroquet pirate pizza poisson pomme poupée robot sirène soleil sorcière spaghetti tortue toboggan trésor valise vampire volcan "
+  + "accordéon arc-en-ciel avion balançoire ballon bateau biscuit brioche cactus caméléon camping carrousel cascade château chaussette cheminée colibri confiture couronne crêpe cygne dragon édredon flamant forêt fromage galaxie gâteau glacier guitare hibou île jongleur kiwi lavande lion lune macaron magicien mangue marmelade mouette myrtille noisette océan ourson palmier parachute pâtisserie phare piano pique-nique planète plume pompier potiron radeau raquette sablier sardine saxophone serpent sous-marin tapis téléphone tigre tipi tracteur trompette tulipe vélo vanille voilier").split(" ").map(w => w.replace(/-/g, ""));
+// Des mots en plus, pour que Yassen devine quand l'IA ne répond pas.
+const CT_DICT = CT_WORDS.concat(("maison voiture chien chat table chaise fenêtre porte livre stylo cahier école cuisine salon chambre lit canapé télévision ordinateur musique chanson danse film cinéma théâtre plage mer soleil pluie neige vent orage hiver été printemps automne "
+  + "matin midi soir nuit café thé lait pain beurre sucre sel poivre tomate carotte salade pomme poire banane fraise cerise citron raisin melon abricot pêche prune figue noix amande miel farine oeuf poulet boeuf poisson riz pâtes soupe gratin tarte glace bonbon "
+  + "main pied tête bras jambe coeur oreille nez bouche dent cheveu oeil sourire bisou câlin amour amitié famille maman papa bébé enfant mamie papi frère soeur cousin ami voisin docteur facteur boulanger professeur "
+  + "train métro bus taxi vélo moto camion route rue pont gare aéroport port ville village campagne montagne colline rivière lac fleuve océan désert forêt prairie champ ferme moulin église mairie marché magasin banque poste hôpital "
+  + "rouge bleu vert jaune violet rose noir blanc gris marron or argent diamant perle bague collier bracelet montre lunettes chapeau écharpe manteau robe jupe pantalon chemise pull chaussure botte sac parapluie valise "
+  + "bateau barque canoë surf ski luge patin raquette ballon balle but match équipe course marathon médaille coupe trophée victoire champion "
+  + "étoile lune planète soleil comète fusée astronaute satellite galaxie univers ciel nuage arc éclair tonnerre brouillard tempête "
+  + "marmite casserole poêle cuillère fourchette couteau assiette verre tasse bol bouteille carafe nappe serviette bougie lampe miroir tableau cadre photo album souvenir cadeau surprise fête anniversaire noël mariage voyage vacances week-end dimanche "
+  + "mouton vache cochon cheval poule canard lapin souris hamster tortue grenouille abeille fourmi papillon araignée moustique escargot lézard serpent crocodile lion tigre ours loup renard cerf biche sanglier hibou aigle pigeon moineau mouette pingouin phoque baleine requin dauphin méduse crabe homard crevette").split(" ")).map(w => w.replace(/-/g, ""));
+const ctNorm = t => String(t || "").toUpperCase().replace(/Œ/g, "OE").replace(/Æ/g, "AE").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Z]/g, "");
+const CT_LINES = {
+  start: ["J'ai un mot. Il est trop bien. Vous ne le trouverez jamais. Enfin… peut-être.", "Mon mot est caché. Indice : c'est un mot. Hihi.", "Je garde un mot rien que pour moi. Essayez de me le voler !"],
+  cut: ["Coupé ! C'était « {m} », bien sûr. Trop facile !", "« {m} » ! Je l'ai ! *fait des étincelles de victoire*", "Hihi, « {m} ». Vous pensiez vraiment que je ne trouverais pas ?"],
+  give: ["Grrr… bon. D'accord. Voilà une lettre de plus.", "Votre duo est trop fort, c'est injuste. Tenez, une lettre.", "*boude* Une lettre de plus. Mais c'est la dernière ! (Ce n'est pas la dernière.)"],
+  diff: ["Pas le même mot ! Mon secret est bien gardé.", "Hihi, vous n'étiez pas sur la même longueur d'onde cette fois.", "Deux mots différents ! Je garde ma lettre."],
+  miss: ["Moi, j'avais pensé à « {m} »… raté.", "J'avais misé sur « {m} ». Bien joué, l'indice était malin.", "« {m} » ? Non ? Bon."],
+  wrong: ["Non non non ! Ce n'est pas mon mot.", "Raté ! *se cache derrière ses petites mains*", "Hihi, presque ! Enfin, pas du tout."]
+};
+// Une réplique choisie d'après la manche : elle ne change pas à chaque rafraîchissement de l'écran.
+const ctLine = (k, m, n) => { const l = CT_LINES[k]; return (n == null ? pickOne(l) : l[Math.abs(n) % l.length]).replace("{m}", m || ""); };
+// Où vit la partie : sur ce téléphone, ou à distance.
+const ctLive = () => !!(S.layer && S.layer.type === "live" && Live.state && Live.state.kind === "contact");
+const ctState = () => (ctLive() ? Live.state : S.ct);
+function ctSet(patch) {
+  if (ctLive()) { Live.write(patch); return; }
+  if (!S.ct) return;
+  for (const [k, v] of Object.entries(patch)) { if (v === null) delete S.ct[k]; else S.ct[k] = v; }
+  render(true);
+}
+const ctPrefix = C => (C.secret || "").slice(0, C.shown || 1);
+function ctNewGame(mode, level, secret) {
+  let w = secret ? ctNorm(secret) : "";
+  if (!w) {
+    // Parfois, un mot de chez vous : une aventure que vous avez vécue.
+    const mine = Store.cols.aventures.filter(a => !/\s/.test(String(a.title || "").trim())).map(a => ctNorm(a.title)).filter(t => t.length >= 5 && t.length <= 12);
+    w = mine.length && Math.random() < 0.3 ? pickOne(mine) : ctNorm(pickOne(CT_WORDS));
+  }
+  return { mode, level: own(CT_LEVELS, level) ? level : "malin", secret: w, shown: 1, turn: Math.random() < 0.5 ? "a" : "b", round: 1, phase: "word", tries: 0, cuts: 0, hits: 0, hist: [], start: Date.now() };
+}
+// Yassen devine le mot de l'indice. Avec l'IA s'il le peut, sinon parmi les mots qu'il connaît.
+async function ctThink(prefix, clue, level) {
+  const L = CT_LEVELS[level] || CT_LEVELS.malin, pool = [...new Set(CT_DICT.map(ctNorm))].filter(w => w.startsWith(prefix) && w.length > prefix.length);
+  let m = "", conf = 0;
+  if (AI.ready()) {
+    try {
+      const out = await Promise.race([AI.json(`Jeu du Contact. Le mot cherché commence par « ${prefix} ». Indice donné : « ${clue} ».\nQuel mot français, commençant exactement par « ${prefix} », correspond le mieux à cet indice ? Un seul mot, sans article.\nRéponds en JSON : {"mot": "…", "confiance": nombre de 0 à 100}`, "Tu es Yassen Jr., une petite flamme maline qui joue au jeu du Contact. Tu cherches le mot que l'indice décrit." + YJ_JSON, "light"), new Promise((_, no) => setTimeout(() => no(new Error("délai")), 7000))]);
+      m = ctNorm(out && out.mot); conf = Math.max(0, Math.min(100, +(out && out.confiance) || 0));
+      if (!m.startsWith(prefix)) { m = ""; conf = 0; }
+    } catch (e) { m = ""; }
+  }
+  if (!m && pool.length) { m = pickOne(pool); conf = Math.min(100, Math.round(160 / pool.length)); }
+  const go = conf >= L.conf && Math.random() < L.coin;
+  return { m, c: conf, go };
+}
+// L'indice est donné : Yassen réfléchit pendant que l'autre cherche.
+async function ctClue(w, clue) {
+  const C = ctState(); if (!C) return;
+  const start = C.start, round = C.round, p = ctPrefix(C);
+  ctSet({ w, clue, phase: "clue", yj: null, g: null, cAt: null });
+  if (C.mode === "soiree") return;
+  const r = await ctThink(p, clue, C.level), C2 = ctState();
+  if (!C2 || C2.start !== start || C2.round !== round) return;
+  ctSet({ yj: { m: r.m, c: r.c, cut: !!(r.go && r.m && r.m === ctNorm(w)) } });
+}
+// Fin de manche : « ok » (contact réussi), « cut » (coupé), « diff » (pas le même mot), « skip » (pas trouvé).
+function ctNext(res) {
+  const C = ctState(); if (!C || C.phase === "end") return;
+  const hist = [...toArr(C.hist), { p: ctPrefix(C), clue: cStr(C.clue, 120), w: cStr(C.w, 40), r: res }].slice(-30), patch = { hist, w: null, clue: null, g: null, cAt: null, yj: null };
+  if (res === "ok") {
+    patch.hits = (C.hits || 0) + 1;
+    if (ctNorm(C.w) === C.secret) return ctEnd({ ...patch, won: true, how: "contact" });
+    patch.shown = Math.min(C.secret.length, (C.shown || 1) + 1);
+    if (patch.shown >= C.secret.length) return ctEnd({ ...patch, won: true, how: "all" });
+  }
+  if (res === "cut") patch.cuts = (C.cuts || 0) + 1;
+  if ((C.round || 1) >= CT_MAX) return ctEnd({ ...patch, won: false });
+  ctSet({ ...patch, round: (C.round || 1) + 1, turn: other(C.turn || "a"), phase: "word" });
+  Sfx.play(res === "ok" ? "coin" : res === "cut" ? "hit" : "soft");
+}
+function ctEnd(patch) {
+  const C = ctState();
+  ctSet({ ...patch, phase: "end", won: !!patch.won });
+  Sfx.play(patch.won ? "fanfare" : "soft");
+  // Les cœurs, une seule fois (sur le téléphone de celui ou celle qui a lancé la partie, à distance).
+  if (patch.won && C.mode !== "soiree" && (!ctLive() || C.by === whoAmI())) {
+    const st = ctStars({ ...C, ...patch });
+    Store.patchMeta("game", { [`earn/ct_${C.start}`]: 10 + st * 5 });
+  }
+}
+// Moins Yassen a dû dévoiler de lettres, plus c'est beau.
+const ctStars = C => { const r = (C.shown || 1) / Math.max(1, (C.secret || "").length); return r <= 0.4 ? 3 : r <= 0.7 ? 2 : 1; };
+function ctGuess(v) {
+  const C = ctState(); if (!C || C.phase === "end") return;
+  if (ctNorm(v) && ctNorm(v) === C.secret) { ctEnd({ won: true, how: "guess" }); return; }
+  ctSet({ tries: (C.tries || 0) + 1, oops: Date.now() });
+  toast(C.mode === "soiree" ? "Ce n'est pas le mot du gardien." : ctLine("wrong")); Sfx.play("hit");
+}
+// Le compte à rebours dure trois secondes à partir du « Contact ! » ; les deux téléphones le calculent seuls.
+const ctCount = C => C.cAt ? Math.max(0, 3 - Math.floor((Date.now() - C.cAt) / 900)) : 3;
+const ctRevealed = C => C.phase === "clue" && C.cAt && Date.now() - C.cAt >= 2900;
+const CtTick = { t: null, run() { if (this.t) return; this.t = setInterval(() => { const C = ctState(); if (!C || !C.cAt || ctRevealed(C)) { clearInterval(this.t); this.t = null; } render(true); }, 300); } };
+
+/* ───── Les écrans ───── */
+function ctTiles(C) {
+  const p = ctPrefix(C);
+  return `<div class="ct-word" aria-label="Le mot commence par ${esc(p)}">${[...p].map(l => `<span>${l}</span>`).join("")}<span class="more" aria-hidden="true">…</span></div>`;
+}
+function contactSetupView() {
+  const E = S.ctSetup || (S.ctSetup = { where: "", keeper: "yassen", level: "malin" }), col = cvar(5);
+  const chip = (k, v, l) => `<button class="chip" aria-pressed="${E[k] === v}" data-a="ct-opt" data-k="${k}" data-v="${v}">${esc(l)}</button>`;
+  return `${layerHead("")}
+    <section class="setup-hero" style="${col}"><span class="g" aria-hidden="true">${ico("bubbles")}</span><h1>Contact</h1><p>${esc(fr("Yassen Jr. garde un mot secret et n'en montre que le début. Faites-vous deviner des mots, criez « Contact ! », et forcez-le à lâcher ses lettres une à une."))}</p></section>
+    <div class="ct-yj"><span aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span><p>« ${esc(ctLine("start", "", new Date().getDate()))} »</p></div>
+    ${rulesHtml(["Yassen montre la première lettre de son mot, par exemple « M ».", "À tour de rôle, l'un·e de vous pense à un autre mot qui commence pareil (« montagne ») et en donne un indice (« ça se monte et ça se descend »).", "Si l'autre croit avoir trouvé : « Contact ! ». Trois secondes, puis vous dites votre mot en même temps.", "Même mot, et Yassen n'a pas deviné avant vous ? Il doit dévoiler une lettre de plus. S'il a deviné, il vous coupe.", "Vous gagnez en trouvant son mot : par un contact, ou en le tentant directement. Moins il a dû dévoiler de lettres, plus c'est beau."])}
+    ${Store.backend === "shared" ? `<div class="stack"><h2 class="sec">Où jouez-vous ?</h2><div class="chips">${chip("where", "", "Sur ce téléphone")}${chip("where", "distance", "À distance, chacun·e sur son téléphone")}</div></div>` : ""}
+    ${E.where === "distance" ? "" : `<div class="stack"><h2 class="sec">Qui garde le mot ?</h2><div class="chips">${chip("keeper", "yassen", "Yassen Jr.")}${chip("keeper", "soiree", "Un·e ami·e (soirée à 3 ou plus)")}</div></div>`}
+    ${E.keeper === "soiree" && E.where !== "distance" ? `<p class="small muted">${esc(fr("En soirée, l'ami·e qui garde le mot le tape en cachette ici, puis c'est à cette personne de crier « Coupé ! » si elle trouve le mot de l'indice avant la fin du compte à rebours."))}</p>
+      <div class="field"><label for="ct-keep">Le mot secret du gardien (les autres ne regardent pas)</label><input id="ct-keep" data-d maxlength="20" autocomplete="off" autocapitalize="characters" class="ct-secret" value="${dv("ct-keep", "")}"></div>` : `<div class="stack"><h2 class="sec">Yassen est…</h2><div class="esc-levels">${Object.entries(CT_LEVELS).map(([k, l]) => `<button class="esc-level" aria-pressed="${E.level === k}" data-a="ct-opt" data-k="level" data-v="${k}"><b>${esc(l.name)}${k === "malin" ? " · conseillé" : ""}</b><span class="small">${esc(l.desc)}</span></button>`).join("")}</div></div>`}
+    <div class="row"><button class="btn wide c" style="${col}" data-a="ct-start">C'est parti</button></div>`;
+}
+function contactView() {
+  const C = S.ct;
+  if (!C) return contactSetupView();
+  return contactGame(C, null, `<div class="g-head"><button class="icon-btn" data-a="ct-quit" aria-label="Quitter la partie">×</button><div class="g-prog"><span>Contact · manche ${Math.min(C.round || 1, CT_MAX)}</span></div><span class="g-timer">${(C.shown || 1)} lettre${(C.shown || 1) > 1 ? "s" : ""}</span></div>`);
+}
+// La partie, sur ce téléphone (me = null) ou à distance (me = « a » ou « b »).
+function contactGame(C, me, head) {
+  const col = cvar(5), soiree = C.mode === "soiree", giver = C.turn || "a", taker = other(giver), p = ctPrefix(C), E = S.ctUi || (S.ctUi = {});
+  const last = toArr(C.hist).slice(-1)[0], say = !last ? ctLine("start", "", C.start) : last.r === "ok" ? ctLine("give", "", C.round) : last.r === "cut" ? "Hihi, coupé ! Au suivant." : last.r === "diff" ? ctLine("diff", "", C.round) : "Pas trouvé ? Normal, mon mot est trop fort.";
+  const yj = `<div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${soiree ? "Le gardien garde son mot." : `« ${esc(say)} »`}</p></div>`;
+  const guessBox = C.phase === "end" ? "" : E.guess ? `<div class="esc-latch"><label for="ct-sec">${soiree ? "Le mot du gardien" : "Le mot de Yassen"}, d'après vous :</label><input id="ct-sec" data-d maxlength="20" autocomplete="off" autocapitalize="characters" value="${dv("ct-sec", "")}"><div class="row"><button class="btn" data-a="ct-guess">Tenter</button><button class="btn ghost" data-a="ct-guess-box">Annuler</button></div></div>`
+    : `<div class="joker"><button class="link" data-a="ct-guess-box">${soiree ? "Tenter le mot du gardien" : "Tenter directement le mot de Yassen"}</button></div>`;
+  const hist = toArr(C.hist);
+  const histHtml = hist.length ? `<details class="story-path"><summary>Les manches · ${C.hits || 0} contact${(C.hits || 0) > 1 ? "s" : ""}, ${C.cuts || 0} coupure${(C.cuts || 0) > 1 ? "s" : ""}</summary><ol>${hist.map(h => `<li><b>${esc(h.p)}…</b> « ${esc(h.clue)} » → ${esc(h.w)} · ${{ ok: "contact ✓", cut: "coupé", diff: "pas le même mot", skip: "pas trouvé" }[h.r] || ""}</li>`).join("")}</ol></details>` : "";
+
+  if (C.phase === "end") {
+    const st = ctStars(C);
+    return head + `<div class="esc-win"><span class="esc-hero-yj ${C.won ? "" : "bounce"}" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span>
+      <h1 class="sheet-title">${C.won ? "Trouvé !" : soiree ? "Le gardien a gagné" : "Yassen garde son secret"}</h1>
+      <div class="ct-word big">${[...C.secret].map(l => `<span>${l}</span>`).join("")}</div>
+      ${C.won ? `<p class="esc-stars" aria-label="${st} étoiles sur 3">${"★".repeat(st)}${"☆".repeat(3 - st)}</p>` : ""}
+      <p class="small muted">${esc(fr(`${Math.min(C.round || 1, CT_MAX)} manche${(C.round || 1) > 1 ? "s" : ""} · ${C.shown || 1} lettre${(C.shown || 1) > 1 ? "s" : ""} dévoilée${(C.shown || 1) > 1 ? "s" : ""} sur ${C.secret.length} · ${C.hits || 0} contact${(C.hits || 0) > 1 ? "s" : ""} réussi${(C.hits || 0) > 1 ? "s" : ""}`))}</p>
+      <p class="esc-say">${soiree ? "" : C.won ? `« ${esc(C.how === "all" ? "Vous m'avez tout pris ! Toutes mes lettres ! Bon… c'était drôle. On rejoue ?" : C.how === "guess" ? "Comment vous avez su ?! Vous lisez dans mes pensées, c'est ça ?" : "Un contact sur mon propre mot… Vos deux têtes sont vraiment synchronisées.")} »` : `« Hihi ! Mon mot, c'était ça. Revanche ? »`}</p>
+      ${C.won && !soiree ? `<p class="small muted">+${10 + st * 5} cœurs pour vous deux.</p>` : ""}
+      <div class="row" style="justify-content:center"><button class="btn c" style="${col}" data-a="${me ? "lv-replay" : "ct-replay"}">Rejouer</button><button class="btn ghost" data-a="${me ? "close-layer" : "ct-quit"}">Terminer</button></div></div>` + histHtml;
+  }
+  const names = k => (soiree ? (k === giver ? "la personne qui donne l'indice" : "les autres") : nm(k));
+
+  if (C.phase === "word") {
+    if (me && me !== giver) return head + ctTiles(C) + yj + `<p class="verdict" style="${col}">${esc(fr(`${nm(giver)} cherche un mot qui commence par ${p}…`))}</p>` + guessBox + histHtml;
+    if (!me && !E.hidden) return head + ctTiles(C) + yj + `<section class="curtain" style="${col}"><p>${soiree ? "Au tour de quelqu'un d'autre de donner un indice" : "À toi de donner un indice"}</p><p class="who">${esc(soiree ? "Qui a une idée ?" : nm(giver))}</p><p>${esc(fr(soiree ? "Le gardien et les autres détournent les yeux le temps de taper le mot." : `${nm(taker)}, détourne les yeux le temps que ${nm(giver)} tape son mot.`))}</p><button class="btn" data-a="ct-hide">C'est moi</button></section>` + guessBox + histHtml;
+    return head + ctTiles(C) + yj + `<div class="stack">
+      <div class="field"><label for="ct-w">Ton mot, en secret (il doit commencer par ${esc(p)})</label><input id="ct-w" data-d maxlength="24" autocomplete="off" autocapitalize="characters" class="ct-secret" value="${dv("ct-w", "")}"></div>
+      <div class="field"><label for="ct-c">${soiree ? "Ton indice (à dire à voix haute, l'écrire est facultatif)" : `Ton indice pour ${esc(me ? nm(taker) : nm(taker))}${me ? "" : ", à dire à voix haute aussi"}`}</label><input id="ct-c" data-d maxlength="100" autocomplete="off" value="${dv("ct-c", "")}" placeholder="${esc(fr("Pas le mot lui-même, ni une partie du mot"))}"></div>
+      <button class="btn wide c" style="${col}" data-a="ct-clue">Donner l'indice</button></div>` + histHtml;
+  }
+
+  // L'indice est donné.
+  const clue = `<div class="panel ct-clue" style="${col}"><p class="card-for">Indice de ${esc(soiree ? "la personne" : nm(giver))}</p><p class="big-word">${esc(C.clue || "(dit à voix haute)")}</p></div>`;
+  if (!C.cAt) {
+    if (me === giver) return head + ctTiles(C) + clue + `<p class="verdict" style="${col}">${esc(fr(`On attend le « Contact ! » de ${nm(taker)}…`))}</p>` + yj + guessBox;
+    if (me === taker) return head + ctTiles(C) + clue + `<div class="field"><label for="ct-g">Ton mot (il commence par ${esc(p)})</label><input id="ct-g" data-d maxlength="24" autocomplete="off" autocapitalize="characters" value="${dv("ct-g", "")}"></div>
+      <button class="ct-contact" data-a="ct-contact">Contact !</button><div class="joker"><button class="link" data-a="ct-skip">Je ne trouve pas, on passe</button></div>` + yj;
+    return head + ctTiles(C) + clue + `<p class="small" style="text-align:center">${esc(fr(soiree ? "Quelqu'un croit avoir trouvé ? Criez « Contact ! » et touchez le bouton." : `${nm(taker)}, tu crois avoir trouvé ? Criez « Contact ! » et touche le bouton.`))}</p>
+      <button class="ct-contact" data-a="ct-contact">Contact !</button><div class="joker"><button class="link" data-a="ct-skip">On ne trouve pas, indice suivant</button></div>` + yj + guessBox;
+  }
+  if (!ctRevealed(C)) { CtTick.run(); const n = ctCount(C); return head + ctTiles(C) + clue + `<p class="count ct-count" style="${col}" aria-live="assertive">${n > 0 ? n : fr("Dites-le !")}</p><p class="small muted" style="text-align:center">${soiree ? "Le gardien cherche à vous couper…" : "Yassen cherche le mot de l'indice…"}</p>`; }
+  // La révélation.
+  if (!soiree && !C.yj) { CtTick.run(); return head + ctTiles(C) + clue + `<p class="verdict" style="${col}">Dites-le !</p><p class="small muted" style="text-align:center">Yassen réfléchit encore… *se gratte la flamme*</p>`; }
+  const y = C.yj || {}, wGiver = `<div class="rv"><b>${esc(soiree ? "Le mot de l'indice" : `Le mot de ${nm(giver)}`)}</b><p class="pick">${esc(C.w || "")}</p></div>`;
+  if (!soiree && y.cut) return head + ctTiles(C) + clue + `<p class="verdict" style="${cvar(1)}">Coupé !</p><div class="reveal" style="${col}">${wGiver}</div><div class="ct-yj cut"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(ctLine("cut", (C.w || "").toLowerCase(), C.round))}</p></div>
+    <button class="btn wide" data-a="ct-next" data-v="cut">Manche suivante</button>`;
+  const miss = !soiree && y.m ? `<p class="small muted" style="text-align:center">${esc(ctLine("miss", y.m.toLowerCase(), C.round))}</p>` : "";
+  if (me) {
+    const same = ctNorm(C.g) && ctNorm(C.g) === ctNorm(C.w);
+    return head + ctTiles(C) + clue + `<div class="reveal" style="${col}">${wGiver}<div class="rv"><b>Le mot de ${esc(nm(taker))}</b><p class="pick">${esc(C.g || "")}</p></div></div>
+      <p class="verdict" style="${col}">${same ? "Contact !" : "Pas le même mot…"}</p>${miss}<button class="btn wide" data-a="ct-next" data-v="${same ? "ok" : "diff"}">${same ? "Yassen doit lâcher une lettre" : "Manche suivante"}</button>`;
+  }
+  return head + ctTiles(C) + clue + `<div class="reveal" style="${col}">${wGiver}</div>${miss}
+    <p class="lbl" style="text-align:center">${soiree ? "Le gardien a-t-il trouvé avant la fin ? Et vous, même mot ?" : "Vous avez dit le même mot ?"}</p>
+    <div class="actions"><button class="btn wide c" style="${col}" data-a="ct-next" data-v="ok">Même mot !</button><button class="btn ghost wide" data-a="ct-next" data-v="diff">Pas le même</button>${soiree ? `<button class="btn line wide" data-a="ct-next" data-v="cut">Le gardien a coupé</button>` : ""}</div>`;
+}
+function startLiveContact(level) {
+  const C = ctNewGame("yassen", level);
+  Live.start({ kind: "contact", ...C });
+}
+
 /* ───────────────────────── Centre de notifications ─────────────────────────
    Tout ce que l'autre a fait récemment, au même endroit : une partie lancée (qu'on rejoint d'un toucher),
    un petit mot, une lettre scellée ou qui s'ouvre, un souvenir, une aventure, une histoire, Yassen Jr.…
@@ -9789,6 +10019,7 @@ function renderNow(force) {
   else if (S.layer.type === "conte") html = conteView();
   else if (S.layer.type === "annee") html = yearView();
   else if (S.layer.type === "escape") html = escapeView();
+  else if (S.layer.type === "contact") html = contactView();
   else if (S.layer.type === "hap") html = hapView();
   // L'animation d'ouverture continue là où elle en était si l'écran est redessiné juste après.
   if (fresh) render.layerAt = Date.now();
@@ -9835,6 +10066,7 @@ const ACT = {
     if (d.mode === "conte" || d.mode === "epopee") { S.layer = { type: "conte" }; S.fight = null; S.cx = { ...S.cx, view: d.mode === "epopee" ? "new" : "lib", mode: d.mode === "epopee" ? "rpg" : "conte", id: null, help: false, check: null, roll: null, pitching: null, slow: false, err: "" }; return; }
     if (d.mode === "puzzle") { S.layer = { type: "puzzle" }; S.pz = null; S.pzSize = S.pzSize || 3; return; }
     if (d.mode === "arcade") { S.layer = { type: "arcade" }; S.arc = null; return; }
+    if (d.mode === "contact") { S.layer = { type: "contact" }; S.ct = null; S.ctUi = {}; return; }
     if (d.mode === "recit") { S.layer = { type: "story" }; S.story = null; S.storyStyle = couple().style === "secret" ? "secret" : "ensemble"; return; }
     if (d.mode === "defis") { S.layer = { type: "defis" }; S.dfSaved = {}; S.dfSeen = []; S.dfCur = null; return; }
     S.setup = { mode: d.mode, cat: "mix", mood: "surpris", dur: 10, style: couple().style || "partage" };
@@ -9999,6 +10231,7 @@ const ACT = {
     const L = Live.state; if (!L) return;
     if (L.kind === "cards") startLiveCards({ ...L.setup });
     else if (L.kind === "arcade") startLiveArcade(L.game);
+    else if (L.kind === "contact") startLiveContact(L.level);
     else startLiveStory(L.id);
   },
   "lv-submit"(d) {
@@ -10395,6 +10628,41 @@ const ACT = {
   "esc-done"() { S.layer = null; S.esc = null; },
   "hap-go"() { S.hapShow = null; S.esc = { z: "", since: Esc.active() ? Date.now() : 0 }; S.layer = { type: "escape" }; },
   "hap-later"() { S.hapShow = null; S.layer = null; toast("Yassen Jr. vous attend… La carte reste sur l'accueil."); },
+  // Contact
+  "ct-opt"(d) { const E = S.ctSetup || (S.ctSetup = {}); E[d.k] = d.v; if (d.k === "where" && d.v === "distance") E.keeper = "yassen"; },
+  "ct-start"() {
+    const E = S.ctSetup || {};
+    if (E.where === "distance" && Store.backend === "shared") { startLiveContact(E.level); S.ctUi = {}; return; }
+    let secret = "";
+    if (E.keeper === "soiree") { secret = ctNorm(S.drafts["ct-keep"]); if (secret.length < 3) { toast("Le gardien doit d'abord taper un mot secret d'au moins trois lettres."); return; } clearDrafts("ct-keep"); }
+    S.ct = ctNewGame(E.keeper === "soiree" ? "soiree" : "yassen", E.level, secret); S.ctUi = {};
+    Sfx.play("chime");
+  },
+  "ct-hide"() { (S.ctUi || (S.ctUi = {})).hidden = true; },
+  "ct-clue"() {
+    const C = ctState(); if (!C || C.phase !== "word") return;
+    const w = cStr(S.drafts["ct-w"], 24).trim(), clue = cStr(S.drafts["ct-c"], 100).trim(), p = ctPrefix(C), nw = ctNorm(w);
+    if (!nw.startsWith(p) || nw.length <= p.length) { toast(`Ton mot doit commencer par ${p} et être plus long.`); return; }
+    if (C.mode !== "soiree" && !clue) { toast("Écris aussi ton indice : Yassen en a besoin pour essayer de vous couper."); return; }
+    if (clue && ctNorm(clue).includes(nw)) { toast("L'indice ne doit pas contenir le mot lui-même."); return; }
+    clearDrafts("ct-w", "ct-c"); S.ctUi = { ...(S.ctUi || {}), hidden: false };
+    ctClue(w, clue); Sfx.play("paper");
+  },
+  "ct-contact"() {
+    const C = ctState(); if (!C || C.phase !== "clue" || C.cAt) return;
+    if (ctLive()) {
+      const g = cStr(S.drafts["ct-g"], 24).trim();
+      if (!ctNorm(g)) { toast("Écris d'abord ton mot, puis crie « Contact ! »."); return; }
+      clearDrafts("ct-g"); ctSet({ g, cAt: Date.now() });
+    } else ctSet({ cAt: Date.now() });
+    Sfx.play("pop"); Sfx.buzz([20, 40, 20]); CtTick.run();
+  },
+  "ct-skip"() { ctNext("skip"); },
+  "ct-next"(d) { if (["ok", "cut", "diff"].includes(d.v)) ctNext(d.v); },
+  "ct-guess-box"() { const E = S.ctUi || (S.ctUi = {}); E.guess = !E.guess; },
+  "ct-guess"() { const v = S.drafts["ct-sec"]; clearDrafts("ct-sec"); (S.ctUi || {}).guess = false; ctGuess(v); },
+  "ct-replay"() { const C = S.ct; S.ctUi = {}; S.ct = C && C.mode !== "soiree" ? ctNewGame(C.mode, C.level) : null; },
+  "ct-quit"() { S.ct = null; S.ctUi = {}; },
   "yr-open"() { S.yr = { i: 0 }; S.layer = { type: "annee" }; Sfx.play("chime"); },
   "yr-next"() { S.yr.i++; },
   "yr-prev"() { S.yr.i = Math.max(0, S.yr.i - 1); },
