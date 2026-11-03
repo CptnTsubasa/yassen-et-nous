@@ -16,7 +16,7 @@ async function phone(code, me, time) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   await ctx.route('https://www.gstatic.com/firebasejs/**', r => r.fulfill({ status: 200, contentType: 'text/javascript', body: /12\.0\.0/.test(r.request().url()) ? fakeAi : fakeDb }));
   await ctx.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await ctx.addInitScript(([c, me]) => { try { localStorage.setItem('entre-nous:couple', c); localStorage.setItem('entre-nous:me', me); localStorage.setItem('entre-nous:sfx', '0'); localStorage.setItem('entre-nous:yj-daily-off', '1'); localStorage.setItem('entre-nous:onboarded', '1'); } catch (e) {} }, [code, me]);
+  await ctx.addInitScript(([c, me]) => { try { localStorage.setItem('entre-nous:couple', c); localStorage.setItem('entre-nous:me', me); localStorage.setItem('entre-nous:sfx', '0'); localStorage.setItem('entre-nous:esc-preview', '1'); localStorage.setItem('entre-nous:yj-daily-off', '1'); localStorage.setItem('entre-nous:onboarded', '1'); } catch (e) {} }, [code, me]);
   const P = await ctx.newPage(); P.on('pageerror', e => errs.push(me + ': ' + e.message));
   if (time) await P.clock.setSystemTime(time);
   await P.goto('http://localhost:8123/'); await W(1800);

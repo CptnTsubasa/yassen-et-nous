@@ -20,6 +20,7 @@ const A = await phone('a');
 const click = async (P, sel) => { await P.click(sel); await W(150); };
 const idx = (x, y) => A.evaluate(([x, y]) => PO_PAIRS.findIndex(p => p[0] === x && p[1] === y), [x, y]);
 await click(A, '[data-a="tab"][data-tab="play"]');
+ok('appli publiée : l\'évasion reste cachée (pas de carte, aucune trace écrite)', !(await A.$('.esc-card')) && await A.evaluate(() => { Hap.check(); return !escOn() && !(Store.meta.escape || {}).since; }));
 ok('le jeu est dans « Se découvrir »', await A.isVisible('[data-a="open-mode"][data-mode="plusou"]'));
 await click(A, '[data-a="open-mode"][data-mode="plusou"]'); await A.screenshot({ path: 'plusou-1-accueil.png' });
 ok('chrono de 5 secondes par défaut', await A.getAttribute('[data-a="po-chrono"][data-v="5"]', 'aria-pressed') === 'true');

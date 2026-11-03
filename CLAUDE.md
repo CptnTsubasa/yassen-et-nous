@@ -47,6 +47,8 @@ Publiée par GitHub Pages : https://cptntsubasa.github.io/yassen-et-nous/
 Escape game à deux (`Esc`, `escGen`, `ESC_ROOMS`) : la partie vit dans `escape/run`, les salles réussies et les
 happenings vus dans `meta/escape`. Le tirage du happening (`hapOf`) existe en double, dans l'appli et dans le
 service : les deux doivent rester identiques (le test `hap` le vérifie).
+**En pause dans l'appli publiée** : `ESC_ON = false` (rien ne s'affiche, rien n'est écrit). Le passer à `true`
+pour l'ouvrir ; `localStorage["entre-nous:esc-preview"] = "1"` l'ouvre sur un seul téléphone (tests, démo).
 
 ## Jeux récents
 

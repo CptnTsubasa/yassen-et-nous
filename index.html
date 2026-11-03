@@ -3052,7 +3052,7 @@ function notifPanel() {
   else if (Notification.permission === "denied") body = `<p class="small">${esc(fr("Les notifications sont bloquées. Pour les autoriser : Réglages de l'iPhone → Notifications → Y&S."))}</p>`;
   else if (!Push.on()) body = `<p class="small">${esc(fr("Un petit mot, une lettre, une invitation à jouer : ton téléphone te prévient, même appli fermée."))}</p><button class="btn" data-a="push-on">Activer les notifications</button>`;
   else body = `<p class="small">${esc(fr(`Ce téléphone reçoit les notifications de ${me ? nm(me) : "toi"}. Choisis lesquelles :`))}</p>
-    <div class="chips notif-chips">${NOTIF_TYPES.map(([t, l]) => `<button class="chip" aria-pressed="${Push.pref(me, t)}" data-a="push-pref" data-v="${t}">${esc(fr(l))}</button>`).join("")}</div>
+    <div class="chips notif-chips">${NOTIF_TYPES.filter(([t]) => t !== "escape" || escOn()).map(([t, l]) => `<button class="chip" aria-pressed="${Push.pref(me, t)}" data-a="push-pref" data-v="${t}">${esc(fr(l))}</button>`).join("")}</div>
     <div class="row"><button class="btn ghost" data-a="push-test">M'envoyer une notification de test</button></div>
     ${lsGet("entre-nous:notif-old") === "1" ? `<p class="small" style="color:var(--i1)">${esc(fr("Le service Cloudflare n'est pas à jour : les câlins et pensées n'envoient pas de notification. Recolle le code du service (notifications/worker.js) dans Cloudflare."))}</p>` : ""}
     <button class="link" data-a="push-off">Ne plus recevoir de notifications ici</button>`;
@@ -3096,7 +3096,7 @@ function viewHome() {
       <div class="row"><button class="btn" data-a="sheet" data-name="names">Ajouter nos prénoms</button></div>
     </div>`}
   ${liveBanner()}
-  ${Hap.card() || (Esc.active() ? escPlayCard() : "")}
+  ${escOn() ? Hap.card() || (Esc.active() ? escPlayCard() : "") : ""}
   ${dailyBlock()}
   ${yassenCard()}
   ${questsCard()}
@@ -3111,7 +3111,7 @@ function viewPlay() {
   <header class="top"><h1 class="logo">Jouer</h1></header>
   <p class="hello">Quelques minutes ou toute une soirée : choisissez votre moment.</p>
   <button class="feature" data-a="open-mode" data-mode="surprise"><span class="icon-tile">${ico("dice")}</span><span class="mode-txt"><b>Surprise</b><span>${esc(fr(MODES.surprise.desc))}</span></span></button>
-  ${escPlayCard()}
+  ${escOn() ? escPlayCard() : ""}
   ${MODE_GROUPS.map(([t, ks]) => `<section class="stack"><h2 class="sec">${esc(t)}</h2><div class="list">${ks.map(modeRow).join("")}</div></section>`).join("")}
   ${cartesBlock()}`;
 }
@@ -7694,6 +7694,10 @@ const YJ_MINI = '<svg viewBox="0 0 40 44" width="26"><path d="M20 2C24 9 31 12 3
    La partie vit dans l'espace commun (escape/run) : on peut s'arrêter et reprendre plus tard.
    Les énigmes changent à chaque partie (tirage à partir de run.seed) ; quelques-unes utilisent vos vraies dates.
    Un seul téléphone ? On peut passer de l'autre côté, en se le passant. */
+// L'évasion est en pause dans l'appli publiée : passer ESC_ON à true pour l'ouvrir à tout le monde.
+// « entre-nous:esc-preview » = « 1 » l'ouvre sur un seul téléphone (démo, tests).
+const ESC_ON = false;
+const escOn = () => ESC_ON || lsGet("entre-nous:esc-preview") === "1";
 const ESC_LEVELS = {
   douillet: { name: "Douillet", desc: "Indices gratuits, pas de pénalité. Pour se détendre.", hint: 0, slip: 0, hintMax: 3, fin: [1.5, 2.5], unit: 460, target: 60 },
   malin: { name: "Malin", desc: "Chaque indice et chaque erreur coûtent des points. Le bon équilibre.", hint: 10, slip: 8, hintMax: 3, fin: [1.5, 2.5, 3.5], unit: 340, target: 40 },
@@ -7819,7 +7823,7 @@ function escHints(run, step) {
 const Esc = {
   state: null, unsub: null, seenStart: 0,
   open() {
-    if (this.unsub || !Store.db || Store.backend !== "shared") return;
+    if (this.unsub || !Store.db || Store.backend !== "shared" || !escOn()) return;
     this.unsub = Store.db.doc("escape/run").onSnapshot(s => {
       const was = this.state;
       try { this.state = cleanEscape(s.exists ? s.data() : null); } catch (e) { this.state = null; }
@@ -8193,7 +8197,7 @@ const Hap = {
   },
   check() {
     const e = Store.meta.escape || {};
-    if (Store.backend !== "shared" || !Store.ready || !Shared.code() || !whoAmI()) return;
+    if (!escOn() || Store.backend !== "shared" || !Store.ready || !Shared.code() || !whoAmI()) return;
     if (!e.since) { if (!this.init) { this.init = true; Store.patchMeta("escape", { since: Date.now(), next: "grenier" }); } return; }
     const h = this.now();
     if (!h || Date.now() < h.at || !(e.since < h.at) || lsGet("entre-nous:hap") === h.week) return;

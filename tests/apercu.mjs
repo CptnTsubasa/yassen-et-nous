@@ -101,7 +101,7 @@ function freshDb() {
     capsule: { m1: { kind: "mot", from: "b", text: "Merci pour ce week-end, je t'aime.", createdAt: now - 5 * 86400000 } }
   } } };
 }
-window.__DEMO = { db: freshDb(), subs: new Set(), ls: who => ({ "entre-nous:couple": CODE, "entre-nous:me": who, "entre-nous:hap": weekMonday(), "entre-nous:install-hide": "1", "entre-nous:sfx": "1" }) };
+window.__DEMO = { db: freshDb(), subs: new Set(), ls: who => ({ "entre-nous:couple": CODE, "entre-nous:me": who, "entre-nous:hap": weekMonday(), "entre-nous:install-hide": "1", "entre-nous:esc-preview": "1", "entre-nous:sfx": "1" }) };
 function boot() { window.__DEMO.subs.clear(); for (const k of ["a", "b"]) document.getElementById("f-" + k).srcdoc = APP; }
 let shown = "a";
 function show(k) { shown = k; for (const x of ["a", "b"]) { document.getElementById("t-" + x).setAttribute("aria-pressed", String(x === k)); const p = document.getElementById("p-" + x); if (x === k) p.removeAttribute("hidden-small"); else p.setAttribute("hidden-small", ""); } }
