@@ -8317,6 +8317,8 @@ async function ctClue(w, clue) {
   const start = C.start, round = C.round, p = ctPrefix(C);
   ctSet({ w, clue, phase: "clue", yj: null, g: null, cAt: null });
   if (C.mode === "soiree") return;
+  // L'indice mène à son propre mot : comme dans les vraies règles, le gardien ne peut pas couper ce contact-là.
+  if (ctNorm(w) === C.secret) { ctSet({ yj: { m: "", c: 0, cut: false, own: true } }); return; }
   const r = await ctThink(p, clue, C.level), C2 = ctState();
   if (!C2 || C2.start !== start || C2.round !== round) return;
   ctSet({ yj: { m: r.m, c: r.c, cut: !!(r.go && r.m && r.m === ctNorm(w)) } });
@@ -8429,11 +8431,13 @@ function contactGame(C, me, head) {
   const y = C.yj || {}, wGiver = `<div class="rv"><b>${esc(soiree ? "Le mot de l'indice" : `Le mot de ${nm(giver)}`)}</b><p class="pick">${esc(C.w || "")}</p></div>`;
   if (!soiree && y.cut) return head + ctTiles(C) + clue + `<p class="verdict" style="${cvar(1)}">Coupé !</p><div class="reveal" style="${col}">${wGiver}</div><div class="ct-yj cut"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(ctLine("cut", (C.w || "").toLowerCase(), C.round))}</p></div>
     <button class="btn wide" data-a="ct-next" data-v="cut">Manche suivante</button>`;
-  const miss = !soiree && y.m ? `<p class="small muted" style="text-align:center">${esc(ctLine("miss", y.m.toLowerCase(), C.round))}</p>` : "";
+  const mine = ctNorm(C.w) === C.secret;
+  const miss = mine ? `<p class="verdict" style="${cvar(3)}">${soiree ? "C'est le mot du gardien !" : "C'est le mot de Yassen !"}</p><p class="small muted" style="text-align:center">${soiree ? "Même mot, et la partie est gagnée." : "« Ah non… pas mon mot… » Même mot, et c'est gagné."}</p>`
+    : !soiree && y.m ? `<p class="small muted" style="text-align:center">${esc(ctLine("miss", y.m.toLowerCase(), C.round))}</p>` : "";
   if (me) {
     const same = ctNorm(C.g) && ctNorm(C.g) === ctNorm(C.w);
     return head + ctTiles(C) + clue + `<div class="reveal" style="${col}">${wGiver}<div class="rv"><b>Le mot de ${esc(nm(taker))}</b><p class="pick">${esc(C.g || "")}</p></div></div>
-      <p class="verdict" style="${col}">${same ? "Contact !" : "Pas le même mot…"}</p>${miss}<button class="btn wide" data-a="ct-next" data-v="${same ? "ok" : "diff"}">${same ? "Yassen doit lâcher une lettre" : "Manche suivante"}</button>`;
+      <p class="verdict" style="${col}">${same ? "Contact !" : "Pas le même mot…"}</p>${miss}<button class="btn wide" data-a="ct-next" data-v="${same ? "ok" : "diff"}">${same ? (mine ? "Voir la victoire" : "Yassen doit lâcher une lettre") : "Manche suivante"}</button>`;
   }
   return head + ctTiles(C) + clue + `<div class="reveal" style="${col}">${wGiver}</div>${miss}
     <p class="lbl" style="text-align:center">${soiree ? "Le gardien a-t-il trouvé avant la fin ? Et vous, même mot ?" : "Vous avez dit le même mot ?"}</p>

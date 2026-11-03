@@ -50,6 +50,14 @@ ok('Yassen se trompe et le dit (« maison »)', await A.evaluate(() => S.ct.yj.c
 await click(A, '[data-a="ct-next"][data-v="ok"]');
 ok('contact réussi : Yassen dévoile une lettre (MA…)', await A.evaluate(() => S.ct.shown === 2 && [...document.querySelectorAll('.ct-word span')].map(s => s.textContent).join('') === 'MA…'));
 await A.screenshot({ path: 'contact-4-lettre.png' });
+// Contact sur le mot secret lui-même : Yassen ne peut pas couper, et c'est gagné
+const save = await A.evaluate(() => JSON.stringify(S.ct));
+await A.evaluate(() => { window.__ctMot = 'marmotte'; window.__ctConf = 99; });
+await round(A, 'marmotte', 'elle siffle dans la montagne');
+ok('contact sur son propre mot : pas de coupure', await A.evaluate(() => S.ct.yj && S.ct.yj.cut === false && S.ct.yj.own === true) && /C'est le mot de Yassen/.test(await A.textContent('.layer')));
+await click(A, '[data-a="ct-next"][data-v="ok"]');
+ok('… et la partie est gagnée', await A.evaluate(() => S.ct.phase === 'end' && S.ct.won && S.ct.how === 'contact'));
+await A.evaluate(s => { S.ct = JSON.parse(s); render(true); }, save); await W(200);
 // Tenter directement le mot : raté, puis trouvé
 await click(A, '[data-a="ct-guess-box"]'); await A.fill('#ct-sec', 'mardi'); await click(A, '[data-a="ct-guess"]');
 ok('mot tenté au hasard : raté', await A.evaluate(() => S.ct.tries === 1 && S.ct.phase !== 'end'));
