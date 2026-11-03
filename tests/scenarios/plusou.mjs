@@ -59,19 +59,38 @@ ok('portrait gardé dans l\'album, cœurs gagnés', await A.evaluate(() => Store
 const neutral = await A.evaluate(() => { Store.meta.couple.pa = 'prenom'; Store.meta.space = { owner: '' }; let bad = 0; for (let n = 0; n < 50; n++) { const d = poDeck([], 'a'); d.forEach((x, i) => { if (i % 2 === 0 && /\{/.test(PO_PAIRS[x][0] + PO_PAIRS[x][1])) bad++; }); } Store.meta.couple.pa = 'papa'; return bad; });
 ok('sans réglage Papa / Maman : que des paires sans accord pour cette personne', neutral === 0);
 ok(`${await A.evaluate(() => PO_PAIRS.length)} paires, 10 questions par partie`, await A.evaluate(() => PO_PAIRS.length >= 100 && poDeck([], 'a').length === 10));
-// Tour miroir : il faut répondre avant de passer à la suite
-await click(A, '[data-a="po-quit"]'); await click(A, '[data-a="po-miroir"][data-v="1"]'); await click(A, '[data-a="po-start"]');
-await A.evaluate(() => { S.po.b0 = 1; S.po.a0 = 1; render(true); }); await W(200);
-ok('miroir : « Question suivante » attend la réponse miroir', await A.evaluate(() => document.querySelector('[data-a="po-next"]').disabled));
-await click(A, '[data-a="po-mir"][data-v="0"]');
-ok('miroir : réponse notée', await A.evaluate(() => S.po.m0 === 0 && !document.querySelector('[data-a="po-next"]').disabled));
+// Tour miroir, partie complète sur ce téléphone : pari + miroir en secret, réponse, révélation, jusqu'au portrait
+await click(A, '[data-a="po-quit"]'); await click(A, '[data-a="po-miroir"][data-v="1"]'); await click(A, '[data-a="po-chrono"][data-v="0"]'); await click(A, '[data-a="po-start"]');
+let seen = 0;
+for (let q = 0; q < 10; q++) {
+  if (!(await A.$('[data-a="po-hid"]'))) break;
+  await click(A, '[data-a="po-hid"]'); await click(A, `[data-a="po-bet"][data-v="${q % 2}"]`);
+  if (q === 0) { ok('miroir : demandé en secret juste après le pari, avant la réponse', await A.isVisible('[data-a="po-mir"]') && !(await A.$('[data-a="po-ans"]'))); await A.screenshot({ path: 'plusou-6-miroir.png' }); }
+  await click(A, '[data-a="po-mir"][data-v="0"]');
+  await click(A, `[data-a="po-ans"][data-v="${q % 3 ? 0 : 1}"]`);
+  if (/Miroir\s*:/.test(await A.textContent('.layer'))) seen++;
+  if (q === 0) { await click(A, '[data-a="po-why"]'); ok('« Pourquoi ? » : explication et 15 secondes', /explique-toi/.test(await A.textContent('.layer')) && !!(await A.$('.po-15'))); }
+  { const nb = await A.$('[data-a="po-next"]'); if (q === 0) ok('« Question suivante » toujours disponible', !!nb && !(await nb.isDisabled())); }
+  await click(A, '[data-a="po-next"]');
+}
+ok(`miroir : affiché à chaque révélation (${seen} sur 10)`, seen === 10);
+const port2 = await A.textContent('.layer');
+await A.screenshot({ path: 'plusou-7-portrait-miroir.png', fullPage: true });
+ok('portrait avec le miroir (« se voit pareil » ou « se voit plutôt »)', /Votre portrait croisé/.test(port2) && /se voit (pareil|plutôt)/.test(port2));
+ok('« Pourquoi ? » ne déborde pas sur la question suivante', await A.evaluate(() => !document.querySelector('.po-15')));
 // À distance
 const B = await phone('b');
-await A.evaluate(([s1]) => { S.po = null; S.layer = null; startLivePlusou([], 5, false); Live.write({ deck: [s1, s1, s1, s1], first: 'a' }); }, [soleil]); await W(900);
+await A.evaluate(([s1]) => { S.po = null; S.layer = null; startLivePlusou([], 5, true); Live.write({ deck: [s1, s1, s1, s1], first: 'a' }); }, [soleil]); await W(900);
 await B.evaluate(() => { S.layer = { type: 'live' }; render(true); }); await W(500);
 ok('à distance : Sarah attend le pari de Yanis', /parie en secret sur ta réponse/.test(await B.textContent('.layer')));
-await click(A, '[data-a="po-bet"][data-v="1"]'); await W(900);
+await click(A, '[data-a="po-bet"][data-v="1"]'); await W(600);
+ok('à distance : Sarah attend encore pendant le miroir de Yanis', /parie en secret/.test(await B.textContent('.layer')));
+await click(A, '[data-a="po-mir"][data-v="0"]'); await W(900);
 await click(B, '[data-a="po-go"]'); await click(B, '[data-a="po-ans"][data-v="1"]'); await W(900);
 await B.screenshot({ path: 'plusou-5-distance.png' });
 ok('à distance : réponse vue sur les deux téléphones, pari gagné', /Pari gagné/.test(await A.textContent('.layer')) && /Pari gagné/.test(await B.textContent('.layer')));
+await click(A, '[data-a="po-why"]'); await W(900);
+ok('à distance : « Pourquoi ? » apparaît aussi chez Sarah', /explique-toi/.test(await B.textContent('.layer')) && /Miroir\s*:/.test(await B.textContent('.layer')));
+await click(B, '[data-a="po-next"]'); await W(900);
+ok('à distance : question suivante propre sur les deux téléphones (Sarah demande)', /Sarah demande à Yanis/.test(await A.textContent('.layer')) && !/explique-toi/.test(await A.textContent('.layer')) && /parie en secret sur ta réponse/.test(await A.textContent('.layer')));
 console.log('errors', JSON.stringify(errs)); await b.close();

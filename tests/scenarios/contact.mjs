@@ -28,6 +28,25 @@ await click(A, '[data-a="tab"][data-tab="play"]');
 ok('Contact dans l\'onglet Jouer', await A.isVisible('[data-a="open-mode"][data-mode="contact"]'));
 await click(A, '[data-a="open-mode"][data-mode="contact"]'); await A.screenshot({ path: 'contact-1-accueil.png' });
 ok('Yassen « Malin » par défaut', await A.getAttribute('[data-a="ct-opt"][data-k="level"][data-v="malin"]', 'aria-pressed') === 'true');
+ok('« Règles du vrai Contact » par défaut', await A.getAttribute('[data-a="ct-opt"][data-k="rules"][data-v="vrai"]', 'aria-pressed') === 'true');
+// Les règles du vrai Contact
+await click(A, '[data-a="ct-start"]');
+await A.evaluate(() => { S.ct.secret = 'MARMOTTE'; render(true); }); await W(200);
+ok('vrai Contact : qui a une idée prend la main', await A.isVisible('[data-a="ct-claim"][data-v="b"]') && !(await A.$('[data-a="ct-guess-box"]')));
+await click(A, '[data-a="ct-claim"][data-v="b"]');
+await A.evaluate(() => { window.__ctMots = [{ mot: 'mouton', confiance: 80 }, { mot: 'montgolfière', confiance: 60 }, { mot: 'moulin', confiance: 40 }]; });
+await click(A, '[data-a="ct-hide"]'); await A.fill('#ct-w', 'mélodie'); await A.fill('#ct-c', 'une suite de notes'); await click(A, '[data-a="ct-clue"]'); await W(700);
+await click(A, '[data-a="ct-contact"]'); await W(3400);
+const tries = await A.textContent('.layer');
+ok('vrai Contact : Yassen tente trois mots', /J'ai tenté « mouton », « montgolfière », « moulin »… raté/.test(tries) && await A.evaluate(() => S.ct.yj.ms.length === 3));
+await A.screenshot({ path: 'contact-7-trois-essais.png' });
+await click(A, '[data-a="ct-next"][data-v="ok"]');
+ok('vrai Contact : lettre gagnée, la main est de nouveau libre', await A.evaluate(() => S.ct.shown === 2 && S.ct.turn === ''));
+await click(A, '[data-a="ct-claim"][data-v="a"]'); await click(A, '[data-a="ct-hide"]'); await A.fill('#ct-w', 'Mélodie'); await A.fill('#ct-c', 'encore des notes'); await click(A, '[data-a="ct-clue"]');
+ok('vrai Contact : un mot déjà joué est refusé', await A.evaluate(() => S.ct.phase === 'word'));
+await A.evaluate(() => { window.__ctMots = null; S.ct = null; S.ctSetup.rules = 'detente'; render(true); }); await W(200);
+// Contact détente (la version facile) : tour de rôle et mot tenté directement
+await click(A, '[data-a="ct-opt"][data-k="rules"][data-v="detente"]');
 await click(A, '[data-a="ct-start"]');
 await A.evaluate(() => { S.ct.secret = 'MARMOTTE'; S.ct.turn = 'a'; render(true); }); await W(200);
 ok('le mot commence par M, la suite est cachée', await A.evaluate(() => [...document.querySelectorAll('.ct-word span')].map(s => s.textContent).join('') === 'M…'));
@@ -65,7 +84,7 @@ await click(A, '[data-a="ct-guess-box"]'); await A.fill('#ct-sec', 'Marmotte'); 
 await A.screenshot({ path: 'contact-5-gagne.png' });
 ok('mot trouvé : victoire, étoiles et cœurs', await A.evaluate(() => S.ct.phase === 'end' && S.ct.won) && /Trouvé/.test(await A.textContent('.layer')) && await A.evaluate(() => Object.keys(Store.meta.game.earn || {}).some(k => k.startsWith('ct_'))));
 // Sans IA : Yassen devine parmi ses propres mots
-const off = await A.evaluate(async () => { AI.state = 'off'; const r = await ctThink('PAP', 'il vole', 'redoutable'); AI.state = ''; return r; });
+const off = await A.evaluate(async () => { AI.state = 'off'; const r = (await ctThink('PAP', 'il vole', 'redoutable', 3))[0]; AI.state = ''; return r; });
 ok(`sans IA, Yassen devine quand même (« ${off.m} »)`, /^PAP/.test(off.m));
 // Mode soirée : le gardien est un·e ami·e
 await click(A, '[data-a="ct-quit"]'); await click(A, '[data-a="ct-opt"][data-k="keeper"][data-v="soiree"]');
@@ -78,7 +97,7 @@ await click(A, '[data-a="ct-next"][data-v="ok"]');
 ok('soirée : contact réussi, BO…', await A.evaluate(() => S.ct.secret === 'BOUGIE' && S.ct.shown === 2));
 // À distance : Yanis donne l'indice, Sarah fait contact sur son téléphone
 const B = await phone('b');
-await A.evaluate(() => { S.ct = null; S.layer = null; window.__ctMot = 'mouton'; window.__ctConf = 10; startLiveContact('malin'); }); await W(500);
+await A.evaluate(() => { S.ct = null; S.layer = null; window.__ctMot = 'mouton'; window.__ctConf = 10; startLiveContact('malin', 'detente'); }); await W(500);
 await A.evaluate(() => { Live.write({ secret: 'MARMOTTE', turn: 'a' }); }); await W(900);
 await B.evaluate(() => { S.layer = { type: 'live' }; render(true); }); await W(500);
 ok('à distance : Sarah attend l\'indice de Yanis', /Yanis cherche un mot qui commence par M/.test(await B.textContent('.layer')));

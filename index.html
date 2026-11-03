@@ -464,6 +464,8 @@ body { background: var(--bg); }
 .po-chrono span { font: 800 2.4rem/1 var(--f-body); font-variant-numeric: tabular-nums; }
 .po-chrono .bar { width: 100%; height: 8px; }
 .po-big .btn { padding: 22px 12px; font-size: 1.1rem; }
+.po-15 { height: 6px; } .po-15 i { width: 100%; animation: po15 15s linear both; }
+@keyframes po15 { to { width: 0; } }
 .po-portrait ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
 /* Contact */
 .ct-word { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
@@ -2023,7 +2025,8 @@ function cleanLive(v) {
     s.level = own(CT_LEVELS, s.level) ? s.level : "malin"; s.mode = "yassen";
     s.shown = cInt(s.shown, 1, s.secret.length, 1); s.round = cInt(s.round, 1, 99, 1);
     if (!["word", "clue", "end"].includes(s.phase)) s.phase = "word";
-    if (s.turn !== "a" && s.turn !== "b") s.turn = "a";
+    s.rules = own(CT_RULES, s.rules) ? s.rules : "vrai";
+    if (s.turn !== "a" && s.turn !== "b") s.turn = s.rules === "detente" ? "a" : "";
     s.hist = toArr(s.hist).filter(isObj).slice(-30);
   }
   if (s.kind === "arcade") {
@@ -8287,29 +8290,35 @@ function ctSet(patch) {
   render(true);
 }
 const ctPrefix = C => (C.secret || "").slice(0, C.shown || 1);
-function ctNewGame(mode, level, secret) {
+// « vrai » : les règles du vrai Contact (pas de mot tenté directement, mots déjà joués refusés, Yassen tente
+// jusqu'à trois mots, celle ou celui qui a une idée prend la main). « detente » : plus facile, tour de rôle.
+const CT_RULES = { vrai: "Règles du vrai Contact", detente: "Contact détente" };
+const ctPure = C => C.rules !== "detente";
+function ctNewGame(mode, level, secret, rules) {
   let w = secret ? ctNorm(secret) : "";
   if (!w) {
     // Parfois, un mot de chez vous : une aventure que vous avez vécue.
     const mine = Store.cols.aventures.filter(a => !/\s/.test(String(a.title || "").trim())).map(a => ctNorm(a.title)).filter(t => t.length >= 5 && t.length <= 12);
     w = mine.length && Math.random() < 0.3 ? pickOne(mine) : ctNorm(pickOne(CT_WORDS));
   }
-  return { mode, level: own(CT_LEVELS, level) ? level : "malin", secret: w, shown: 1, turn: Math.random() < 0.5 ? "a" : "b", round: 1, phase: "word", tries: 0, cuts: 0, hits: 0, hist: [], start: Date.now() };
+  const r = own(CT_RULES, rules) ? rules : "vrai";
+  return { mode, rules: r, level: own(CT_LEVELS, level) ? level : "malin", secret: w, shown: 1, turn: r === "detente" ? (Math.random() < 0.5 ? "a" : "b") : "", round: 1, phase: "word", tries: 0, cuts: 0, hits: 0, hist: [], start: Date.now() };
 }
 // Yassen devine le mot de l'indice. Avec l'IA s'il le peut, sinon parmi les mots qu'il connaît.
-async function ctThink(prefix, clue, level) {
-  const L = CT_LEVELS[level] || CT_LEVELS.malin, pool = [...new Set(CT_DICT.map(ctNorm))].filter(w => w.startsWith(prefix) && w.length > prefix.length);
-  let m = "", conf = 0;
+async function ctThink(prefix, clue, level, n = 1) {
+  // Les mots qu'il connaît, sous leur forme écrite (avec accents) pour les afficher.
+  const pool = [...new Map(CT_DICT.map(w => [ctNorm(w), w])).entries()].filter(([w]) => w.startsWith(prefix) && w.length > prefix.length);
+  let tries = [];
   if (AI.ready()) {
     try {
-      const out = await Promise.race([AI.json(`Jeu du Contact. Le mot cherché commence par « ${prefix} ». Indice donné : « ${clue} ».\nQuel mot français, commençant exactement par « ${prefix} », correspond le mieux à cet indice ? Un seul mot, sans article.\nRéponds en JSON : {"mot": "…", "confiance": nombre de 0 à 100}`, "Tu es Yassen Jr., une petite flamme maline qui joue au jeu du Contact. Tu cherches le mot que l'indice décrit." + YJ_JSON, "light"), new Promise((_, no) => setTimeout(() => no(new Error("délai")), 7000))]);
-      m = ctNorm(out && out.mot); conf = Math.max(0, Math.min(100, +(out && out.confiance) || 0));
-      if (!m.startsWith(prefix)) { m = ""; conf = 0; }
-    } catch (e) { m = ""; }
+      const out = await Promise.race([AI.json(`Jeu du Contact. Le mot cherché commence par « ${prefix} ». Indice donné : « ${clue} ».\nDonne ${n > 1 ? `les ${n} mots français` : "le mot français"} commençant exactement par « ${prefix} » qui ${n > 1 ? "correspondent" : "correspond"} le mieux à cet indice, du plus probable au moins probable. Un seul mot chaque fois, sans article.\nRéponds en JSON : {"mots": [{"mot": "…", "confiance": nombre de 0 à 100}]}`, "Tu es Yassen Jr., une petite flamme maline qui joue au jeu du Contact. Tu cherches le mot que l'indice décrit." + YJ_JSON, "light"), new Promise((_, no) => setTimeout(() => no(new Error("délai")), 7000))]);
+      const list = out && Array.isArray(out.mots) ? out.mots : out && out.mot ? [out] : [];
+      tries = list.map(x => ({ m: ctNorm(x && x.mot), d: cStr(x && x.mot, 30).trim().toLowerCase(), c: Math.max(0, Math.min(100, +(x && x.confiance) || 0)) })).filter(x => x.m.startsWith(prefix) && x.m.length > prefix.length);
+    } catch (e) { tries = []; }
   }
-  if (!m && pool.length) { m = pickOne(pool); conf = Math.min(100, Math.round(160 / pool.length)); }
-  const go = conf >= L.conf && Math.random() < L.coin;
-  return { m, c: conf, go };
+  // Sans IA : quelques mots au hasard parmi ceux qu'il connaît.
+  if (!tries.length) tries = shuffle(pool).slice(0, n).map(([m, d]) => ({ m, d, c: Math.min(100, Math.round(160 / pool.length)) }));
+  return [...new Map(tries.map(x => [x.m, x])).values()].slice(0, n);
 }
 // L'indice est donné : Yassen réfléchit pendant que l'autre cherche.
 async function ctClue(w, clue) {
@@ -8319,9 +8328,10 @@ async function ctClue(w, clue) {
   if (C.mode === "soiree") return;
   // L'indice mène à son propre mot : comme dans les vraies règles, le gardien ne peut pas couper ce contact-là.
   if (ctNorm(w) === C.secret) { ctSet({ yj: { m: "", c: 0, cut: false, own: true } }); return; }
-  const r = await ctThink(p, clue, C.level), C2 = ctState();
+  const L = CT_LEVELS[C.level] || CT_LEVELS.malin, tries = await ctThink(p, clue, C.level, ctPure(C) ? 3 : 1), C2 = ctState();
   if (!C2 || C2.start !== start || C2.round !== round) return;
-  ctSet({ yj: { m: r.m, c: r.c, cut: !!(r.go && r.m && r.m === ctNorm(w)) } });
+  const hit = tries.find(x => x.m === ctNorm(w));
+  ctSet({ yj: { ms: tries.map(x => x.m), ds: tries.map(x => x.d || x.m.toLowerCase()), m: (tries[0] || {}).m || "", cut: !!(hit && hit.c >= L.conf && Math.random() < L.coin) } });
 }
 // Fin de manche : « ok » (contact réussi), « cut » (coupé), « diff » (pas le même mot), « skip » (pas trouvé).
 function ctNext(res) {
@@ -8335,7 +8345,7 @@ function ctNext(res) {
   }
   if (res === "cut") patch.cuts = (C.cuts || 0) + 1;
   if ((C.round || 1) >= CT_MAX) return ctEnd({ ...patch, won: false });
-  ctSet({ ...patch, round: (C.round || 1) + 1, turn: other(C.turn || "a"), phase: "word" });
+  ctSet({ ...patch, round: (C.round || 1) + 1, turn: ctPure(C) ? "" : other(C.turn || "a"), phase: "word" });
   Sfx.play(res === "ok" ? "coin" : res === "cut" ? "hit" : "soft");
 }
 function ctEnd(patch) {
@@ -8375,6 +8385,7 @@ function contactSetupView() {
     ${rulesHtml(["Yassen montre la première lettre de son mot, par exemple « M ».", "À tour de rôle, l'un·e de vous pense à un autre mot qui commence pareil (« montagne ») et en donne un indice (« ça se monte et ça se descend »).", "Si l'autre croit avoir trouvé : « Contact ! ». Trois secondes, puis vous dites votre mot en même temps.", "Même mot, et Yassen n'a pas deviné avant vous ? Il doit dévoiler une lettre de plus. S'il a deviné, il vous coupe.", "Vous gagnez en trouvant son mot : par un contact, ou en le tentant directement. Moins il a dû dévoiler de lettres, plus c'est beau."])}
     ${Store.backend === "shared" ? `<div class="stack"><h2 class="sec">Où jouez-vous ?</h2><div class="chips">${chip("where", "", "Sur ce téléphone")}${chip("where", "distance", "À distance, chacun·e sur son téléphone")}</div></div>` : ""}
     ${E.where === "distance" ? "" : `<div class="stack"><h2 class="sec">Qui garde le mot ?</h2><div class="chips">${chip("keeper", "yassen", "Yassen Jr.")}${chip("keeper", "soiree", "Un·e ami·e (soirée à 3 ou plus)")}</div></div>`}
+    <div class="stack"><h2 class="sec">Les règles</h2><div class="esc-levels">${Object.entries(CT_RULES).map(([k, l]) => `<button class="esc-level" aria-pressed="${(E.rules || "vrai") === k}" data-a="ct-opt" data-k="rules" data-v="${k}"><b>${esc(l)}${k === "vrai" ? " · conseillé" : ""}</b><span class="small">${esc(fr(k === "vrai" ? "Comme le vrai jeu : on ne gagne que par un contact sur le mot, un mot joué ne peut pas revenir, et Yassen tente jusqu'à trois mots pour vous couper. Qui a une idée prend la main." : "Plus facile : on peut tenter le mot directement, Yassen ne tente qu'un mot, et vous donnez l'indice à tour de rôle."))}</span></button>`).join("")}</div></div>
     ${E.keeper === "soiree" && E.where !== "distance" ? `<p class="small muted">${esc(fr("En soirée, l'ami·e qui garde le mot le tape en cachette ici, puis c'est à cette personne de crier « Coupé ! » si elle trouve le mot de l'indice avant la fin du compte à rebours."))}</p>
       <div class="field"><label for="ct-keep">Le mot secret du gardien (les autres ne regardent pas)</label><input id="ct-keep" data-d maxlength="20" autocomplete="off" autocapitalize="characters" class="ct-secret" value="${dv("ct-keep", "")}"></div>` : `<div class="stack"><h2 class="sec">Yassen est…</h2><div class="esc-levels">${Object.entries(CT_LEVELS).map(([k, l]) => `<button class="esc-level" aria-pressed="${E.level === k}" data-a="ct-opt" data-k="level" data-v="${k}"><b>${esc(l.name)}${k === "malin" ? " · conseillé" : ""}</b><span class="small">${esc(l.desc)}</span></button>`).join("")}</div></div>`}
     <div class="row"><button class="btn wide c" style="${col}" data-a="ct-start">C'est parti</button></div>`;
@@ -8389,7 +8400,7 @@ function contactGame(C, me, head) {
   const col = cvar(5), soiree = C.mode === "soiree", giver = C.turn || "a", taker = other(giver), p = ctPrefix(C), E = S.ctUi || (S.ctUi = {});
   const last = toArr(C.hist).slice(-1)[0], say = !last ? ctLine("start", "", C.start) : last.r === "ok" ? ctLine("give", "", C.round) : last.r === "cut" ? "Hihi, coupé ! Au suivant." : last.r === "diff" ? ctLine("diff", "", C.round) : "Pas trouvé ? Normal, mon mot est trop fort.";
   const yj = `<div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${soiree ? "Le gardien garde son mot." : `« ${esc(say)} »`}</p></div>`;
-  const guessBox = C.phase === "end" ? "" : E.guess ? `<div class="esc-latch"><label for="ct-sec">${soiree ? "Le mot du gardien" : "Le mot de Yassen"}, d'après vous :</label><input id="ct-sec" data-d maxlength="20" autocomplete="off" autocapitalize="characters" value="${dv("ct-sec", "")}"><div class="row"><button class="btn" data-a="ct-guess">Tenter</button><button class="btn ghost" data-a="ct-guess-box">Annuler</button></div></div>`
+  const guessBox = C.phase === "end" || ctPure(C) ? "" : E.guess ? `<div class="esc-latch"><label for="ct-sec">${soiree ? "Le mot du gardien" : "Le mot de Yassen"}, d'après vous :</label><input id="ct-sec" data-d maxlength="20" autocomplete="off" autocapitalize="characters" value="${dv("ct-sec", "")}"><div class="row"><button class="btn" data-a="ct-guess">Tenter</button><button class="btn ghost" data-a="ct-guess-box">Annuler</button></div></div>`
     : `<div class="joker"><button class="link" data-a="ct-guess-box">${soiree ? "Tenter le mot du gardien" : "Tenter directement le mot de Yassen"}</button></div>`;
   const hist = toArr(C.hist);
   const histHtml = hist.length ? `<details class="story-path"><summary>Les manches · ${C.hits || 0} contact${(C.hits || 0) > 1 ? "s" : ""}, ${C.cuts || 0} coupure${(C.cuts || 0) > 1 ? "s" : ""}</summary><ol>${hist.map(h => `<li><b>${esc(h.p)}…</b> « ${esc(h.clue)} » → ${esc(h.w)} · ${{ ok: "contact ✓", cut: "coupé", diff: "pas le même mot", skip: "pas trouvé" }[h.r] || ""}</li>`).join("")}</ol></details>` : "";
@@ -8407,6 +8418,11 @@ function contactGame(C, me, head) {
   }
   const names = k => (soiree ? (k === giver ? "la personne qui donne l'indice" : "les autres") : nm(k));
 
+  if (C.phase === "word" && !C.turn && !soiree) {
+    const who = me ? `<button class="btn wide c" style="${col}" data-a="ct-claim" data-v="${me}">J'ai une idée !</button>`
+      : `<div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${col}" data-a="ct-claim" data-v="${k}">${esc(nm(k))} a une idée</button>`).join("")}</div>`;
+    return head + ctTiles(C) + yj + `<p class="lbl" style="text-align:center">${esc(fr(`Un mot qui commence par ${p} ? La première personne qui a une idée prend la main.`))}</p>` + who + histHtml;
+  }
   if (C.phase === "word") {
     if (me && me !== giver) return head + ctTiles(C) + yj + `<p class="verdict" style="${col}">${esc(fr(`${nm(giver)} cherche un mot qui commence par ${p}…`))}</p>` + guessBox + histHtml;
     if (!me && !E.hidden) return head + ctTiles(C) + yj + `<section class="curtain" style="${col}"><p>${soiree ? "Au tour de quelqu'un d'autre de donner un indice" : "À toi de donner un indice"}</p><p class="who">${esc(soiree ? "Qui a une idée ?" : nm(giver))}</p><p>${esc(fr(soiree ? "Le gardien et les autres détournent les yeux le temps de taper le mot." : `${nm(taker)}, détourne les yeux le temps que ${nm(giver)} tape son mot.`))}</p><button class="btn" data-a="ct-hide">C'est moi</button></section>` + guessBox + histHtml;
@@ -8433,7 +8449,8 @@ function contactGame(C, me, head) {
     <button class="btn wide" data-a="ct-next" data-v="cut">Manche suivante</button>`;
   const mine = ctNorm(C.w) === C.secret;
   const miss = mine ? `<p class="verdict" style="${cvar(3)}">${soiree ? "C'est le mot du gardien !" : "C'est le mot de Yassen !"}</p><p class="small muted" style="text-align:center">${soiree ? "Même mot, et la partie est gagnée." : "« Ah non… pas mon mot… » Même mot, et c'est gagné."}</p>`
-    : !soiree && y.m ? `<p class="small muted" style="text-align:center">${esc(ctLine("miss", y.m.toLowerCase(), C.round))}</p>` : "";
+    : !soiree && toArr(y.ms).length > 1 ? `<p class="small muted" style="text-align:center">${esc(`J'ai tenté ${toArr(y.ds || y.ms).map(m => `« ${String(m).toLowerCase()} »`).join(", ")}… raté.`)}</p>`
+    : !soiree && y.m ? `<p class="small muted" style="text-align:center">${esc(ctLine("miss", String(toArr(y.ds)[0] || y.m).toLowerCase(), C.round))}</p>` : "";
   if (me) {
     const same = ctNorm(C.g) && ctNorm(C.g) === ctNorm(C.w);
     return head + ctTiles(C) + clue + `<div class="reveal" style="${col}">${wGiver}<div class="rv"><b>Le mot de ${esc(nm(taker))}</b><p class="pick">${esc(C.g || "")}</p></div></div>
@@ -8443,8 +8460,8 @@ function contactGame(C, me, head) {
     <p class="lbl" style="text-align:center">${soiree ? "Le gardien a-t-il trouvé avant la fin ? Et vous, même mot ?" : "Vous avez dit le même mot ?"}</p>
     <div class="actions"><button class="btn wide c" style="${col}" data-a="ct-next" data-v="ok">Même mot !</button><button class="btn ghost wide" data-a="ct-next" data-v="diff">Pas le même</button>${soiree ? `<button class="btn line wide" data-a="ct-next" data-v="cut">Le gardien a coupé</button>` : ""}</div>`;
 }
-function startLiveContact(level) {
-  const C = ctNewGame("yassen", level);
+function startLiveContact(level, rules) {
+  const C = ctNewGame("yassen", level, "", rules);
   Live.start({ kind: "contact", ...C });
 }
 
@@ -8580,7 +8597,11 @@ function plusouView() {
 }
 // La partie, sur ce téléphone (me = null) ou à distance (me = « a » ou « b »).
 function plusouGame(P, me, head) {
-  const col = cvar(2), deck = toArr(P.deck), U = S.poUi || (S.poUi = {});
+  const col = cvar(2), deck = toArr(P.deck);
+  // L'état de l'écran (rideau, chrono) appartient à une question : il repart de zéro à chaque nouvelle question,
+  // sur les deux téléphones.
+  if (!S.poUi || S.poUi.qi !== P.i) S.poUi = { qi: P.i };
+  const U = S.poUi;
   if (P.i >= deck.length) {
     const sc = poScore(P), port = k => { const L = poPortrait(P, k); return `<section class="panel po-portrait"><h2 class="sec">Aux yeux de ${esc(nm(other(k)))}, ${esc(nm(k))} est…</h2><ul>${L.map(x => `<li>plus <b>${esc(x.yes)}</b> ${esc(poQue(x.no))}${x.self != null ? `<span class="small muted"> · ${x.self === x.yes ? "et se voit pareil" : `mais se voit plutôt ${esc(x.self)}`}</span>` : ""}</li>`).join("")}</ul><p class="small">${esc(fr(`${nm(k)} a deviné ${sc[k]} réponse${sc[k] > 1 ? "s" : ""} sur ${sc["n" + k]}.`))}</p></section>`; };
     const best = sc.a === sc.b ? "Égalité parfaite : vous lisez aussi bien, de chaque côté, le regard de l'autre." : `${nm(sc.a > sc.b ? "a" : "b")} connaît le mieux le regard de l'autre, cette fois.`;
@@ -8589,15 +8610,16 @@ function plusouGame(P, me, head) {
       <div class="actions">${P.saved ? `<p class="small muted" style="text-align:center">Gardé dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="po-album">Garder le portrait dans l'album</button>`}
       <button class="btn wide c" style="${col}" data-a="${me ? "lv-replay" : "po-replay"}">Rejouer</button><button class="btn line wide" data-a="${me ? "close-layer" : "po-quit"}">Terminer</button></div>`;
   }
-  const idx = deck[P.i], pr = PO_PAIRS[idx] || ["", ""], ask = poAsker(P, P.i), ans = other(ask), x = poForm(pr[0], ask), y = poForm(pr[1], ask);
+  const i = P.i, idx = deck[i], pr = PO_PAIRS[idx] || ["", ""], ask = poAsker(P, i), ans = other(ask), x = poForm(pr[0], ask), y = poForm(pr[1], ask);
   const q = `<div class="po-q" style="${col}"><p class="card-for">${esc(nm(ask))} demande à ${esc(nm(ans))}</p><p class="po-line">Tu me trouves plus <b>${esc(x)}</b> ou plus <b>${esc(y)}</b> ?</p><p class="small po-cat">${esc(PO_CATS[pr[2]] || "")}</p></div>`;
-  const bet = P["b" + P.i], a = P["a" + P.i];
-  // 1. Le pari secret
-  if (bet == null) {
+  const bet = P["b" + i], a = P["a" + i], m = P["m" + i], needMir = !!P.miroir && m == null;
+  const two = (act, pre) => `<div class="pickers">${[x, y].map((t, k) => `<button class="btn c" style="${cvar(k ? 6 : 5)}" data-a="${act}" data-v="${k}">${pre}${esc(t)}</button>`).join("")}</div>`;
+  // 1. Le pari secret, puis (avec le miroir) comment on se voit soi-même : tout se décide avant la réponse de l'autre.
+  if (bet == null || needMir) {
     if (me && me !== ask) return head + q + `<p class="verdict" style="${col}">${esc(fr(`${nm(ask)} parie en secret sur ta réponse…`))}</p>`;
     if (!me && !U.hid) return head + `<section class="curtain" style="${col}"><p>Pari secret · passe le téléphone à</p><p class="who">${esc(nm(ask))}</p><p>${esc(fr(`${nm(ans)}, on détourne les yeux.`))}</p><button class="btn" data-a="po-hid">C'est moi</button></section>`;
-    return head + q + `<p class="lbl" style="text-align:center">${esc(fr(`${nm(ask)}, que va répondre ${nm(ans)} ? Parie en secret.`))}</p>
-      <div class="pickers">${[x, y].map((t, i) => `<button class="btn c" style="${cvar(i ? 6 : 5)}" data-a="po-bet" data-v="${i}">Plus ${esc(t)}</button>`).join("")}</div>`;
+    if (bet == null) return head + q + `<p class="lbl" style="text-align:center">${esc(fr(`${nm(ask)}, que va répondre ${nm(ans)} ? Parie en secret.`))}</p>` + two("po-bet", "Plus ");
+    return head + q + `<p class="small muted" style="text-align:center">Pari placé ✓</p><p class="lbl" style="text-align:center">${esc(fr(`Tour miroir : et toi, ${nm(ask)}, tu te trouves plus… (en secret aussi)`))}</p>` + two("po-mir", "");
   }
   // 2. La réponse, à l'instinct
   if (a == null) {
@@ -8606,18 +8628,19 @@ function plusouGame(P, me, head) {
     if (P.chrono) PoTick.run();
     const left = P.chrono ? Math.max(0, Math.ceil(P.chrono - (Date.now() - U.t0) / 1000)) : 0;
     return head + q + (P.chrono ? `<div class="po-chrono"><span id="po-left">${left}</span><div class="bar"><i id="po-bar" style="width:${Math.max(0, left / P.chrono * 100)}%"></i></div></div>` : "")
-      + `<div class="pickers po-big">${[x, y].map((t, i) => `<button class="btn c" style="${cvar(i ? 6 : 5)}" data-a="po-ans" data-v="${i}">Plus ${esc(t)}</button>`).join("")}</div>`;
+      + `<div class="pickers po-big">${[x, y].map((t, k) => `<button class="btn c" style="${cvar(k ? 6 : 5)}" data-a="po-ans" data-v="${k}">Plus ${esc(t)}</button>`).join("")}</div>`;
   }
-  // 3. La révélation : le pari, Yassen, pourquoi, contester, et le miroir
-  const c = [x, y][+a], won = +bet === +a, late = !!P["t" + P.i], m = P["m" + P.i];
+  // 3. La révélation : la réponse, le pari, le miroir, Yassen, puis « Pourquoi ? » et « Je conteste ! » (vus des deux côtés)
+  const c = [x, y][+a], won = +bet === +a, late = !!P["t" + i], why = +P["w" + i] || 0, fight = +P["x" + i] || 0;
+  const t15 = at => `<div class="bar po-15"><i style="animation-delay:-${Math.min(15, (Date.now() - at) / 1000).toFixed(1)}s"></i></div>`;
   return head + q + `<div class="reveal" style="${col}"><div class="rv"><b>${esc(nm(ans))} a répondu</b><p class="pick">Plus ${esc(c)}</p></div><div class="rv"><b>${esc(nm(ask))} avait parié</b><p class="pick">Plus ${esc([x, y][+bet])}</p></div></div>
     <p class="verdict" style="${col}">${late ? `Trop lent ! Yassen a répondu à la place de ${esc(nm(ans))}…` : won ? "Pari gagné !" : "Pari perdu !"}</p>
-    <div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(PO_YJ[(P.i + idx) % PO_YJ.length].replace("{c}", c))}</p></div>
-    ${U.why ? instr("Pourquoi ?", esc(fr(`${nm(ans)}, explique-toi en une phrase, à voix haute. Exemple : « plus ${c}, parce que… »`))) : ""}${U.contest ? instr("Contestation !", esc(fr(`${nm(ask)} n'est pas d'accord ? Quinze secondes chacun·e pour plaider. Et ensuite, un câlin de réconciliation.`))) : ""}
-    <div class="row" style="justify-content:center">${U.why ? "" : `<button class="btn ghost" data-a="po-why">Pourquoi ?</button>`}${U.contest ? "" : `<button class="btn ghost" data-a="po-contest">Je conteste !</button>`}</div>
-    ${P.miroir && m == null && (!me || me === ask) ? `<p class="lbl" style="text-align:center">${esc(fr(`Tour miroir : ${nm(ask)}, et toi, tu te trouves plus…`))}</p><div class="pickers">${[x, y].map((t, i) => `<button class="btn line" data-a="po-mir" data-v="${i}">${esc(t)}</button>`).join("")}</div>`
-      : P.miroir && m != null ? `<p class="small muted" style="text-align:center">${esc(fr(`Miroir : ${nm(ask)} se trouve plutôt ${[x, y][+m]}.`))}</p>` : ""}
-    <button class="btn wide c" style="${col}" data-a="po-next" ${P.miroir && m == null ? "disabled" : ""}>${P.i + 1 >= deck.length ? "Voir le portrait croisé" : "Question suivante"}</button>`;
+    ${m != null ? `<p class="small" style="text-align:center">${esc(fr(`Miroir : ${nm(ask)} se voit plutôt ${[x, y][+m]}${+m === +a ? ", comme ${nm(ans)} !" : `, et ${nm(ans)} pas du tout !`}`))}</p>` : ""}
+    <div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(PO_YJ[(i + idx) % PO_YJ.length].replace("{c}", c))}</p></div>
+    ${why ? instr("Pourquoi ?", esc(fr(`${nm(ans)}, explique-toi en une phrase, à voix haute : « plus ${c}, parce que… »`))) + t15(why) : ""}
+    ${fight ? instr("Contestation !", esc(fr(`${nm(ask)} n'est pas d'accord ? Quinze secondes chacun·e pour plaider. Et ensuite, un câlin de réconciliation.`))) + t15(fight) : ""}
+    ${why && fight ? "" : `<div class="row" style="justify-content:center">${why ? "" : `<button class="btn ghost" data-a="po-why">Pourquoi ?</button>`}${fight ? "" : `<button class="btn ghost" data-a="po-contest">Je conteste !</button>`}</div>`}
+    <button class="btn wide c" style="${col}" data-a="po-next">${i + 1 >= deck.length ? "Voir le portrait croisé" : "Question suivante"}</button>`;
 }
 function startLivePlusou(cats, chrono, miroir) { Live.start({ kind: "plusou", ...poNewGame(cats, chrono, miroir) }); }
 
@@ -10431,7 +10454,7 @@ const ACT = {
     const L = Live.state; if (!L) return;
     if (L.kind === "cards") startLiveCards({ ...L.setup });
     else if (L.kind === "arcade") startLiveArcade(L.game);
-    else if (L.kind === "contact") startLiveContact(L.level);
+    else if (L.kind === "contact") startLiveContact(L.level, L.rules);
     else if (L.kind === "plusou") { const cats = [...new Set(toArr(L.deck).map(i => (PO_PAIRS[i] || [])[2]))]; startLivePlusou(cats.length === 4 ? [] : cats, L.chrono, L.miroir); }
     else startLiveStory(L.id);
   },
@@ -10833,12 +10856,13 @@ const ACT = {
   "ct-opt"(d) { const E = S.ctSetup || (S.ctSetup = {}); E[d.k] = d.v; if (d.k === "where" && d.v === "distance") E.keeper = "yassen"; },
   "ct-start"() {
     const E = S.ctSetup || {};
-    if (E.where === "distance" && Store.backend === "shared") { startLiveContact(E.level); S.ctUi = {}; return; }
+    if (E.where === "distance" && Store.backend === "shared") { startLiveContact(E.level, E.rules); S.ctUi = {}; return; }
     let secret = "";
     if (E.keeper === "soiree") { secret = ctNorm(S.drafts["ct-keep"]); if (secret.length < 3) { toast("Le gardien doit d'abord taper un mot secret d'au moins trois lettres."); return; } clearDrafts("ct-keep"); }
-    S.ct = ctNewGame(E.keeper === "soiree" ? "soiree" : "yassen", E.level, secret); S.ctUi = {};
+    S.ct = ctNewGame(E.keeper === "soiree" ? "soiree" : "yassen", E.level, secret, E.rules); S.ctUi = {};
     Sfx.play("chime");
   },
+  "ct-claim"(d) { const C = ctState(); if (C && C.phase === "word" && !C.turn && (d.v === "a" || d.v === "b")) { S.ctUi = { ...(S.ctUi || {}), hidden: !!ctLive() }; ctSet({ turn: d.v }); Sfx.play("pop"); } },
   "ct-hide"() { (S.ctUi || (S.ctUi = {})).hidden = true; },
   "ct-clue"() {
     const C = ctState(); if (!C || C.phase !== "word") return;
@@ -10846,6 +10870,7 @@ const ACT = {
     if (!nw.startsWith(p) || nw.length <= p.length) { toast(`Ton mot doit commencer par ${p} et être plus long.`); return; }
     if (C.mode !== "soiree" && !clue) { toast("Écris aussi ton indice : Yassen en a besoin pour essayer de vous couper."); return; }
     if (clue && ctNorm(clue).includes(nw)) { toast("L'indice ne doit pas contenir le mot lui-même."); return; }
+    if (ctPure(C) && toArr(C.hist).some(h => ctNorm(h.w) === nw)) { toast("Ce mot a déjà été joué : il faut en trouver un autre."); return; }
     clearDrafts("ct-w", "ct-c"); S.ctUi = { ...(S.ctUi || {}), hidden: false };
     ctClue(w, clue); Sfx.play("paper");
   },
@@ -10862,7 +10887,7 @@ const ACT = {
   "ct-next"(d) { if (["ok", "cut", "diff"].includes(d.v)) ctNext(d.v); },
   "ct-guess-box"() { const E = S.ctUi || (S.ctUi = {}); E.guess = !E.guess; },
   "ct-guess"() { const v = S.drafts["ct-sec"]; clearDrafts("ct-sec"); (S.ctUi || {}).guess = false; ctGuess(v); },
-  "ct-replay"() { const C = S.ct; S.ctUi = {}; S.ct = C && C.mode !== "soiree" ? ctNewGame(C.mode, C.level) : null; },
+  "ct-replay"() { const C = S.ct; S.ctUi = {}; S.ct = C && C.mode !== "soiree" ? ctNewGame(C.mode, C.level, "", C.rules) : null; },
   "ct-quit"() { S.ct = null; S.ctUi = {}; },
   // Tu me trouves plus… ou plus… ?
   "po-cat"(d) { const E = S.poSetup || (S.poSetup = { cats: [] }); E.cats = !d.v ? [] : E.cats.includes(d.v) ? E.cats.filter(c => c !== d.v) : [...E.cats, d.v]; },
@@ -10877,11 +10902,11 @@ const ACT = {
     S.po = P; Sfx.play("chime");
   },
   "po-hid"() { (S.poUi || (S.poUi = {})).hid = true; },
-  "po-bet"(d) { const P = poState(); if (!P || P["b" + P.i] != null) return; S.poUi = { ...(S.poUi || {}), hid: false }; poSet({ ["b" + P.i]: +d.v === 1 ? 1 : 0 }); Sfx.play("tick"); },
+  "po-bet"(d) { const P = poState(); if (!P || P["b" + P.i] != null) return; poSet({ ["b" + P.i]: +d.v === 1 ? 1 : 0 }); Sfx.play("tick"); },
   "po-go"() { (S.poUi || (S.poUi = {})).t0 = Date.now(); Sfx.play("tick"); },
   "po-ans"(d) { poAnswer(+d.v === 1 ? 1 : 0); },
-  "po-why"() { (S.poUi || (S.poUi = {})).why = true; },
-  "po-contest"() { (S.poUi || (S.poUi = {})).contest = true; },
+  "po-why"() { const P = poState(); if (P && !P["w" + P.i]) poSet({ ["w" + P.i]: Date.now() }); },
+  "po-contest"() { const P = poState(); if (P && !P["x" + P.i]) poSet({ ["x" + P.i]: Date.now() }); },
   "po-mir"(d) { const P = poState(); if (P && P["m" + P.i] == null) poSet({ ["m" + P.i]: +d.v === 1 ? 1 : 0 }); },
   "po-next"() { poNext(); },
   "po-album"() {
