@@ -454,6 +454,17 @@ body { background: var(--bg); }
 .yr-typing i:nth-child(2) { animation-delay: .2s; } .yr-typing i:nth-child(3) { animation-delay: .4s; }
 .yr-end { display: flex; gap: 10px; margin-top: 10px; }
 .yr .btn.ghost { background: rgba(255, 255, 255, .5); color: #2E2333; }
+/* Tu me trouves plus… ou plus… ? */
+.po-q { background: var(--c); color: var(--on-c); border-radius: 26px; padding: 22px 20px; display: grid; gap: 8px; text-align: center; animation: deal .35s ease both; }
+.po-q .card-for { color: inherit; opacity: .8; }
+.po-line { margin: 0; font-family: var(--f-display); font-size: clamp(1.4rem, 6vw, 1.8rem); line-height: 1.2; text-wrap: balance; }
+.po-line b { font-weight: 400; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; }
+.po-cat { margin: 0; opacity: .75; }
+.po-chrono { display: grid; gap: 6px; justify-items: center; }
+.po-chrono span { font: 800 2.4rem/1 var(--f-body); font-variant-numeric: tabular-nums; }
+.po-chrono .bar { width: 100%; height: 8px; }
+.po-big .btn { padding: 22px 12px; font-size: 1.1rem; }
+.po-portrait ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
 /* Contact */
 .ct-word { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
 .ct-word span { min-width: 2.1rem; padding: 8px 6px; border-radius: 12px; background: var(--c, #F2A93B); color: var(--on-c, #fff); font: 800 1.6rem/1 var(--f-body); text-align: center; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .15); animation: deal .35s ease both; }
@@ -1755,6 +1766,7 @@ const TONE = { l: "Léger", d: "Drôle", r: "Romantique", p: "Profond" };
 const MODES = {
   questions: { title: "Entre Nous", desc: "Les questions complices : l'un devine, l'autre répond, et vous en parlez.", c: 1, glyph: "✦" },
   qui: { title: "Qui de nous deux ?", desc: "Vote secret, révélation, plaidoiries.", c: 2, glyph: "⇄" },
+  plusou: { title: "Tu me trouves plus… ou plus… ?", desc: "Pariez sur la réponse de l'autre, répondez à l'instinct, et découvrez comment l'autre vous voit.", c: 2, glyph: "⇋" },
   defis: { title: "Les défis complices", desc: "Des défis courts, filtrés selon votre envie.", c: 3, glyph: "⚑" },
   histoire: { title: "Notre histoire", desc: "Revisitez vos moments forts et gardez-les dans l'album.", c: 4, glyph: "♥︎" },
   etsi: { title: "Et si on… ?", desc: "Des scénarios à imaginer, des idées à vivre.", c: 5, glyph: "☁︎" },
@@ -1977,7 +1989,7 @@ function cleanMeta(m, v) {
 // Une partie à distance : seuls les réponses et les mots écrits gardent du texte libre ; tout le reste
 // doit être un mot-clé, un nombre ou un booléen, et renvoyer à un contenu qui existe.
 function cleanLive(v) {
-  if (!isObj(v) || !["cards", "arcade", "story", "contact"].includes(v.kind)) return null;
+  if (!isObj(v) || !["cards", "arcade", "story", "contact", "plusou"].includes(v.kind)) return null;
   const walk = (x, free, depth) => {
     if (depth > 6) return undefined;
     if (typeof x === "number") return Number.isFinite(x) ? x : undefined;
@@ -2001,6 +2013,11 @@ function cleanLive(v) {
   ["by", "first", "coinWho"].forEach(k => { if (k in s && s[k] !== "a" && s[k] !== "b") delete s[k]; });
   if ("stopReq" in s && !(isObj(s.stopReq) && (s.stopReq.by === "a" || s.stopReq.by === "b"))) delete s.stopReq;
   if (s.kind === "cards") { if (!own(MODES, s.mode)) return null; s.deck = (s.deck || []).filter(id => own(CARDS, id)); }
+  if (s.kind === "plusou") {
+    s.deck = toArr(s.deck).map(Number).filter(i => Number.isInteger(i) && i >= 0 && i < PO_PAIRS.length).slice(0, 20);
+    s.chrono = [0, 3, 5, 10].includes(+s.chrono) ? +s.chrono : 5; s.miroir = s.miroir === true;
+    Object.keys(s).filter(k => /^[abmt]\d+$/.test(k)).forEach(k => { s[k] = +s[k] === 1 ? 1 : 0; });
+  }
   if (s.kind === "contact") {
     s.secret = ctNorm(s.secret); if (s.secret.length < 2) return null;
     s.level = own(CT_LEVELS, s.level) ? s.level : "malin"; s.mode = "yassen";
@@ -2870,9 +2887,9 @@ const PATHS = {
   puzzle: '<path d="M5 9h3.2a2 2 0 1 1 3.6 0H15v3.2a2 2 0 1 1 0 3.6V19H5z"/><path d="M15 9h4v10h-4"/>'
 };
 const ARC_ICON = { tp: "fork", flags: "flag", onde: "gauge", synchro: "sync" };
-const MODE_ICON = { conte: "quill", epopee: "sword", questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle", contact: "bubbles" };
+const MODE_ICON = { conte: "quill", epopee: "sword", questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle", contact: "bubbles", plusou: "heart" };
 const ico = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name] || ""}</svg>`;
-const MODE_GROUPS = [["Se découvrir", ["questions", "qui", "etsi"]], ["Vivre une histoire", ["conte", "epopee", "recit"]], ["Se souvenir", ["histoire", "puzzle"]], ["S'amuser", ["contact", "arcade", "defis"]]];
+const MODE_GROUPS = [["Se découvrir", ["questions", "plusou", "qui", "etsi"]], ["Vivre une histoire", ["conte", "epopee", "recit"]], ["Se souvenir", ["histoire", "puzzle"]], ["S'amuser", ["contact", "arcade", "defis"]]];
 const modeRow = k => { const m = MODES[k]; return `<button class="mode-row" style="${cvar(m.c)}" data-a="open-mode" data-mode="${k}"><span class="icon-tile">${ico(MODE_ICON[k])}</span><span class="mode-txt"><b>${esc(fr(m.title))}</b><span>${esc(fr(m.desc))}</span></span><span class="chev" aria-hidden="true">›</span></button>`; };
 const syncLine = () => (navigator.onLine === false ? "Hors ligne pour le moment : vos changements partiront au retour du réseau. " : "") + (Store.backend === "shared" ? "Votre progression est commune à vos deux téléphones."
   : Store.backend === "db" ? "Vos souvenirs, aventures et lettres sont partagés entre les personnes qui ont accès à cette page."
@@ -5323,7 +5340,7 @@ const Live = {
   },
   active() { const s = this.state; return !!(s && !s.ended && Date.now() - (s.updatedAt || 0) < 12 * 3600 * 1000); }
 };
-const liveTitle = L => L.kind === "contact" ? "Contact" : L.kind === "cards" ? (MODES[L.mode] || {}).title || "Partie" : L.kind === "arcade" ? (ARCADE[L.game] || {}).title || "Arcade" : (STORY[L.id] || {}).title || "Histoire";
+const liveTitle = L => L.kind === "contact" ? "Contact" : L.kind === "plusou" ? "Tu me trouves plus… ou plus… ?" : L.kind === "cards" ? (MODES[L.mode] || {}).title || "Partie" : L.kind === "arcade" ? (ARCADE[L.game] || {}).title || "Arcade" : (STORY[L.id] || {}).title || "Histoire";
 function liveBanner() {
   if (Store.backend !== "shared" || !Live.active()) return "";
   const L = Live.state;
@@ -5532,12 +5549,12 @@ function liveStoryView(L, me, head) {
 function liveView() {
   const L = Live.state, me = whoAmI();
   if (!L) return layerHead("") + empty("Aucune partie à distance en cours", "Lancez-en une depuis un jeu, en choisissant « À distance ».");
-  const right = L.kind === "cards" && !L.ended ? `Carte ${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && !L.ended && L.game !== "synchro" ? `${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && L.game === "synchro" ? `Manche ${L.round}` : L.kind === "story" ? `Chapitre ${L.steps || 1}` : L.kind === "contact" ? `Manche ${Math.min(L.round || 1, CT_MAX)}` : "";
+  const right = L.kind === "cards" && !L.ended ? `Carte ${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && !L.ended && L.game !== "synchro" ? `${L.i + 1} sur ${(L.deck || []).length}` : L.kind === "arcade" && L.game === "synchro" ? `Manche ${L.round}` : L.kind === "story" ? `Chapitre ${L.steps || 1}` : L.kind === "contact" ? `Manche ${Math.min(L.round || 1, CT_MAX)}` : L.kind === "plusou" ? `${Math.min((L.i || 0) + 1, toArr(L.deck).length)} sur ${toArr(L.deck).length}` : "";
   const head = `<div class="g-head"><button class="icon-btn" data-a="close-layer" aria-label="Fermer">×</button><div class="g-prog"><span>${esc(fr(liveTitle(L)))} · à distance</span></div><span class="g-timer">${right}</span></div>`;
   if (!me) return head + `<div class="panel" style="text-align:center;${cvar(7)}"><p class="card-for">Sur ce téléphone…</p><p class="big-word" style="font-size:1.7rem">Qui es-tu ?</p></div>
     <div class="pickers">${["a", "b"].map(k => `<button class="btn c" style="${cvar(7)}" data-a="pzr-me" data-v="${k}">${esc(nm(k))}</button>`).join("")}</div>
     <p class="small muted" style="text-align:center">${esc(fr("Ce choix reste enregistré sur ce téléphone. Chacun fait le sien sur son propre téléphone."))}</p>`;
-  const body = L.kind === "cards" ? liveCardsView(L, me, head) : L.kind === "arcade" ? liveArcadeView(L, me, head) : L.kind === "contact" ? contactGame(L, me, head) : liveStoryView(L, me, head);
+  const body = L.kind === "cards" ? liveCardsView(L, me, head) : L.kind === "arcade" ? liveArcadeView(L, me, head) : L.kind === "contact" ? contactGame(L, me, head) : L.kind === "plusou" ? plusouGame(L, me, head) : liveStoryView(L, me, head);
   return body + (L.ended ? "" : liveStopBox(L, me));
 }
 
@@ -8423,6 +8440,179 @@ function startLiveContact(level) {
   Live.start({ kind: "contact", ...C });
 }
 
+/* ───────────────────────── Tu me trouves plus… ou plus… ? ─────────────────────────
+   À tour de rôle, l'un·e demande : « Tu me trouves plus soleil ou plus lune ? ». Avant la réponse, cette personne
+   parie en secret sur ce que l'autre va dire ; l'autre répond à l'instinct, chrono en marche. Puis on se dit
+   pourquoi. À la fin, le portrait croisé : comment chacun·e est vu·e par l'autre, et qui connaît le mieux le
+   regard de l'autre. Les paires écrites « {beau|belle} » s'accordent : elles ne sont proposées qu'à la personne
+   qui a choisi « Papa » ou « Maman » (le mot décrit toujours la personne qui pose la question).
+   La partie vit dans S.po (sur ce téléphone) ou dans la partie à distance (Live, kind « plusou »). */
+const PO_CATS = { tendre: "Tendres", taquin: "Taquines", absurde: "Absurdes", profond: "Profondes" };
+const PO_PAIRS = [
+  // Tendres
+  ["soleil", "lune", "tendre"], ["câlin du matin", "câlin du soir", "tendre"], ["doudou", "bouillotte", "tendre"], ["tendre", "drôle", "tendre"],
+  ["chocolat chaud", "thé à la menthe", "tendre"], ["sourire", "fou rire", "tendre"], ["douceur", "tempête", "tendre"], ["bisou dans le cou", "bisou sur le front", "tendre"],
+  ["refuge", "aventure", "tendre"], ["poème", "chanson", "tendre"], ["plaid", "feu de cheminée", "tendre"], ["lettre d'amour", "message vocal de quatre minutes", "tendre"],
+  ["étoile filante", "coucher de soleil", "tendre"], ["romantique", "pratique", "tendre"], ["sensible", "solide", "tendre"], ["patience", "enthousiasme", "tendre"],
+  ["port d'attache", "grand voyage", "tendre"], ["printemps", "automne", "tendre"], ["mélodie", "silence qui fait du bien", "tendre"], ["brioche du dimanche", "croissant du lundi", "tendre"],
+  ["calme", "pétillance", "tendre"], ["adorable", "irrésistible", "tendre"], ["main tenue", "épaule où se poser", "tendre"], ["comédie romantique", "film d'aventure", "tendre"],
+  ["{beau|belle}", "{intelligent|intelligente}", "tendre"], ["{mignon|mignonne}", "sexy", "tendre"], ["{beau|belle} au réveil", "{beau|belle} en soirée", "tendre"],
+  ["{rassurant|rassurante}", "{surprenant|surprenante}", "tendre"], ["{élégant|élégante}", "{craquant|craquante}", "tendre"], ["{doux|douce}", "{passionné|passionnée}", "tendre"],
+  // Taquines
+  ["en retard", "en avance d'une heure", "taquin"], ["tragédie grecque", "comédie musicale", "taquin"], ["accro au téléphone", "accro au canapé", "taquin"],
+  ["chaussettes qui traînent", "vaisselle qui attend", "taquin"], ["chef de projet du week-end", "touriste de la vie", "taquin"], ["insupportable", "irrésistible", "taquin"],
+  ["imprévisible", "prévisible", "taquin"], ["« j'ai pas faim » puis mange tout", "« on verra » puis ne voit jamais", "taquin"], ["GPS", "boussole cassée", "taquin"],
+  ["alarme à 6 h", "dix rappels de cinq minutes", "taquin"], ["mauvaise foi", "mauvaise humeur avant le café", "taquin"], ["drame pour une égratignure", "héroïsme pour un rhume", "taquin"],
+  ["casse-pieds", "pot de colle", "taquin"], ["sieste", "insomnie", "taquin"], ["série en entier en une nuit", "un épisode par mois", "taquin"],
+  ["{râleur|râleuse} du matin", "{grognon|grognonne} du soir", "taquin"], ["{voleur|voleuse} de couette", "{ronfleur|ronfleuse}", "taquin"], ["{têtu|têtue}", "{bavard|bavarde}", "taquin"],
+  ["{gourmand|gourmande}", "{affamé|affamée} en permanence", "taquin"], ["{frileux|frileuse}", "{boudeur|boudeuse}", "taquin"], ["{mauvais perdant|mauvaise perdante}", "{mauvais gagnant|mauvaise gagnante}", "taquin"],
+  // Absurdes
+  ["raton laveur", "pingouin", "absurde"], ["raclette", "sushi", "absurde"], ["Disney", "film d'horreur", "absurde"], ["ninja", "panda", "absurde"], ["licorne", "dragon", "absurde"],
+  ["croissant", "pain au chocolat", "absurde"], ["capybara", "loutre", "absurde"], ["pirate", "astronaute", "absurde"], ["chat", "chien", "absurde"], ["tortue", "guépard", "absurde"],
+  ["cornichon", "olive", "absurde"], ["pyjama licorne", "pyjama dinosaure", "absurde"], ["boule disco", "lampe de chevet", "absurde"], ["pâte à crêpe", "pâte à pizza", "absurde"],
+  ["playlist années 80", "playlist de mariage", "absurde"], ["grenouille", "papillon", "absurde"], ["koala", "suricate", "absurde"], ["tempête de neige", "canicule", "absurde"],
+  ["château de sable", "igloo", "absurde"], ["paillettes", "jogging", "absurde"], ["film de Noël", "série policière", "absurde"], ["karaoké", "quiz", "absurde"], ["camping", "palace", "absurde"],
+  ["trottinette", "montgolfière", "absurde"], ["mouette", "pigeon", "absurde"], ["fromage qui pue", "dessert qui colle", "absurde"], ["frite", "patate douce", "absurde"],
+  ["dinosaure", "robot", "absurde"], ["bulle de savon", "feu d'artifice", "absurde"], ["chaussette dépareillée", "parapluie retourné", "absurde"],
+  // Profondes
+  ["rêve", "construction", "profond"], ["présent", "futur", "profond"], ["courage", "douceur", "profond"], ["racines", "ailes", "profond"], ["écoute", "conseil", "profond"],
+  ["instinct", "réflexion", "profond"], ["lumière", "abri", "profond"], ["cœur", "tête", "profond"], ["force tranquille", "feu d'artifice", "profond"], ["question", "réponse", "profond"],
+  ["boussole", "carte au trésor", "profond"], ["mains qui réparent", "mots qui consolent", "profond"], ["phare", "bateau", "profond"], ["île", "pont", "profond"], ["source", "rivière", "profond"],
+  ["montagne", "océan", "profond"], ["patience", "passion", "profond"], ["silence complice", "grande déclaration", "profond"], ["mémoire", "promesse", "profond"],
+  ["{fort|forte} dans la tempête", "{apaisant|apaisante} après", "profond"], ["{fidèle|fidèle} à ses idées", "{ouvert|ouverte} aux autres", "profond"], ["{inspirant|inspirante}", "{rassurant|rassurante}", "profond"]
+];
+const PO_CHRONO = { 3: "Éclair · 3 s", 5: "Normal · 5 s", 10: "Tranquille · 10 s", 0: "Sans chrono" };
+const PO_YJ = ["« {c} », je confirme. Je vous observe depuis longtemps.", "Hihi, « {c} ». J'aurais dit pareil.", "« {c} » ? Ça se discute… mais bon.", "Oh, « {c} » ! Je note ça dans mon carnet secret.", "« {c} », c'est tellement vrai que j'en fais des étincelles.", "« {c} »… *hoche sa petite flamme d'un air savant*"];
+// L'accord d'une paire, d'après le réglage Papa / Maman de la personne décrite (« » si rien n'est choisi).
+function poGender(k) {
+  const v = couple()["p" + k];
+  if (v === "papa" || v === "maman") return v === "papa" ? "m" : "f";
+  const p = parentOf(k);
+  return p === "Papa" ? "m" : p === "Maman" ? "f" : "";
+}
+const poForm = (t, k) => { const g = poGender(k); return String(t).replace(/\{([^|}]*)\|([^}]*)\}/g, (_, m, f) => (g === "f" ? f : m)); };
+const poUsable = (i, k) => !/\{/.test(PO_PAIRS[i][0] + PO_PAIRS[i][1]) || !!poGender(k);
+const poAsker = (P, i) => (i % 2 === 0 ? P.first : other(P.first));
+// Dix questions, en alternant qui demande, chacune adaptée à la personne qu'elle décrit.
+function poDeck(cats, first) {
+  const ok = PO_PAIRS.map((p, i) => i).filter(i => !cats.length || cats.includes(PO_PAIRS[i][2]));
+  const pool = shuffle(ok), deck = [];
+  for (let n = 0; n < 10 && pool.length; n++) {
+    const k = n % 2 === 0 ? first : other(first), j = pool.findIndex(i => poUsable(i, k));
+    if (j < 0) break;
+    deck.push(pool.splice(j, 1)[0]);
+  }
+  return deck;
+}
+const poLive = () => !!(S.layer && S.layer.type === "live" && Live.state && Live.state.kind === "plusou");
+const poState = () => (poLive() ? Live.state : S.po);
+function poSet(patch) {
+  if (poLive()) { Live.write(patch); return; }
+  if (!S.po) return;
+  Object.assign(S.po, patch);
+  render(true);
+}
+function poNewGame(cats, chrono, miroir) {
+  const first = Math.random() < 0.5 ? "a" : "b";
+  return { deck: poDeck(cats, first), first, i: 0, chrono: [0, 3, 5, 10].includes(+chrono) ? +chrono : 5, miroir: !!miroir, start: Date.now() };
+}
+// La réponse (ou Yassen qui répond à la place de qui a été trop lent·e).
+function poAnswer(v, late) {
+  const P = poState(); if (!P || P["a" + P.i] != null) return;
+  S.poUi = { ...(S.poUi || {}), t0: 0 };
+  poSet({ ["a" + P.i]: v, ...(late ? { ["t" + P.i]: 1 } : {}) });
+  Sfx.play(late ? "boop" : "pop");
+}
+const PoTick = { t: null, run() { if (this.t) return; this.t = setInterval(() => {
+  const P = poState(), U = S.poUi || {};
+  if (!P || !U.t0 || P["a" + P.i] != null) { clearInterval(this.t); this.t = null; return; }
+  const left = P.chrono - (Date.now() - U.t0) / 1000, el = document.getElementById("po-left");
+  if (el) el.textContent = Math.max(0, Math.ceil(left));
+  const bar = document.getElementById("po-bar"); if (bar) bar.style.width = Math.max(0, left / P.chrono * 100) + "%";
+  if (left <= 0) { clearInterval(this.t); this.t = null; poAnswer(Math.random() < 0.5 ? 0 : 1, true); }
+}, 100); } };
+function poNext() {
+  const P = poState(); if (!P) return;
+  if (P.i + 1 >= toArr(P.deck).length) { poSet({ i: P.i + 1, end: Date.now() }); poFinish(); return; }
+  S.poUi = {}; poSet({ i: P.i + 1 }); Sfx.play("page");
+}
+// Fin de partie : des cœurs selon les paris gagnés (une seule fois, sur le téléphone qui termine).
+function poFinish() {
+  const P = poState(), sc = poScore(P);
+  Store.patchMeta("game", { [`earn/po_${P.start || P.startAt}`]: 10 + sc.a + sc.b });
+  Sfx.play("fanfare");
+}
+// « plus beau qu'intelligent » : « que » s'élide devant une voyelle.
+const poQue = t => (/^[aeiouyhâàéèêëîïôûœ]/i.test(t) ? "qu'" : "que ") + t;
+const poScore = P => { const s = { a: 0, b: 0, na: 0, nb: 0 }; toArr(P.deck).forEach((_, i) => { const k = poAsker(P, i); if (P["a" + i] == null) return; s["n" + k]++; if (+P["b" + i] === +P["a" + i]) s[k]++; }); return s; };
+// Le portrait croisé : comment chacun·e est vu·e par l'autre.
+function poPortrait(P, k) {
+  return toArr(P.deck).map((d, i) => ({ d, i })).filter(x => poAsker(P, x.i) === k && P["a" + x.i] != null).map(({ d, i }) => {
+    const pr = PO_PAIRS[d], c = +P["a" + i], m = P["m" + i];
+    return { yes: poForm(pr[c], k), no: poForm(pr[1 - c], k), self: m == null ? null : poForm(pr[+m], k) };
+  });
+}
+function plusouSetupView() {
+  const E = S.poSetup || (S.poSetup = { cats: [], chrono: 5, miroir: false, where: "" }), col = cvar(2);
+  const chip = (a, v, on, l) => `<button class="chip" aria-pressed="${on}" data-a="${a}" data-v="${v}">${esc(l)}</button>`;
+  return `${layerHead("")}
+    <section class="setup-hero" style="${col}"><span class="g" aria-hidden="true">${ico("people")}</span><h1>Tu me trouves plus… ou plus… ?</h1><p>${esc(fr("Pariez en secret sur la réponse de l'autre, répondez à l'instinct, et découvrez comment l'autre vous voit."))}</p></section>
+    ${rulesHtml(["À tour de rôle, l'un·e demande : « Tu me trouves plus soleil ou plus lune ? ».", "Avant la réponse, la personne qui demande parie en secret sur ce que l'autre va dire.", "L'autre répond à l'instinct, avant la fin du chrono. Trop lent ? Yassen répond à sa place.", "Puis : pourquoi ? Une phrase pour s'expliquer, et le droit de contester.", "À la fin : le portrait croisé de vous deux, et qui connaît le mieux le regard de l'autre."])}
+    <div class="stack"><h2 class="sec">Les questions</h2><div class="chips">${chip("po-cat", "", !E.cats.length, "Tout mélanger")}${Object.entries(PO_CATS).map(([k, l]) => chip("po-cat", k, E.cats.includes(k), l)).join("")}</div></div>
+    <div class="stack"><h2 class="sec">Le chrono pour répondre</h2><div class="chips">${Object.entries(PO_CHRONO).map(([k, l]) => chip("po-chrono", k, +E.chrono === +k, l)).join("")}</div></div>
+    <div class="stack"><h2 class="sec">Le tour miroir</h2><div class="chips">${chip("po-miroir", "1", !!E.miroir, "Oui : on dit aussi comment on se voit")}${chip("po-miroir", "", !E.miroir, "Non merci")}</div></div>
+    ${Store.backend === "shared" ? `<div class="stack"><h2 class="sec">Où jouez-vous ?</h2><div class="chips">${chip("po-where", "", !E.where, "Sur ce téléphone")}${chip("po-where", "distance", E.where === "distance", "À distance, chacun·e sur son téléphone")}</div></div>` : ""}
+    <div class="row"><button class="btn wide c" style="${col}" data-a="po-start">C'est parti</button></div>`;
+}
+function plusouView() {
+  const P = S.po;
+  if (!P) return plusouSetupView();
+  const n = toArr(P.deck).length;
+  return plusouGame(P, null, `<div class="g-head"><button class="icon-btn" data-a="po-quit" aria-label="Quitter la partie">×</button><div class="g-prog"><span>Question ${Math.min(P.i + 1, n)} sur ${n}</span><div class="bar"><i style="width:${(P.i / Math.max(1, n)) * 100}%"></i></div></div></div>`);
+}
+// La partie, sur ce téléphone (me = null) ou à distance (me = « a » ou « b »).
+function plusouGame(P, me, head) {
+  const col = cvar(2), deck = toArr(P.deck), U = S.poUi || (S.poUi = {});
+  if (P.i >= deck.length) {
+    const sc = poScore(P), port = k => { const L = poPortrait(P, k); return `<section class="panel po-portrait"><h2 class="sec">Aux yeux de ${esc(nm(other(k)))}, ${esc(nm(k))} est…</h2><ul>${L.map(x => `<li>plus <b>${esc(x.yes)}</b> ${esc(poQue(x.no))}${x.self != null ? `<span class="small muted"> · ${x.self === x.yes ? "et se voit pareil" : `mais se voit plutôt ${esc(x.self)}`}</span>` : ""}</li>`).join("")}</ul><p class="small">${esc(fr(`${nm(k)} a deviné ${sc[k]} réponse${sc[k] > 1 ? "s" : ""} sur ${sc["n" + k]}.`))}</p></section>`; };
+    const best = sc.a === sc.b ? "Égalité parfaite : vous lisez aussi bien, de chaque côté, le regard de l'autre." : `${nm(sc.a > sc.b ? "a" : "b")} connaît le mieux le regard de l'autre, cette fois.`;
+    return head + `<div class="esc-win"><span class="esc-hero-yj" aria-hidden="true">${yassenSvg(Jeu.stage(), false)}</span><h1 class="sheet-title">Votre portrait croisé</h1><p class="small muted">${esc(fr(best))}</p></div>
+      ${port("a")}${port("b")}
+      <div class="actions">${P.saved ? `<p class="small muted" style="text-align:center">Gardé dans l'album ✓</p>` : `<button class="btn ghost wide" data-a="po-album">Garder le portrait dans l'album</button>`}
+      <button class="btn wide c" style="${col}" data-a="${me ? "lv-replay" : "po-replay"}">Rejouer</button><button class="btn line wide" data-a="${me ? "close-layer" : "po-quit"}">Terminer</button></div>`;
+  }
+  const idx = deck[P.i], pr = PO_PAIRS[idx] || ["", ""], ask = poAsker(P, P.i), ans = other(ask), x = poForm(pr[0], ask), y = poForm(pr[1], ask);
+  const q = `<div class="po-q" style="${col}"><p class="card-for">${esc(nm(ask))} demande à ${esc(nm(ans))}</p><p class="po-line">Tu me trouves plus <b>${esc(x)}</b> ou plus <b>${esc(y)}</b> ?</p><p class="small po-cat">${esc(PO_CATS[pr[2]] || "")}</p></div>`;
+  const bet = P["b" + P.i], a = P["a" + P.i];
+  // 1. Le pari secret
+  if (bet == null) {
+    if (me && me !== ask) return head + q + `<p class="verdict" style="${col}">${esc(fr(`${nm(ask)} parie en secret sur ta réponse…`))}</p>`;
+    if (!me && !U.hid) return head + `<section class="curtain" style="${col}"><p>Pari secret · passe le téléphone à</p><p class="who">${esc(nm(ask))}</p><p>${esc(fr(`${nm(ans)}, on détourne les yeux.`))}</p><button class="btn" data-a="po-hid">C'est moi</button></section>`;
+    return head + q + `<p class="lbl" style="text-align:center">${esc(fr(`${nm(ask)}, que va répondre ${nm(ans)} ? Parie en secret.`))}</p>
+      <div class="pickers">${[x, y].map((t, i) => `<button class="btn c" style="${cvar(i ? 6 : 5)}" data-a="po-bet" data-v="${i}">Plus ${esc(t)}</button>`).join("")}</div>`;
+  }
+  // 2. La réponse, à l'instinct
+  if (a == null) {
+    if (me && me !== ans) return head + q + `<p class="verdict" style="${col}">${esc(fr(`Pari placé ✓ ${nm(ans)} réfléchit…`))}</p>`;
+    if (!U.t0 && P.chrono) return head + q + `<p class="lbl" style="text-align:center">${esc(fr(me ? "Réponds à l'instinct, avant la fin du chrono." : `${nm(ask)} a parié. ${nm(ans)}, réponds à l'instinct, avant la fin du chrono !`))}</p><button class="btn wide c" style="${col}" data-a="po-go">${me ? "Je suis prêt·e : lancer le chrono" : `${esc(nm(ans))} est prêt·e : lancer le chrono`}</button>`;
+    if (P.chrono) PoTick.run();
+    const left = P.chrono ? Math.max(0, Math.ceil(P.chrono - (Date.now() - U.t0) / 1000)) : 0;
+    return head + q + (P.chrono ? `<div class="po-chrono"><span id="po-left">${left}</span><div class="bar"><i id="po-bar" style="width:${Math.max(0, left / P.chrono * 100)}%"></i></div></div>` : "")
+      + `<div class="pickers po-big">${[x, y].map((t, i) => `<button class="btn c" style="${cvar(i ? 6 : 5)}" data-a="po-ans" data-v="${i}">Plus ${esc(t)}</button>`).join("")}</div>`;
+  }
+  // 3. La révélation : le pari, Yassen, pourquoi, contester, et le miroir
+  const c = [x, y][+a], won = +bet === +a, late = !!P["t" + P.i], m = P["m" + P.i];
+  return head + q + `<div class="reveal" style="${col}"><div class="rv"><b>${esc(nm(ans))} a répondu</b><p class="pick">Plus ${esc(c)}</p></div><div class="rv"><b>${esc(nm(ask))} avait parié</b><p class="pick">Plus ${esc([x, y][+bet])}</p></div></div>
+    <p class="verdict" style="${col}">${late ? `Trop lent ! Yassen a répondu à la place de ${esc(nm(ans))}…` : won ? "Pari gagné !" : "Pari perdu !"}</p>
+    <div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(PO_YJ[(P.i + idx) % PO_YJ.length].replace("{c}", c))}</p></div>
+    ${U.why ? instr("Pourquoi ?", esc(fr(`${nm(ans)}, explique-toi en une phrase, à voix haute. Exemple : « plus ${c}, parce que… »`))) : ""}${U.contest ? instr("Contestation !", esc(fr(`${nm(ask)} n'est pas d'accord ? Quinze secondes chacun·e pour plaider. Et ensuite, un câlin de réconciliation.`))) : ""}
+    <div class="row" style="justify-content:center">${U.why ? "" : `<button class="btn ghost" data-a="po-why">Pourquoi ?</button>`}${U.contest ? "" : `<button class="btn ghost" data-a="po-contest">Je conteste !</button>`}</div>
+    ${P.miroir && m == null && (!me || me === ask) ? `<p class="lbl" style="text-align:center">${esc(fr(`Tour miroir : ${nm(ask)}, et toi, tu te trouves plus…`))}</p><div class="pickers">${[x, y].map((t, i) => `<button class="btn line" data-a="po-mir" data-v="${i}">${esc(t)}</button>`).join("")}</div>`
+      : P.miroir && m != null ? `<p class="small muted" style="text-align:center">${esc(fr(`Miroir : ${nm(ask)} se trouve plutôt ${[x, y][+m]}.`))}</p>` : ""}
+    <button class="btn wide c" style="${col}" data-a="po-next" ${P.miroir && m == null ? "disabled" : ""}>${P.i + 1 >= deck.length ? "Voir le portrait croisé" : "Question suivante"}</button>`;
+}
+function startLivePlusou(cats, chrono, miroir) { Live.start({ kind: "plusou", ...poNewGame(cats, chrono, miroir) }); }
+
 /* ───────────────────────── Centre de notifications ─────────────────────────
    Tout ce que l'autre a fait récemment, au même endroit : une partie lancée (qu'on rejoint d'un toucher),
    un petit mot, une lettre scellée ou qui s'ouvre, un souvenir, une aventure, une histoire, Yassen Jr.…
@@ -10020,6 +10210,7 @@ function renderNow(force) {
   else if (S.layer.type === "annee") html = yearView();
   else if (S.layer.type === "escape") html = escapeView();
   else if (S.layer.type === "contact") html = contactView();
+  else if (S.layer.type === "plusou") html = plusouView();
   else if (S.layer.type === "hap") html = hapView();
   // L'animation d'ouverture continue là où elle en était si l'écran est redessiné juste après.
   if (fresh) render.layerAt = Date.now();
@@ -10067,6 +10258,7 @@ const ACT = {
     if (d.mode === "puzzle") { S.layer = { type: "puzzle" }; S.pz = null; S.pzSize = S.pzSize || 3; return; }
     if (d.mode === "arcade") { S.layer = { type: "arcade" }; S.arc = null; return; }
     if (d.mode === "contact") { S.layer = { type: "contact" }; S.ct = null; S.ctUi = {}; return; }
+    if (d.mode === "plusou") { S.layer = { type: "plusou" }; S.po = null; S.poUi = {}; return; }
     if (d.mode === "recit") { S.layer = { type: "story" }; S.story = null; S.storyStyle = couple().style === "secret" ? "secret" : "ensemble"; return; }
     if (d.mode === "defis") { S.layer = { type: "defis" }; S.dfSaved = {}; S.dfSeen = []; S.dfCur = null; return; }
     S.setup = { mode: d.mode, cat: "mix", mood: "surpris", dur: 10, style: couple().style || "partage" };
@@ -10232,6 +10424,7 @@ const ACT = {
     if (L.kind === "cards") startLiveCards({ ...L.setup });
     else if (L.kind === "arcade") startLiveArcade(L.game);
     else if (L.kind === "contact") startLiveContact(L.level);
+    else if (L.kind === "plusou") { const cats = [...new Set(toArr(L.deck).map(i => (PO_PAIRS[i] || [])[2]))]; startLivePlusou(cats.length === 4 ? [] : cats, L.chrono, L.miroir); }
     else startLiveStory(L.id);
   },
   "lv-submit"(d) {
@@ -10663,6 +10856,34 @@ const ACT = {
   "ct-guess"() { const v = S.drafts["ct-sec"]; clearDrafts("ct-sec"); (S.ctUi || {}).guess = false; ctGuess(v); },
   "ct-replay"() { const C = S.ct; S.ctUi = {}; S.ct = C && C.mode !== "soiree" ? ctNewGame(C.mode, C.level) : null; },
   "ct-quit"() { S.ct = null; S.ctUi = {}; },
+  // Tu me trouves plus… ou plus… ?
+  "po-cat"(d) { const E = S.poSetup || (S.poSetup = { cats: [] }); E.cats = !d.v ? [] : E.cats.includes(d.v) ? E.cats.filter(c => c !== d.v) : [...E.cats, d.v]; },
+  "po-chrono"(d) { (S.poSetup || (S.poSetup = { cats: [] })).chrono = +d.v; },
+  "po-miroir"(d) { (S.poSetup || (S.poSetup = { cats: [] })).miroir = d.v === "1"; },
+  "po-where"(d) { (S.poSetup || (S.poSetup = { cats: [] })).where = d.v; },
+  "po-start"() {
+    const E = S.poSetup || { cats: [], chrono: 5 }; S.poUi = {};
+    if (E.where === "distance" && Store.backend === "shared") { startLivePlusou(E.cats || [], E.chrono == null ? 5 : E.chrono, E.miroir); return; }
+    const P = poNewGame(E.cats || [], E.chrono == null ? 5 : E.chrono, E.miroir);
+    if (P.deck.length < 2) { toast("Pas assez de questions dans ces paquets : ajoutez-en un autre."); return; }
+    S.po = P; Sfx.play("chime");
+  },
+  "po-hid"() { (S.poUi || (S.poUi = {})).hid = true; },
+  "po-bet"(d) { const P = poState(); if (!P || P["b" + P.i] != null) return; S.poUi = { ...(S.poUi || {}), hid: false }; poSet({ ["b" + P.i]: +d.v === 1 ? 1 : 0 }); Sfx.play("tick"); },
+  "po-go"() { (S.poUi || (S.poUi = {})).t0 = Date.now(); Sfx.play("tick"); },
+  "po-ans"(d) { poAnswer(+d.v === 1 ? 1 : 0); },
+  "po-why"() { (S.poUi || (S.poUi = {})).why = true; },
+  "po-contest"() { (S.poUi || (S.poUi = {})).contest = true; },
+  "po-mir"(d) { const P = poState(); if (P && P["m" + P.i] == null) poSet({ ["m" + P.i]: +d.v === 1 ? 1 : 0 }); },
+  "po-next"() { poNext(); },
+  "po-album"() {
+    const P = poState(); if (!P || P.saved) return;
+    const entries = ["a", "b"].map(k => ({ who: k, label: fr(`Aux yeux de ${nm(other(k))}, ${nm(k)} est…`), text: poPortrait(P, k).map(x => `plus ${x.yes} ${poQue(x.no)}`).join(", ") }));
+    Store.add("capsule", { kind: "souvenir", question: fr(`Comment on se voit · ${fmtDay(todayStr(), { day: "numeric", month: "long" })}`), entries });
+    poSet({ saved: true }); toast("Portrait croisé gardé dans l'album");
+  },
+  "po-replay"() { const E = S.poSetup || { cats: [], chrono: 5 }; S.poUi = {}; S.po = poNewGame(E.cats || [], E.chrono == null ? 5 : E.chrono, E.miroir); },
+  "po-quit"() { S.po = null; S.poUi = {}; },
   "yr-open"() { S.yr = { i: 0 }; S.layer = { type: "annee" }; Sfx.play("chime"); },
   "yr-next"() { S.yr.i++; },
   "yr-prev"() { S.yr.i = Math.max(0, S.yr.i - 1); },

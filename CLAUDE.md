@@ -48,6 +48,13 @@ Escape game à deux (`Esc`, `escGen`, `ESC_ROOMS`) : la partie vit dans `escape/
 happenings vus dans `meta/escape`. Le tirage du happening (`hapOf`) existe en double, dans l'appli et dans le
 service : les deux doivent rester identiques (le test `hap` le vérifie).
 
+## Jeux récents
+
+- Contact (`ct…`) : Yassen Jr. garde le mot ; il devine les indices par l'IA (`ctThink`), sinon dans `CT_DICT`.
+- « Tu me trouves plus… ou plus… ? » (`po…`) : seule exception à l'écriture épicène. Les paires écrites
+  `{beau|belle}` s'accordent d'après le réglage Papa / Maman de la personne décrite (`poGender`), et ne sont
+  jamais proposées à quelqu'un qui n'a pas fait ce choix.
+
 ## Tests
 
 ```bash

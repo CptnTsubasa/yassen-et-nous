@@ -76,7 +76,7 @@ iframe { width: 100%; max-width: 400px; height: min(820px, 78vh); border: 0; bor
 </style>
 <header>
   <h1>L'évasion de <span>Yassen Jr.</span></h1>
-  <p class="lede">Aperçu jouable, avant de l'ajouter à Y&amp;S : l'escape game à deux, le jeu Contact avec Yassen Jr. et les nouvelles histoires de « Il était une fois nous ». Deux téléphones, Papa et Maman, reliés entre eux. Rien n'est enregistré dans votre vrai espace.</p>
+  <p class="lede">Aperçu jouable, avant de l'ajouter à Y&amp;S : l'escape game à deux, le jeu Contact avec Yassen Jr., « Tu me trouves plus… ou plus… ? » et les nouvelles histoires de « Il était une fois nous ». Deux téléphones, Papa et Maman, reliés entre eux. Rien n'est enregistré dans votre vrai espace.</p>
   <div class="bar">
     <div class="tabs" role="group" aria-label="Téléphone affiché"><button id="t-a" aria-pressed="true" data-p="a">Téléphone de Papa</button><button id="t-b" aria-pressed="false" data-p="b">Téléphone de Maman</button></div>
     <button class="act" id="hap" type="button">Voir le happening</button>
