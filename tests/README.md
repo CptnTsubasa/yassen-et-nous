@@ -42,6 +42,7 @@ Un `FAIL`, une erreur de page (`errors [...]`) ou un plantage font échouer le s
 | `recit` | « Il était une fois nous » : 10 histoires jouées au hasard, fin cachée, morale, chemin, album, à distance |
 | `contact` | Contact : Yassen coupe un indice trop facile, lâche une lettre après un contact, mot deviné, mode soirée, à distance |
 | `plusou` | « Tu me trouves plus… ou plus… ? » : pari, chrono, Yassen répond si trop lent, accords Papa / Maman, portrait croisé, miroir, à distance |
+| `quiz` | Arcade : Vrai ou faux, Plus ou moins, Le juste prix (seul et à distance), Contact depuis l'arcade |
 | `lot1` … `lot4` | Vérifications générales (synchro, jeux, interface, hors ligne) |
 | `yjchat`, `yjfast`, `yjsens`, `yjmem` | Yassen Jr. : discussion, réponse en continu, sans IA, mémoire et actualités, quota épuisé |
 | `ia3` | IA en relais : Gemini épuisé → Groq → Workers AI, Gemini injoignable, tâches légères |

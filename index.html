@@ -467,6 +467,14 @@ body { background: var(--bg); }
 .po-15 { height: 6px; } .po-15 i { width: 100%; animation: po15 15s linear both; }
 @keyframes po15 { to { width: 0; } }
 .po-portrait ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+/* Vrai ou faux, Plus ou moins, Le juste prix */
+.qz-q { text-align: center; }
+.qz-text { margin: 0; font-family: var(--f-display); font-size: clamp(1.25rem, 5.4vw, 1.6rem); line-height: 1.3; text-wrap: balance; }
+.qz-opts { display: flex; justify-content: center; gap: 10px; margin-top: 10px; } .qz-opts span { padding: 6px 14px; border-radius: 999px; background: var(--surface-2); font-weight: 700; font-size: .9rem; }
+.jp-card { display: grid; justify-items: center; gap: 4px; padding: 22px 18px; border-radius: 26px; background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+.jp-emoji { font-size: 3.4rem; line-height: 1; } .jp-card b { font-family: var(--f-display); font-weight: 400; font-size: 1.35rem; line-height: 1.25; text-wrap: balance; } .jp-card .small { color: var(--muted); }
+.jp-tries { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; } .jp-tries span { padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-weight: 700; font-size: .85rem; font-variant-numeric: tabular-nums; } .jp-tries .ok { background: color-mix(in srgb, #4DB37A 25%, var(--surface)); }
+.jp-price { margin: 0; text-align: center; font: 800 2.2rem/1 var(--f-body); color: var(--fg); }
 /* Contact */
 .ct-word { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
 .ct-word span { min-width: 2.1rem; padding: 8px 6px; border-radius: 12px; background: var(--c, #F2A93B); color: var(--on-c, #fff); font: 800 1.6rem/1 var(--f-body); text-align: center; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .15); animation: deal .35s ease both; }
@@ -1774,7 +1782,7 @@ const MODES = {
   etsi: { title: "Et si on… ?", desc: "Des scénarios à imaginer, des idées à vivre.", c: 5, glyph: "☁︎" },
   conte: { title: "Notre histoire sur mesure", desc: "Votre contexte, vos détails : une histoire à choix écrite pour vous, par l'IA.", c: 8, glyph: "✎" },
   epopee: { title: "L'épopée", desc: "Un jeu de rôle à deux : classes, statistiques, objets, combats et boss.", c: 7, glyph: "⚔" },
-  arcade: { title: "Arcade", desc: "Quatre mini-jeux rapides, à jouer côte à côte.", c: 7, glyph: "◎" },
+  arcade: { title: "Arcade", desc: "Huit mini-jeux rapides : Vrai ou faux, Plus ou moins, Le juste prix, Contact et bien d'autres.", c: 7, glyph: "◎" },
   contact: { title: "Contact", desc: "Yassen Jr. garde un mot secret : faites-vous deviner des mots pour lui arracher ses lettres.", c: 5, glyph: "✸" },
   recit: { title: "Il était une fois nous", desc: "Une histoire dont vous êtes les héros.", c: 8, glyph: "❦" },
   puzzle: { title: "Le puzzle de Yassen Jr.", desc: "Reconstituez, pièce par pièce, le portrait de votre compagnon de série.", c: 2, glyph: "◧" },
@@ -2031,8 +2039,10 @@ function cleanLive(v) {
   }
   if (s.kind === "arcade") {
     if (!own(ARCADE, s.game)) return null;
-    const list = { tp: TP, flags: FLAGS, onde: SPECTRA }[s.game];
+    const list = { tp: TP, flags: FLAGS, onde: SPECTRA, vf: VF, jp: JP }[s.game];
     if (list) s.deck = (s.deck || []).filter(n => Number.isInteger(n) && n >= 0 && n < list.length);
+    if (s.game === "pm") { s.deck = (s.deck || []).filter(n => Number.isInteger(n) && (n >= 0 && n < PM.length || n >= 1000 && n < 1000 + PM_PERSO.length)); s.th = toArr(s.th).map(Number); }
+    ["pa", "pb"].forEach(k => { if (k in s) s[k] = cNum(s[k], 0, 999, 0); });
     if (s.game === "synchro") s.words = (s.words || []).filter(w => Array.isArray(w) && w.length === 2 && w.every(x => typeof x === "string"));
   }
   if (s.kind === "story" && !(own(STORY, s.id) && own(STORY[s.id].nodes, s.node))) return null;
@@ -2889,7 +2899,7 @@ const PATHS = {
   sync: '<path d="M19.5 10.5A7.5 7.5 0 0 0 6 6.6L4.5 8"/><path d="M4.5 4v4h4"/><path d="M4.5 13.5A7.5 7.5 0 0 0 18 17.4l1.5-1.4"/><path d="M19.5 20v-4h-4"/>',
   puzzle: '<path d="M5 9h3.2a2 2 0 1 1 3.6 0H15v3.2a2 2 0 1 1 0 3.6V19H5z"/><path d="M15 9h4v10h-4"/>'
 };
-const ARC_ICON = { tp: "fork", flags: "flag", onde: "gauge", synchro: "sync" };
+const ARC_ICON = { tp: "fork", flags: "flag", onde: "gauge", synchro: "sync", vf: "star", pm: "map", jp: "cake", contact: "bubbles" };
 const MODE_ICON = { conte: "quill", epopee: "sword", questions: "bubbles", qui: "people", defis: "flag", histoire: "frame", etsi: "sparkles", surprise: "dice", arcade: "gamepad", recit: "book", puzzle: "puzzle", contact: "bubbles", plusou: "heart" };
 const ico = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name] || ""}</svg>`;
 const MODE_GROUPS = [["Se découvrir", ["questions", "plusou", "qui", "etsi"]], ["Vivre une histoire", ["conte", "epopee", "recit"]], ["Se souvenir", ["histoire", "puzzle"]], ["S'amuser", ["contact", "arcade", "defis"]]];
@@ -3843,7 +3853,318 @@ const SPECTRA = [
 ].map(s => s.split("|").map(fr));
 const SYNC = ["Un fruit", "Une ville", "Un animal", "Une série", "Un dessert", "Une appli", "Un pays", "Un emoji",
   "Un sport", "Un plat à se faire livrer", "Un chanteur ou une chanteuse", "Un super-héros", "Une fête", "Un jeu vidéo", "Un moyen de transport", "Une boisson"];
+/* ───── Vrai ou faux, Plus ou moins, Le juste prix : les contenus ─────
+   Des faits, des chiffres et des prix choisis pour être sûrs et stables. Les prix sont des repères moyens,
+   en France, autour de 2025-2026 : le juste prix accepte donc une marge. */
+// [affirmation, vrai ?, explication]
+const VF = [
+  ["La Grande Muraille de Chine est visible à l'œil nu depuis la Lune.", false, "Elle est longue, mais bien trop étroite : depuis la Lune, on ne distingue aucune construction humaine."],
+  ["Napoléon était particulièrement petit.", false, "Il mesurait environ 1,69 m, la taille moyenne de son époque. La légende vient de la caricature anglaise et d'une confusion entre pouces français et anglais."],
+  ["Les poissons rouges ont une mémoire de trois secondes.", false, "Des expériences montrent qu'ils se souviennent de choses pendant des semaines, voire des mois."],
+  ["La foudre ne frappe jamais deux fois au même endroit.", false, "L'Empire State Building est touché une vingtaine de fois par an."],
+  ["Les Vikings portaient des casques à cornes.", false, "Aucun casque à cornes n'a été retrouvé dans leurs tombes : l'image vient des costumes d'opéra du XIXe siècle."],
+  ["Sur Vénus, une journée dure plus longtemps qu'une année.", true, "Vénus met environ 243 jours terrestres à tourner sur elle-même, et 225 à faire le tour du Soleil."],
+  ["Le miel peut se conserver des milliers d'années.", true, "On a retrouvé du miel encore comestible dans des tombes égyptiennes."],
+  ["Les autruches enfouissent leur tête dans le sable quand elles ont peur.", false, "Elles s'aplatissent au sol ou s'enfuient. Vues de loin, la tête baissée donne l'illusion d'être enterrée."],
+  ["Cléopâtre a vécu plus près de l'invention de l'iPhone que de la construction de la grande pyramide de Gizeh.", true, "La pyramide date d'environ 2560 avant notre ère, Cléopâtre est morte en 30 avant notre ère : plus de 2 500 ans d'écart, contre environ 2 000 jusqu'à l'iPhone."],
+  ["La tour Eiffel peut grandir de plus de 10 cm en été.", true, "Le métal se dilate avec la chaleur : son sommet peut bouger d'une quinzaine de centimètres."],
+  ["Les chauves-souris sont aveugles.", false, "Elles voient, et certaines très bien. Beaucoup utilisent en plus l'écholocation pour chasser la nuit."],
+  ["Botaniquement, la banane est une baie, mais pas la fraise.", true, "Pour un botaniste, la fraise est un « faux fruit » couvert de petits fruits secs : les grains."],
+  ["Marie-Antoinette a dit : « Qu'ils mangent de la brioche ! »", false, "Rousseau attribue cette phrase à « une grande princesse » dans un texte écrit quand Marie-Antoinette était encore enfant, en Autriche."],
+  ["Le sang est bleu dans les veines.", false, "Il est toujours rouge, plus foncé quand il contient moins d'oxygène. Les veines paraissent bleues à travers la peau."],
+  ["On n'utilise que 10 % de son cerveau.", false, "L'imagerie montre que toutes les zones du cerveau servent, simplement pas toutes en même temps."],
+  ["Les empreintes digitales des koalas ressemblent beaucoup aux nôtres.", true, "Elles sont si proches des nôtres qu'il est difficile de les distinguer, même au microscope."],
+  ["Un éclair est plus chaud que la surface du Soleil.", true, "Un éclair peut atteindre environ 30 000 °C, contre environ 5 500 °C à la surface du Soleil."],
+  ["La guerre de Cent Ans a duré cent ans.", false, "Elle a duré 116 ans, de 1337 à 1453, avec de longues trêves."],
+  ["Les pieuvres ont trois cœurs.", true, "Deux cœurs envoient le sang vers les branchies, le troisième vers le reste du corps."],
+  ["Le français a été la langue de la cour d'Angleterre pendant plus de trois siècles.", true, "Depuis la conquête normande de 1066, la cour et l'administration anglaises ont parlé français jusqu'à la fin du Moyen Âge."],
+  ["Einstein était nul en maths à l'école.", false, "Il excellait en mathématiques. La légende viendrait d'une mauvaise lecture de ses bulletins suisses, notés à l'envers."],
+  ["Le Mont-Saint-Michel est en Bretagne.", false, "Il est en Normandie, à la frontière avec la Bretagne, et la rivière Couesnon sépare les deux."],
+  ["Telle qu'on la voit aujourd'hui, la Joconde n'a ni sourcils ni cils.", true, "Ils ont peut-être disparu avec le temps et les restaurations, mais à l'œil nu on n'en voit plus."],
+  ["Les flamants roses naissent roses.", false, "Ils naissent gris-blanc. Leur couleur vient des pigments des petites crevettes et algues qu'ils mangent."],
+  ["Christophe Colomb pensait que la Terre était plate.", false, "Les savants savaient depuis l'Antiquité qu'elle était ronde. Colomb s'est surtout trompé sur sa taille."],
+  ["Au Moyen Âge, on pensait que la Terre était plate.", false, "Les lettrés du Moyen Âge savaient qu'elle était ronde ; le mythe date surtout du XIXe siècle."],
+  ["L'eau parfaitement pure conduit très bien l'électricité.", false, "L'eau pure conduit très mal. Ce sont les sels dissous dans l'eau du robinet qui la rendent conductrice."],
+  ["Le Canada compte plus de lacs que tout le reste du monde réuni.", true, "On estime qu'il abrite plus de la moitié des lacs de la planète."],
+  ["L'Australie est plus large que la Lune.", true, "D'est en ouest, l'Australie mesure environ 4 000 km ; le diamètre de la Lune est d'environ 3 475 km."],
+  ["Une année-lumière est une durée.", false, "C'est une distance : celle que parcourt la lumière en un an, environ 9 500 milliards de kilomètres."],
+  ["La tomate est un fruit.", true, "Botaniquement, c'est un fruit, puisqu'elle contient les graines. En cuisine, on la traite comme un légume."],
+  ["La cacahuète est une noix.", false, "C'est une légumineuse, comme les pois et les lentilles, qui mûrit sous terre."],
+  ["Le corps humain contient assez de fer pour fabriquer un petit clou.", true, "Environ 3 à 4 grammes, surtout dans le sang."],
+  ["La Révolution française a commencé en 1789.", true, "La prise de la Bastille, le 14 juillet 1789, en est le symbole."],
+  ["Louis XIV a régné plus de 70 ans.", true, "72 ans, de 1643 à 1715 : le plus long règne de l'histoire de France."],
+  ["La guillotine a servi en France pour la dernière fois en 1977.", true, "La dernière exécution a eu lieu en septembre 1977 ; la peine de mort a été abolie en 1981."],
+  ["Les Françaises ont obtenu le droit de vote en 1944.", true, "Par une ordonnance d'avril 1944 ; elles ont voté pour la première fois en 1945."],
+  ["Jeanne d'Arc a été brûlée à Rouen.", true, "Le 30 mai 1431, sur la place du Vieux-Marché."],
+  ["Le Titanic a coulé pendant son premier voyage.", true, "En avril 1912, entre Southampton et New York."],
+  ["La tour Eiffel devait être démontée au bout de vingt ans.", true, "Elle a été sauvée notamment grâce à son utilité pour les transmissions radio."],
+  ["Les pyramides d'Égypte ont été construites par des esclaves.", false, "Les fouilles montrent des ouvriers organisés, nourris et soignés, logés près des chantiers."],
+  ["Le chocolat est dangereux pour les chiens.", true, "Il contient de la théobromine, que les chiens éliminent très mal."],
+  ["Les éléphants ont peur des souris.", false, "Rien de sérieux ne le montre : ils peuvent être surpris par un petit mouvement, comme n'importe quel animal."],
+  ["Les cheveux et les ongles continuent de pousser après la mort.", false, "C'est la peau qui se rétracte en séchant, ce qui donne cette impression."],
+  ["Le Sahara est le plus grand désert du monde.", false, "C'est le plus grand désert chaud. Le plus grand désert, c'est l'Antarctique."],
+  ["L'Everest est le sommet le plus éloigné du centre de la Terre.", false, "C'est le Chimborazo, en Équateur : la Terre est un peu renflée à l'équateur."],
+  ["Il y a plus d'arbres sur Terre que d'étoiles dans la Voie lactée.", true, "Environ 3 000 milliards d'arbres, contre quelques centaines de milliards d'étoiles."],
+  ["Les manchots vivent au pôle Nord.", false, "Ils vivent dans l'hémisphère Sud. Au pôle Nord, on trouve des ours polaires… mais pas de manchots."],
+  ["Sous leur fourrure blanche, les ours polaires ont la peau noire.", true, "Et leurs poils ne sont pas vraiment blancs : ils sont transparents et creux."],
+  ["Le Rubik's Cube a été inventé par un professeur d'architecture.", true, "Ernő Rubik, en Hongrie, en 1974, pour expliquer la géométrie à ses élèves."],
+  ["Le croissant est une invention française.", false, "Il s'inspire du kipferl autrichien, adapté par les boulangers parisiens au XIXe siècle."],
+  ["La baguette de pain est inscrite au patrimoine culturel immatériel de l'Unesco.", true, "Depuis 2022 : le savoir-faire artisanal et la culture de la baguette."],
+  ["Mozart a composé ses premières œuvres vers cinq ans.", true, "Il a écrit de petites pièces pour clavier dès cet âge."],
+  ["Beethoven était sourd quand il a composé sa Neuvième Symphonie.", true, "Lors de la première, en 1824, il a fallu le retourner vers le public pour qu'il voie les applaudissements."],
+  ["Van Gogh a vendu des centaines de tableaux de son vivant.", false, "Une seule vente est certaine : La Vigne rouge, en 1890."],
+  ["Les dinosaures et les premiers humains ont vécu à la même époque.", false, "Les grands dinosaures ont disparu il y a environ 66 millions d'années, bien avant l'arrivée des humains."],
+  ["Le T. rex a vécu plus près de nous dans le temps que du stégosaure.", true, "Le stégosaure vivait il y a environ 150 millions d'années, le T. rex il y a environ 68 millions."],
+  ["Les requins existaient avant les arbres.", true, "Les premiers requins ont plus de 400 millions d'années ; les premiers arbres sont un peu plus récents."],
+  ["Le Japon compte plus de 6 000 îles.", true, "Il en compte même plus de 14 000, selon un recensement de 2023."],
+  ["Venise est bâtie sur des millions de pieux de bois.", true, "Enfoncés dans la lagune, ils sont protégés de la pourriture par l'absence d'oxygène."],
+  ["Le son va plus vite dans l'eau que dans l'air.", true, "Environ quatre fois plus vite : près de 1 500 m par seconde."],
+  ["Sous leur pelage, les zèbres ont la peau noire.", true, "Leurs rayures blanches sont des zones où les poils ne sont pas pigmentés."],
+  ["Les dauphins dorment avec un œil ouvert.", true, "Une moitié de leur cerveau dort pendant que l'autre veille, pour respirer et surveiller."],
+  ["La statue de la Liberté a été offerte par la France aux États-Unis.", true, "Inaugurée à New York en 1886, avec une structure intérieure conçue par Gustave Eiffel."],
+  ["À l'origine, la statue de la Liberté était couleur cuivre.", true, "Elle a verdi en quelques décennies, à cause de l'oxydation du cuivre."],
+  ["Le Louvre était à l'origine une forteresse.", true, "Construite par Philippe Auguste à la fin du XIIe siècle pour protéger Paris."],
+  ["La Marseillaise a été écrite à Marseille.", false, "Elle a été écrite à Strasbourg en 1792 par Rouget de Lisle. Elle doit son nom aux soldats marseillais qui la chantaient en montant à Paris."],
+  ["La France est le pays le plus visité au monde.", true, "Depuis des décennies, elle accueille chaque année le plus de touristes étrangers."],
+  ["Paris s'appelait autrefois Lutèce.", true, "C'était le nom de la ville à l'époque gallo-romaine."],
+  ["Un TGV a déjà roulé à plus de 570 km/h.", true, "Record du monde sur rail : 574,8 km/h, en 2007."],
+  ["Manger des carottes permet de voir dans le noir.", false, "C'est une rumeur lancée par les Britanniques pendant la Seconde Guerre mondiale pour cacher l'usage du radar."],
+  ["Les escargots ont des dents.", true, "Des milliers de minuscules dents, alignées sur une sorte de langue râpeuse."],
+  ["Le cerveau ne ressent pas la douleur.", true, "Le tissu cérébral n'a pas de récepteurs de la douleur ; c'est ce qui permet certaines opérations à patient éveillé."],
+  ["Réveiller un somnambule est dangereux pour lui.", false, "Il risque surtout d'être désorienté. Le plus sûr reste de le raccompagner doucement au lit."],
+  ["On perd la plus grande partie de sa chaleur par la tête.", false, "La tête ne perd pas plus de chaleur que n'importe quelle autre partie du corps découverte."],
+  ["La première projection publique et payante d'un film a eu lieu à Paris, en 1895.", true, "Organisée par les frères Lumière le 28 décembre 1895."],
+  ["Victor Hugo repose au Panthéon.", true, "Depuis 1885, après des funérailles suivies par une foule immense."],
+  ["Le château de Versailles compte plus de 2 000 fenêtres.", true, "Plus de 2 100 fenêtres, et environ 700 pièces."],
+  ["Les Jeux olympiques modernes ont été relancés par un Français.", true, "Pierre de Coubertin, avec les premiers Jeux d'Athènes en 1896."],
+  ["La Terre est plus proche du Soleil en janvier qu'en juillet.", true, "Elle passe au plus près du Soleil début janvier. Les saisons viennent de l'inclinaison de la Terre, pas de la distance."],
+  ["Les girafes dorment souvent moins de deux heures par jour.", true, "Souvent par petites siestes de quelques minutes, parfois debout."],
+  ["Les humains n'ont que cinq sens.", false, "Il faut au moins ajouter l'équilibre et la proprioception, le sens qui permet de savoir où sont nos membres."],
+  ["Le Petit Prince a été écrit par Antoine de Saint-Exupéry.", true, "Publié en 1943, c'est l'un des livres les plus traduits au monde."],
+  ["Les kangourous ont du mal à reculer.", true, "Leur grosse queue et leurs pattes arrière puissantes sont faites pour avancer."],
+  ["Les ours polaires et les manchots peuvent se croiser dans la nature.", false, "Les uns vivent autour du pôle Nord, les autres dans l'hémisphère Sud : ils ne se rencontrent qu'au zoo."],
+  ["La Joconde a été volée au Louvre en 1911.", true, "Par Vincenzo Peruggia, un ouvrier italien. Elle n'a été retrouvée qu'en 1913."],
+  ["Le Mur de Berlin est tombé en 1989.", true, "Dans la nuit du 9 au 10 novembre 1989."],
+  ["La Lune s'éloigne lentement de la Terre.", true, "D'environ 3,8 cm par an."],
+  ["Les abeilles meurent toutes après avoir piqué.", false, "Seules les ouvrières qui piquent un mammifère y laissent leur dard. Les reines et les bourdons peuvent piquer plusieurs fois."],
+  ["Les lapins ne mangent que des carottes.", false, "Ils mangent surtout du foin et de l'herbe ; la carotte, très sucrée, est une friandise occasionnelle."],
+  ["Il neige parfois dans le Sahara.", true, "Rarement, mais c'est arrivé plusieurs fois, notamment en Algérie."]
+];
+// [ce qu'on mesure, valeur, unité, précision affichée à la révélation]
+const PM = [
+  ["La hauteur de la tour Eiffel, antennes comprises", 330, "m", "Environ 330 m, dont une vingtaine pour les antennes."],
+  ["La hauteur de la statue de la Liberté, socle compris", 93, "m", "93 m du sol à la torche."],
+  ["L'altitude du mont Blanc", 4805, "m", "Environ 4 805 m : elle varie un peu selon l'épaisseur de neige au sommet."],
+  ["L'altitude de l'Everest", 8849, "m", "8 849 m, selon la mesure officielle de 2020."],
+  ["La distance moyenne entre la Terre et la Lune", 384400, "km", "Environ 384 400 km."],
+  ["Le nombre d'os d'un adulte", 206, "os", "206 chez l'adulte ; un bébé en a davantage, qui se soudent en grandissant."],
+  ["Le nombre de battements du cœur en une journée", 100000, "battements", "Environ 100 000 battements par jour, au repos."],
+  ["Le nombre de dents d'un adulte, dents de sagesse comprises", 32, "dents", "32 dents."],
+  ["La température à la surface du Soleil", 5500, "°C", "Environ 5 500 °C."],
+  ["L'âge de l'Univers", 13.8, "milliards d'années", "Environ 13,8 milliards d'années."],
+  ["Le nombre de pays membres de l'ONU", 193, "pays", "193 États membres."],
+  ["Le nombre de touches d'un piano classique", 88, "touches", "88 touches : 52 blanches et 36 noires."],
+  ["La hauteur de la Burj Khalifa, à Dubaï", 828, "m", "828 m : la plus haute tour du monde."],
+  ["La longueur d'un marathon", 42.195, "km", "42,195 km."],
+  ["Le record du monde du 100 m, par Usain Bolt", 9.58, "secondes", "9,58 secondes, en 2009."],
+  ["Le nombre de cases d'un échiquier", 64, "cases", "64 cases, sur 8 lignes de 8."],
+  ["Le nombre de cartes d'un jeu de tarot", 78, "cartes", "78 cartes."],
+  ["La longueur du tunnel sous la Manche", 50, "km", "Environ 50 km, dont 38 sous la mer."],
+  ["Le nombre de marches jusqu'au sommet de la tour Eiffel", 1665, "marches", "1 665 marches, mais le public ne peut monter à pied que jusqu'au 2e étage."],
+  ["La vitesse de pointe d'un guépard", 110, "km/h", "Environ 110 km/h, sur de courtes distances."],
+  ["La vitesse du record du monde sur rail, en TGV", 574.8, "km/h", "574,8 km/h, en 2007."],
+  ["La profondeur de la fosse des Mariannes", 11000, "m", "Près de 11 000 m : le point le plus profond des océans."],
+  ["Le nombre de langues parlées dans le monde", 7000, "langues", "Environ 7 000 langues vivantes."],
+  ["La quantité de sang dans le corps d'un adulte", 5, "litres", "Environ 5 litres."],
+  ["Le nombre de cheveux sur une tête", 100000, "cheveux", "Environ 100 000, un peu plus chez les blonds."],
+  ["La vitesse du son dans l'air", 1235, "km/h", "Environ 1 235 km/h, soit 343 mètres par seconde."],
+  ["La hauteur d'une girafe adulte", 5.5, "m", "Jusqu'à environ 5,5 m pour un grand mâle."],
+  ["La durée de sommeil quotidienne d'un koala", 20, "heures", "Entre 18 et 22 heures par jour : digérer l'eucalyptus fatigue beaucoup."],
+  ["Le poids d'une baleine bleue adulte", 150, "tonnes", "Jusqu'à environ 150 tonnes : le plus gros animal ayant jamais existé."],
+  ["La vitesse de croisière d'un avion de ligne", 900, "km/h", "Environ 900 km/h."],
+  ["La hauteur des tours de Notre-Dame de Paris", 69, "m", "69 m."],
+  ["La population de la France", 68, "millions d'habitants", "Environ 68 millions d'habitants."],
+  ["La population mondiale", 8.2, "milliards d'habitants", "Environ 8,2 milliards en 2025."],
+  ["La superficie de Paris, bois compris", 105, "km²", "Environ 105 km²."],
+  ["Le nombre de départements français", 101, "départements", "101 départements, dont 5 en outre-mer."],
+  ["La durée d'une grossesse humaine", 40, "semaines", "Environ 40 semaines, comptées depuis les dernières règles."],
+  ["La durée de la gestation d'un éléphant", 22, "mois", "Environ 22 mois : la plus longue des mammifères terrestres."],
+  ["Le nombre de muscles du corps humain", 600, "muscles", "Plus de 600 muscles."],
+  ["La longueur de la Seine", 777, "km", "Environ 777 km, de la Bourgogne à la Manche."],
+  ["Le nombre de fenêtres du château de Versailles", 2153, "fenêtres", "2 153 fenêtres."],
+  ["Le nombre d'étoiles sur le drapeau des États-Unis", 50, "étoiles", "Une par État : 50."],
+  ["La température d'ébullition de l'eau au sommet de l'Everest", 70, "°C", "Environ 70 °C : l'air y est beaucoup moins dense."],
+  ["La longueur totale de la Grande Muraille de Chine", 21000, "km", "Environ 21 000 km, toutes ses parties comprises."],
+  ["La vitesse de la lumière", 300000, "km/s", "Environ 300 000 km par seconde."],
+  ["La durée de vie d'une tortue géante des Galápagos", 100, "ans", "Plus de 100 ans."],
+  ["Le nombre d'heures que passe un chat à dormir chaque jour", 15, "heures", "Environ 15 heures par jour, souvent davantage."],
+  ["La longueur du Nil", 6650, "km", "Environ 6 650 km."]
+];
+// [emoji, objet ou activité, prix moyen en euros, précision]
+const JP = [
+  ["🥖", "Une baguette de pain", 1.1, "Environ 1,10 €, un peu plus en ville."],
+  ["🥐", "Un croissant en boulangerie", 1.3, "Environ 1,30 €."],
+  ["☕", "Un expresso au comptoir", 1.7, "Environ 1,70 €, souvent plus à Paris."],
+  ["🎬", "Une place de cinéma, plein tarif", 12, "Environ 12 €, hors tarifs réduits et abonnements."],
+  ["🍔", "Un Big Mac seul, en France", 5.6, "Environ 5,60 €."],
+  ["🍫", "Un pot de pâte à tartiner de 750 g", 6, "Environ 6 € pour la marque la plus connue."],
+  ["🥛", "Un litre de lait demi-écrémé", 1, "Environ 1 €."],
+  ["🧈", "Une plaquette de beurre de 250 g", 2.6, "Environ 2,60 €."],
+  ["🍝", "Un paquet de pâtes de 500 g, de marque", 1.4, "Environ 1,40 €."],
+  ["🍌", "Un kilo de bananes", 2, "Environ 2 €."],
+  ["🥚", "Une boîte de 12 œufs de poules élevées en plein air", 4, "Environ 4 €."],
+  ["🍕", "Une pizza margherita en pizzeria", 11, "Environ 11 €."],
+  ["🎲", "Un Monopoly classique", 30, "Environ 30 €."],
+  ["🃏", "Un jeu de 54 cartes", 4, "Environ 4 €."],
+  ["🌹", "Un bouquet de 12 roses chez un fleuriste", 40, "Environ 40 €, beaucoup plus à la Saint-Valentin."],
+  ["🪥", "Une brosse à dents manuelle", 3, "Environ 3 €."],
+  ["💧", "Une bouteille d'eau de source de 1,5 litre", 0.3, "Environ 30 centimes pour les marques les moins chères."],
+  ["🍎", "Un kilo de pommes", 2.5, "Environ 2,50 €."],
+  ["🥑", "Un avocat", 1, "Environ 1 € pièce."],
+  ["🥔", "Un sachet de chips de 150 g", 2, "Environ 2 €."],
+  ["🍫", "Une tablette de chocolat noir de 100 g, de marque", 2.2, "Environ 2,20 €."],
+  ["🍓", "Une barquette de 500 g de fraises, en saison", 4, "Environ 4 €."],
+  ["🧩", "Un puzzle de 1 000 pièces", 15, "Environ 15 €."],
+  ["📖", "Un roman en format poche", 8, "Environ 8 €."],
+  ["💿", "Un album en vinyle neuf", 28, "Environ 28 €."],
+  ["🚲", "Un vélo de ville d'entrée de gamme", 200, "Environ 200 €."],
+  ["🛴", "Une trottinette électrique d'entrée de gamme", 300, "Environ 300 €."],
+  ["🫖", "Une bouilloire électrique", 25, "Environ 25 €."],
+  ["🍞", "Un grille-pain", 25, "Environ 25 €."],
+  ["🛏️", "Un oreiller", 20, "Environ 20 €."],
+  ["☂️", "Un parapluie", 15, "Environ 15 €."],
+  ["👟", "Une paire de baskets en toile montantes, de la marque la plus célèbre", 80, "Environ 80 €."],
+  ["👖", "Un jean de la marque la plus connue, modèle classique", 110, "Environ 110 €."],
+  ["☕", "Une tasse en céramique", 8, "Environ 8 €."],
+  ["🪴", "Une petite plante verte en pot", 10, "Environ 10 €."],
+  ["🍯", "Un pot de miel de 500 g", 7, "Environ 7 €."],
+  ["🍾", "Une bouteille de champagne d'une grande maison", 45, "Environ 45 €."],
+  ["🍷", "Une bouteille de vin rouge de tous les jours, en supermarché", 6, "Environ 6 €."],
+  ["☕", "Un paquet de café moulu de 250 g, de marque", 3.5, "Environ 3,50 €."],
+  ["🍦", "Une boule de glace dans un cornet, chez un glacier", 3, "Environ 3 €."],
+  ["🥞", "Une crêpe au sucre achetée dans la rue", 3, "Environ 3 €."],
+  ["🥙", "Un kebab-frites", 9, "Environ 9 €."],
+  ["🏊", "Une entrée à la piscine municipale, adulte", 4, "Environ 4 €."],
+  ["🧺", "Une machine à laver d'entrée de gamme", 350, "Environ 350 €."],
+  ["🍬", "Un grand sachet de bonbons de 300 g", 2.5, "Environ 2,50 €."],
+  ["🍉", "Une pastèque entière, en été", 5, "Environ 5 €."],
+  ["🎂", "Un fraisier de six parts en pâtisserie", 25, "Environ 25 €."],
+  ["🎧", "Des écouteurs filaires simples", 15, "Environ 15 €."]
+];
+
+// Vos propres chiffres, glissés parmi les questions de « Plus ou moins » (numéros 1000 et plus).
+const PM_PERSO = [
+  ["Le nombre de souvenirs gardés dans votre album", () => Store.cols.capsule.filter(x => x.kind === "souvenir").length, "souvenirs", "C'est ce que contient votre album aujourd'hui."],
+  ["Le nombre de petits mots que vous vous êtes laissés dans l'appli", () => Store.cols.capsule.filter(x => x.kind === "mot").length, "petits mots", "Et chacun compte."],
+  ["Le nombre de jours passés ensemble dans l'appli", () => Jeu.days(), "jours", "Yassen Jr. les a tous comptés."],
+  ["Le nombre de cœurs dans votre cagnotte", () => Jeu.hearts(), "cœurs", "Votre cagnotte commune, en ce moment."]
+];
+const pmItem = n => (n >= 1000 ? (p => p && [p[0], p[1](), p[2], p[3]])(PM_PERSO[n - 1000]) : PM[n]) || ["", 0, "", ""];
+const qzNum = v => (+v).toLocaleString("fr-FR", { maximumFractionDigits: 3 });
+const qzEur = v => (+v).toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: +v % 1 ? 2 : 0 });
+// Un seuil « plus ou moins » assez loin de la vraie valeur pour qu'il y ait une bonne réponse, arrondi joliment.
+function qzTh(v) {
+  for (let k = 0; k < 20; k++) {
+    const f = Math.random() < 0.5 ? 0.5 + Math.random() * 0.3 : 1.25 + Math.random() * 0.55, x = v * f;
+    const t = x >= 1000 ? +x.toPrecision(2) : x >= 100 ? Math.round(x / 10) * 10 : x >= 10 ? Math.round(x) : Math.round(x * 10) / 10;
+    if (t > 0 && Math.abs(t - v) / v >= 0.15) return t;
+  }
+  return Math.round(v * 2);
+}
+// Le paquet d'une partie. « Plus ou moins » glisse aussi vos chiffres à vous, s'ils sont assez grands.
+function qzDeck(game) {
+  if (game === "vf") return shuffle(VF.map((_, i) => i)).slice(0, 10);
+  if (game === "jp") return shuffle(JP.map((_, i) => i)).slice(0, 6);
+  const mine = PM_PERSO.map((p, i) => 1000 + i).filter(n => pmItem(n)[1] >= 3), d = shuffle(PM.map((_, i) => i)).slice(0, 10 - Math.min(2, mine.length));
+  shuffle(mine).slice(0, 2).forEach(n => d.splice(Math.floor(Math.random() * (d.length + 1)), 0, n));
+  return d;
+}
+// La question et sa bonne réponse (0 ou 1) pour « Vrai ou faux » (0 = vrai) et « Plus ou moins » (0 = plus).
+function qzQuestion(game, n, th) {
+  if (game === "vf") { const f = VF[n] || ["", true, ""]; return { text: f[0], opts: ["Vrai", "Faux"], good: f[1] ? 0 : 1, why: f[2], truth: f[1] ? "Vrai !" : "Faux !" }; }
+  const p = pmItem(n);
+  return { text: `${p[0]} : plus ou moins que ${qzNum(th)} ${p[2]} ?`, opts: ["Plus", "Moins"], good: p[1] > th ? 0 : 1, why: p[3], truth: `${qzNum(p[1])} ${p[2]}` };
+}
+const QZ_YJ = {
+  both: ["Vous deux, vous êtes des encyclopédies ambulantes.", "Bravo ! Je note ça dans mon carnet des génies.", "Deux bonnes réponses : j'en fais des étincelles."],
+  one: ["Un sur deux… le suspense continue !", "Hihi, il y en a un·e qui va devoir expliquer son raisonnement.", "Pas mal ! Mais pas parfait."],
+  none: ["Personne ? Même moi je le savais ! Enfin… presque.", "Raté pour vous deux. On dirait que la réponse était bien cachée.", "*se cache derrière ses petites mains* Ouille."],
+  plus: ["C'est plus !", "Plus ! Beaucoup plus… ou juste un peu ?", "C'est plus, voyons !"],
+  moins: ["C'est moins !", "Moins ! Vous vous emballez.", "C'est moins, voyons !"]
+};
+const qzSay = (k, n) => QZ_YJ[k][Math.abs(n) % QZ_YJ[k].length];
+const qzPrice = t => { const v = parseFloat(String(t || "").replace(/\s/g, "").replace(",", ".").replace(/[^0-9.]/g, "")); return Number.isFinite(v) && v > 0 ? v : 0; };
+const qzClose = (g, v) => Math.abs(g - v) / v <= 0.1;
+
+/* Sur ce téléphone */
+function qzLocal(A, head, endScr, countHtml) {
+  const col = cvar(7), total = A.deck.length, yj = t => `<div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(t)}</p></div>`;
+  if (A.game === "jp") {
+    if (A.phase === "end") { const max = total * 7; return endScr(`${A.pts} / ${max}`, A.pts >= max * 0.6 ? "Vous avez l'œil (et le porte-monnaie) aiguisé !" : A.pts >= max * 0.3 ? "Pas mal du tout. Faites les courses ensemble, vous progresserez." : "Hihi, vous vivez au-dessus… ou en dessous des prix !"); }
+    const it = JP[A.deck[A.i]] || ["", "", 1, ""], tries = A.tries || [];
+    const card = `<div class="jp-card"><span class="jp-emoji" aria-hidden="true">${it[0]}</span><b>${esc(it[1])}</b><span class="small">Prix moyen en France, environ</span></div>`;
+    const chips = tries.length ? `<div class="jp-tries">${tries.map(t => `<span class="${t.r}">${esc(qzEur(t.v))} ${t.r === "ok" ? "✓" : t.r === "plus" ? "↑" : "↓"}</span>`).join("")}</div>` : "";
+    if (A.phase === "found" || A.phase === "miss") return head + card + chips
+      + `<p class="verdict" style="${col}">${A.phase === "found" ? `Le juste prix, en ${tries.length} essai${tries.length > 1 ? "s" : ""} !` : "Raté, Yassen garde le secret…"}</p><p class="jp-price">${esc(qzEur(it[2]))}</p><p class="small muted" style="text-align:center">${esc(it[3])}</p>`
+      + yj(A.phase === "found" ? `+${Math.max(1, 8 - tries.length)} point${8 - tries.length > 1 ? "s" : ""}. Bien vu, vous deux !` : "Personne ne gagne cette fois. Au suivant !")
+      + `<button class="btn wide c" style="${col}" data-a="jp-next">${A.i + 1 >= total ? "Voir le score" : "Objet suivant"}</button>`;
+    const last = tries[tries.length - 1];
+    return head + card + chips + (last ? yj(qzSay(last.r, tries.length)) : yj("À vous ! Proposez un prix, je vous dis si c'est plus ou moins. Sept essais maximum."))
+      + `<div class="field"><label for="jp-in">Votre prix (en euros, mettez-vous d'accord à voix haute)</label><input id="jp-in" data-d inputmode="decimal" autocomplete="off" value="${dv("jp-in", "")}" placeholder="Par exemple : 12,50"></div>
+      <button class="btn wide c" style="${col}" data-a="jp-try">Proposer ce prix</button><p class="small muted" style="text-align:center">${7 - tries.length} essai${7 - tries.length > 1 ? "s" : ""} restant${7 - tries.length > 1 ? "s" : ""} · à moins de 10 %, c'est gagné</p>`;
+  }
+  // Vrai ou faux, Plus ou moins
+  if (A.phase === "end") {
+    const sa = A.pa || 0, sb = A.pb || 0;
+    return endScr(`${sa} – ${sb}`, `${nm("a")} : ${sa} bonne${sa > 1 ? "s" : ""} réponse${sa > 1 ? "s" : ""}, ${nm("b")} : ${sb}. ${sa === sb ? "Égalité parfaite !" : `Victoire de ${nm(sa > sb ? "a" : "b")} !`}`);
+  }
+  const Q = qzQuestion(A.game, A.deck[A.i], (A.th || [])[A.i]);
+  const box = `<div class="panel qz-q" style="${col}"><p class="qz-text">${esc(Q.text)}</p><div class="qz-opts">${Q.opts.map(o => `<span>${o}</span>`).join("")}</div></div>`;
+  if (A.phase === "count") return head + box + countHtml;
+  if (A.phase === "reveal") {
+    const ok = A.ok || {};
+    return head + box + `<p class="verdict" style="${col}">${esc(Q.truth)}</p><p class="small" style="text-align:center">${esc(Q.why)}</p>
+      <p class="lbl" style="text-align:center">Qui avait bon ?</p><div class="chips" style="justify-content:center">${["a", "b"].map(k => `<button class="chip" aria-pressed="${!!ok[k]}" data-a="qz-ok" data-k="${k}">${esc(nm(k))} ✓</button>`).join("")}</div>
+      <button class="btn wide c" style="${col}" data-a="qz-next">${A.i + 1 >= total ? "Voir le score" : "Question suivante"}</button>`;
+  }
+  return head + box + `<p class="small muted" style="text-align:center">${esc(fr("Réfléchissez chacun·e de votre côté, sans rien dire."))}</p><button class="btn wide c" style="${col}" data-a="arc-count" data-v="reveal">3, 2, 1… répondez ensemble</button><div class="joker"><button class="link" data-a="arc-next">Passer</button></div>`;
+}
+
+/* À distance : chacun·e répond sur son téléphone */
+function qzLive(L, me, head, endScr) {
+  const col = cvar(7), ans = L.ans || {}, o = other(me), deck = L.deck || [], total = deck.length;
+  const yj = t => `<div class="ct-yj small-yj"><span aria-hidden="true">${YJ_MINI}</span><p>${esc(t)}</p></div>`, sa = +L.pa || 0, sb = +L.pb || 0;
+  const score = `<p class="small muted" style="text-align:center">${esc(nm("a"))} ${sa} – ${sb} ${esc(nm("b"))} · ${Math.min(L.i + 1, total)} sur ${total}</p>`;
+  if (L.ended) return endScr(`${sa} – ${sb}`, sa === sb ? "Égalité parfaite, même à distance !" : `Victoire de ${nm(sa > sb ? "a" : "b")} !`);
+  if (L.game === "jp") {
+    const it = JP[deck[L.i]] || ["", "", 1, ""];
+    const card = `<div class="jp-card"><span class="jp-emoji" aria-hidden="true">${it[0]}</span><b>${esc(it[1])}</b><span class="small">Prix moyen en France, environ</span></div>`;
+    if (ans[me] == null) return head + card + `<div class="field"><label for="jp-lv">Ton prix, en secret (en euros)</label><input id="jp-lv" data-d inputmode="decimal" autocomplete="off" value="${dv("jp-lv", "")}" placeholder="Par exemple : 12,50"></div><button class="btn wide c" style="${col}" data-a="lv-jp">Envoyer mon prix</button>` + score;
+    if (ans[o] == null) return head + card + liveSent + liveWaiting(o, false) + score;
+    const g = { a: qzPrice(ans.a), b: qzPrice(ans.b) }, d = k => Math.abs(g[k] - it[2]), win = d("a") === d("b") ? "" : d("a") < d("b") ? "a" : "b";
+    return head + card + `<div class="reveal" style="${col}">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))}</b><p class="pick">${esc(qzEur(g[k]))}${qzClose(g[k], it[2]) ? " 🎯" : ""}</p></div>`).join("")}</div>
+      <p class="jp-price">${esc(qzEur(it[2]))}</p><p class="small muted" style="text-align:center">${esc(it[3])}</p>
+      <p class="verdict" style="${col}">${win ? `${esc(nm(win))} est plus près !` : "Exactement aussi près l'un·e que l'autre !"}</p>` + score
+      + `<button class="btn wide" data-a="lv-qz-next">${L.i + 1 >= total ? "Voir le score" : "Objet suivant"}</button>`;
+  }
+  const Q = qzQuestion(L.game, deck[L.i], (L.th || [])[L.i]);
+  const box = `<div class="panel qz-q" style="${col}"><p class="qz-text">${esc(Q.text)}</p></div>`;
+  if (ans[me] == null) return head + box + `<div class="pickers">${Q.opts.map((t, i) => `<button class="btn c" style="${cvar(i ? 1 : 3)}" data-a="lv-pick" data-k="${me}" data-v="${i}">${t}</button>`).join("")}</div>` + score;
+  if (ans[o] == null) return head + box + liveSent + liveWaiting(o, false) + score;
+  const right = k => +ans[k] === Q.good, n = (right("a") ? 1 : 0) + (right("b") ? 1 : 0);
+  return head + box + `<p class="verdict" style="${col}">${esc(Q.truth)}</p><p class="small" style="text-align:center">${esc(Q.why)}</p>
+    <div class="reveal" style="${col}">${["a", "b"].map(k => `<div class="rv"><b>${esc(nm(k))}</b><p class="pick">${Q.opts[+ans[k]]} ${right(k) ? "✓" : "✗"}</p></div>`).join("")}</div>`
+    + yj(qzSay(n === 2 ? "both" : n ? "one" : "none", L.i)) + score + `<button class="btn wide" data-a="lv-qz-next">${L.i + 1 >= total ? "Voir le score" : "Question suivante"}</button>`;
+}
+
 const ARCADE = {
+  vf: { title: "Vrai ou faux ?", glyph: "✓", desc: "Idées reçues, curiosités et faits historiques : démêlez le vrai du faux.",
+    rules: ["Une affirmation s'affiche. Chacun·e se fait son avis, sans rien dire.", "Lancez le compte à rebours : à « Dites-le ! », annoncez « vrai » ou « faux » en même temps.", "La réponse s'affiche, avec son explication. Touchez le prénom de celles et ceux qui avaient bon.", "Dix affirmations par partie. À la fin, le score de chacun·e."] },
+  pm: { title: "Plus ou moins", glyph: "↕", desc: "Des chiffres sur le monde… et sur vous deux. Plus ou moins ?",
+    rules: ["Un chiffre est caché : la hauteur d'une tour, la vitesse d'un animal… ou un chiffre de votre vie dans l'appli.", "La question : plus ou moins que la valeur proposée ? Chacun·e réfléchit en silence.", "À « Dites-le ! », annoncez « plus » ou « moins » en même temps, puis découvrez le vrai chiffre.", "Dix questions par partie, et le score de chacun·e."] },
+  jp: { title: "Le juste prix", glyph: "€", desc: "Yassen Jr. présente : trouvez le prix des objets et sorties du quotidien.",
+    rules: ["Un objet ou une activité s'affiche, avec son prix moyen en France caché.", "Mettez-vous d'accord sur un prix et proposez-le : Yassen répond « c'est plus ! » ou « c'est moins ! ».", "À moins de 10 % du prix, c'est gagné. Sept essais par objet ; moins il en faut, plus vous marquez de points.", "Six objets par partie. Les prix sont des repères moyens : ils varient selon les magasins et les villes."] },
+  contact: { title: "Contact", glyph: "✸", desc: "Yassen Jr. garde un mot secret : faites-vous deviner des mots pour lui arracher ses lettres.", rules: [] },
   tp: { title: "Tu préfères ?", glyph: "⇋", desc: "Deux options, un compte à rebours, et vous répondez en même temps.",
     rules: ["Deux options s'affichent. Chacun choisit dans sa tête, sans rien dire.",
       "Lancez le compte à rebours : à « Dites-le ! », annoncez votre choix en même temps, à voix haute.",
@@ -3873,6 +4194,8 @@ function startArc(game) {
   else if (game === "flags") { A.deck = shuffle(FLAGS.map((_, i) => i)).slice(0, 10); A.phase = "show"; }
   else if (game === "onde") { A.deck = shuffle(SPECTRA.map((_, i) => i)).slice(0, 6); ondeRound(A); }
   else if (game === "synchro") { A.prompt = pickOne(SYNC); A.round = 1; A.phase = "think"; }
+  else if (game === "vf" || game === "pm") { A.deck = qzDeck(game); if (game === "pm") A.th = A.deck.map(n => qzTh(pmItem(n)[1])); A.pa = 0; A.pb = 0; A.ok = {}; A.phase = "show"; }
+  else if (game === "jp") { A.deck = qzDeck("jp"); A.tries = []; A.pts = 0; A.phase = "guess"; }
   A.start = A.phase; A.phase = "rules";
   S.arc = A;
 }
@@ -3897,7 +4220,7 @@ const curtainHtml = (col, pre, who, sub, act) => `<section class="curtain" style
 function arcadeView() {
   const A = S.arc, col = cvar(7);
   if (!A) return `${layerHead("")}
-    <section class="setup-hero" style="${col}"><span class="g" aria-hidden="true">${ico("gamepad")}</span><h1>Arcade</h1><p>${esc(fr("Quatre mini-jeux rapides, à jouer côte à côte. Ici, on gagne ensemble ou on rit ensemble."))}</p></section>
+    <section class="setup-hero" style="${col}"><span class="g" aria-hidden="true">${ico("gamepad")}</span><h1>Arcade</h1><p>${esc(fr("Huit mini-jeux rapides, côte à côte ou à distance. Ici, on gagne ensemble ou on rit ensemble."))}</p></section>
     ${Store.backend === "shared" ? `<div class="stack"><h2 class="sec">Où jouez-vous ?</h2><div class="chips"><button class="chip" aria-pressed="${!S.arcRemote}" data-a="arc-where" data-v="">Sur ce téléphone</button><button class="chip" aria-pressed="${!!S.arcRemote}" data-a="arc-where" data-v="1">À distance, chacun sur son téléphone</button></div></div>` : ""}
     <div class="list" style="${col}">${Object.entries(ARCADE).map(([k, g]) => `<button class="mode-row" data-a="arc-start" data-g="${k}"><span class="icon-tile">${ico(ARC_ICON[k])}</span><span class="mode-txt"><b>${esc(fr(g.title))}</b><span>${esc(fr(g.desc))}</span></span><span class="chev" aria-hidden="true">›</span></button>`).join("")}</div>`;
   const G = ARCADE[A.game], total = A.deck ? A.deck.length : 0;
@@ -3911,6 +4234,7 @@ function arcadeView() {
   const countHtml = `<p class="count" style="${col}" aria-live="assertive">${A.count > 0 ? A.count : fr("Dites-le !")}</p>`;
   if (A.phase === "rules") return head + rulesHtml(G.rules) + `<button class="btn wide c" style="${col}" data-a="arc-begin">C'est parti</button>`;
 
+  if (A.game === "vf" || A.game === "pm" || A.game === "jp") return qzLocal(A, head, endScr, countHtml);
   if (A.game === "tp" || A.game === "flags") {
     if (A.phase === "end") return endScr("C'était la dernière !", "Un choix vous a surpris ? C'est le bon moment pour en reparler.");
     const q = A.game === "tp"
@@ -5433,6 +5757,9 @@ function liveCardsView(L, me, head) {
 
 /* Arcade */
 const ARC_REMOTE_RULES = {
+  vf: ["Une affirmation s'affiche sur vos deux téléphones.", "Chacun·e répond « vrai » ou « faux » de son côté.", "Les deux réponses apparaissent, avec la vraie réponse et son explication.", "Dix affirmations : un point par bonne réponse."],
+  pm: ["Un chiffre est caché : plus ou moins que la valeur proposée ?", "Chacun·e répond de son côté.", "Le vrai chiffre apparaît, avec vos deux réponses.", "Dix questions : un point par bonne réponse."],
+  jp: ["Un objet ou une activité s'affiche. Chacun·e écrit son prix, en secret.", "Les deux prix apparaissent avec le prix moyen en France.", "Le plus près gagne un point, et à moins de 10 % on en gagne un de plus.", "Huit objets par partie. Les prix sont des repères moyens."],
   tp: ["Deux options s'affichent sur vos deux téléphones.", "Chacun choisit la sienne de son côté, sans voir le choix de l'autre.", "Les deux choix apparaissent en même temps. Pas le même ? Défendez le vôtre, en appel, en vocal ou par message.", "Dix dilemmes par partie. Pas de points."],
   flags: ["Une petite manie s'affiche. Elle parle toujours de « quelqu'un », jamais de l'un de vous deux.", "Chacun vote « green » ou « red » de son côté.", "Les deux verdicts apparaissent en même temps. Pas d'accord ? Défendez le vôtre.", "Dix manies par partie. Pas de points."],
   onde: ["Une échelle s'affiche entre deux extrêmes, par exemple « Froid » et « Chaud ».", "Le guide de la manche voit seul où se cache la cible, et écrit un seul indice : un objet, un film ou une situation qui se placerait à cet endroit.", "L'autre reçoit l'indice, déplace l'aiguille et valide.", "Points : 4 en plein dans le mille, 3 tout près, 2 pas loin. Six manches, les rôles alternent, le score est commun."],
@@ -5443,6 +5770,8 @@ function startLiveArcade(game) {
   if (game === "tp") s.deck = shuffle(TP.map((_, i) => i)).slice(0, 10);
   else if (game === "flags") s.deck = shuffle(FLAGS.map((_, i) => i)).slice(0, 10);
   else if (game === "onde") { s.deck = shuffle(SPECTRA.map((_, i) => i)).slice(0, 6); s.target = 5 + Math.floor(Math.random() * 91); }
+  else if (game === "vf" || game === "pm") { s.deck = qzDeck(game); if (game === "pm") s.th = s.deck.map(n => qzTh(pmItem(n)[1])); s.pa = 0; s.pb = 0; }
+  else if (game === "jp") { s.deck = shuffle(JP.map((_, i) => i)).slice(0, 8); s.pa = 0; s.pb = 0; }
   else { s.game = "synchro"; s.prompt = pickOne(SYNC); s.round = 1; }
   Live.start(s);
 }
@@ -5451,6 +5780,7 @@ function liveArcadeView(L, me, head) {
   const endScr = (big, txt) => head + `<div class="stack" style="text-align:center;justify-items:center;padding-top:24px"><p class="end-big">${esc(fr(big))}</p><p>${esc(fr(txt))}</p></div>
     <div class="actions"><button class="btn wide c" style="${col}" data-a="lv-replay">Rejouer</button><button class="btn line wide" data-a="close-layer">Retour à l'accueil</button></div>`;
   if (S.lvRules !== L.startAt) return head + rulesHtml(ARC_REMOTE_RULES[L.game] || []) + `<button class="btn wide c" style="${col}" data-a="lv-rules-ok">C'est parti</button>`;
+  if (L.game === "vf" || L.game === "pm" || L.game === "jp") return qzLive(L, me, head, endScr).replace(/data-a="lv-qz-next"/g, `data-a="lv-qz-next" data-i="${L.i}"`);
   const next = (label = "Suivant") => `<button class="btn wide" data-a="${L.game === "onde" ? "lv-onde-next" : "lv-arc-next"}">${L.i + 1 >= total ? "Terminer" : label}</button>`;
 
   if (L.game === "tp" || L.game === "flags") {
@@ -10582,7 +10912,45 @@ const ACT = {
       addPuzzle();
     }
   },
-  "arc-start"(d) { if (S.arcRemote && Store.backend === "shared") startLiveArcade(d.g); else startArc(d.g); },
+  "arc-start"(d) {
+    if (d.g === "contact") { S.layer = { type: "contact" }; S.ct = null; S.ctUi = {}; S.ctSetup = { ...(S.ctSetup || {}), where: S.arcRemote && Store.backend === "shared" ? "distance" : "" }; return; }
+    if (S.arcRemote && Store.backend === "shared") startLiveArcade(d.g); else startArc(d.g);
+  },
+  "qz-ok"(d) { const A = S.arc; if (A && (d.k === "a" || d.k === "b")) { A.ok = A.ok || {}; A.ok[d.k] = !A.ok[d.k]; } },
+  "qz-next"() {
+    const A = S.arc; if (!A) return;
+    const ok = A.ok || {}; A.pa = (A.pa || 0) + (ok.a ? 1 : 0); A.pb = (A.pb || 0) + (ok.b ? 1 : 0); A.ok = {};
+    A.i++; A.phase = A.i >= A.deck.length ? "end" : "show"; Sfx.play(A.phase === "end" ? "fanfare" : "page");
+  },
+  "jp-try"() {
+    const A = S.arc, it = A && JP[A.deck[A.i]]; if (!it || A.phase !== "guess") return;
+    const v = qzPrice(S.drafts["jp-in"]); if (!v) { toast("Écrivez un prix en euros, par exemple 12,50."); return; }
+    clearDrafts("jp-in");
+    const r = qzClose(v, it[2]) ? "ok" : v < it[2] ? "plus" : "moins"; A.tries = [...(A.tries || []), { v, r }];
+    if (r === "ok") { A.phase = "found"; A.pts = (A.pts || 0) + Math.max(1, 8 - A.tries.length); Sfx.play("fanfare"); }
+    else if (A.tries.length >= 7) { A.phase = "miss"; Sfx.play("soft"); }
+    else Sfx.play("boop");
+  },
+  "jp-next"() { const A = S.arc; if (!A) return; A.i++; A.tries = []; A.phase = A.i >= A.deck.length ? "end" : "guess"; },
+  "lv-jp"() {
+    const me = whoAmI(), v = qzPrice(S.drafts["jp-lv"]); if (!me) return;
+    if (!v) { toast("Écris un prix en euros, par exemple 12,50."); return; }
+    clearDrafts("jp-lv"); Live.answer("ans", me, String(v)); Sfx.play("pop");
+  },
+  "lv-qz-next"(d) {
+    const L = Live.state; if (!L || L.ended || +d.i !== L.i) return;
+    const ans = L.ans || {}, deck = L.deck || [];
+    let pa = +L.pa || 0, pb = +L.pb || 0;
+    if (L.game === "jp") {
+      const v = (JP[deck[L.i]] || [])[2], g = { a: qzPrice(ans.a), b: qzPrice(ans.b) }, da = Math.abs(g.a - v), db = Math.abs(g.b - v);
+      if (da < db) pa++; else if (db < da) pb++;
+      if (qzClose(g.a, v)) pa++; if (qzClose(g.b, v)) pb++;
+    } else {
+      const Q = qzQuestion(L.game, deck[L.i], (L.th || [])[L.i]);
+      if (+ans.a === Q.good) pa++; if (+ans.b === Q.good) pb++;
+    }
+    if (L.i + 1 >= deck.length) Live.write({ pa, pb, ended: true }); else Live.write({ pa, pb, i: L.i + 1 });
+  },
   "arc-where"(d) { S.arcRemote = d.v === "1"; },
   "arc-begin"() { S.arc.phase = S.arc.start; },
   "arc-menu"() { S.arc = null; },
